@@ -3592,192 +3592,433 @@ do
     end
 
     -- ═══════════════════════════════════════════
-    -- RAGE TAB: ANTI-AIM
+    -- RAGE TAB: ANTI-AIM (Matcha-style Desync + Fake Position)
     -- ═══════════════════════════════════════════
     do
-        local AA = {
-            velocity_desync        = false,
-            velocity_desync_type   = "high",
-            velocity_desync_rotate = false,
-            network_desync         = false,
-            fake_position          = false,
+        -- ── State ──────────────────────────────────────────────────────
+        local aaDesync = {
+            Enabled      = false,
+            Mode         = "Custom",
+            RandomAmount = 20,
+            Visualize    = false,
+            Line         = false,
+            Status       = false,
+            Dot          = false,
+            CustomX      = 0,
+            CustomY      = 0,
+            CustomZ      = 0,
         }
 
-        local AA_connection = nil
-        local AA_do_sleep    = false
-        local AA_sleep_tick  = tick()
+        local aaFakePos = {
+            Enabled      = false,
+            Mode         = "Voidless",
+            Version      = "Version 1",
+            ReturnDelay  = 0.5,
+            Active       = false,
+            OriginalPos  = nil,
+        }
 
-        -- Флаги для восстановления velocity на следующем кадре (избегаем RenderStepped:Wait внутри коллбека)
-        local _aa_restore_lv = nil
-        local _aa_restore_av = nil
-        local _aa_restore_hrp = nil
+        -- ── Desync clone (invisible body at fake pos) ──────────────────
+        local DesyncClone = nil
+        local DesyncHighlight = nil
+        local DesyncGlow = nil
 
-        local function aa_velocity_desync(hrp)
-            if not hrp then return end
-            -- Восстанавливаем предыдущий кадр, если нужно
-            if _aa_restore_hrp then
-                pcall(function()
-                    _aa_restore_hrp.AssemblyLinearVelocity = _aa_restore_lv
-                    _aa_restore_hrp.AssemblyAngularVelocity = _aa_restore_av
-                end)
-                _aa_restore_hrp = nil
+        pcall(function()
+            DesyncClone = game:GetObjects("rbxassetid://8246626421")[1]
+            DesyncClone.Parent = Workspace
+            DesyncClone.Humanoid:Destroy()
+            DesyncClone.Head.Face:Destroy()
+            for _, v in pairs(DesyncClone:GetDescendants()) do
+                if v:IsA("BasePart") or v:IsA("MeshPart") then
+                    v.CanCollide = false
+                    v.Transparency = 0
+                end
             end
-            local old_lv = hrp.AssemblyLinearVelocity
-            local old_av = hrp.AssemblyAngularVelocity
-            local v
-            local t = AA.velocity_desync_type
-            if t == "y high" then
-                v = Vector3.new(0, 16384, 0)
-            elseif t == "low" then
-                v = Vector3.new(
-                    math.random(1,2)==1 and -300 or 300,
-                    math.random(1,2)==1 and -300 or 300,
-                    math.random(1,2)==1 and -300 or 300
-                )
-            elseif t == "high" then
-                v = Vector3.new(
-                    math.random(1,2)==1 and -16384 or 16384,
-                    math.random(1,2)==1 and -14384 or 16384,
-                    math.random(1,2)==1 and -16384 or 16384
-                )
-            elseif t == "zero" then
-                v = Vector3.zero
+            DesyncClone.HumanoidRootPart.Transparency = 0.5
+            DesyncClone.HumanoidRootPart.CFrame = CFrame.new(9999, 9999, 9999)
+
+            DesyncHighlight = Instance.new("Highlight")
+            DesyncHighlight.Enabled = false
+            DesyncHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            DesyncHighlight.FillColor = Color3.fromRGB(0, 255, 0)
+            DesyncHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            DesyncHighlight.FillTransparency = 0.3
+            DesyncHighlight.OutlineTransparency = 0
+            DesyncHighlight.Adornee = DesyncClone
+            DesyncHighlight.Parent = DesyncClone
+
+            DesyncGlow = Instance.new("PointLight")
+            DesyncGlow.Color = Color3.fromRGB(0, 255, 100)
+            DesyncGlow.Brightness = 4
+            DesyncGlow.Range = 2
+            DesyncGlow.Parent = DesyncClone.HumanoidRootPart
+        end)
+
+        -- ── Drawing overlays ──────────────────────────────────────────
+        local aaLine = Drawing.new("Line")
+        aaLine.Thickness = 2
+        aaLine.Color = Color3.fromRGB(0, 255, 0)
+        aaLine.Visible = false
+        aaLine.Transparency = 1
+
+        local aaDot = Drawing.new("Circle")
+        aaDot.Radius = 6
+        aaDot.Thickness = 1.5
+        aaDot.NumSides = 16
+        aaDot.Color = Color3.fromRGB(0, 255, 100)
+        aaDot.Filled = true
+        aaDot.Transparency = 1
+        aaDot.Visible = false
+
+        local aaStatus = Drawing.new("Text")
+        aaStatus.Text = "Desync: OFF"
+        aaStatus.Size = 16
+        aaStatus.Font = 2
+        aaStatus.Color = Color3.fromRGB(255, 0, 0)
+        aaStatus.Outline = true
+        aaStatus.OutlineColor = Color3.fromRGB(0, 0, 0)
+        aaStatus.Center = false
+        aaStatus.Visible = false
+        aaStatus.Position = Vector2.new(100, 100)
+
+        -- ── Camera setback part (keeps camera at real pos) ────────────
+        local desync_setback = Instance.new("Part")
+        desync_setback.Name = "CrystalDesyncSetback"
+        desync_setback.Size = Vector3.new(2, 2, 1)
+        desync_setback.CanCollide = false
+        desync_setback.Anchored = true
+        desync_setback.Transparency = 1
+        desync_setback.Parent = Workspace
+
+        -- ── Status-label drag ─────────────────────────────────────────
+        local aaDragging = false
+        UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 and aaDesync.Status then
+                local mp = UserInputService:GetMouseLocation()
+                local tp = aaStatus.Position
+                local ts = aaStatus.TextBounds
+                if mp.X >= tp.X and mp.X <= tp.X + ts.X and
+                   mp.Y >= tp.Y and mp.Y <= tp.Y + ts.Y then
+                    aaDragging = true
+                end
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                aaDragging = false
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if aaDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                aaStatus.Position = UserInputService:GetMouseLocation()
+            end
+        end)
+
+        -- ── Desync heartbeat ──────────────────────────────────────────
+        RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+
+            if not char or not hrp then
+                if DesyncClone then
+                    DesyncClone:SetPrimaryPartCFrame(CFrame.new(9999, 9999, 9999))
+                    if DesyncHighlight then DesyncHighlight.Enabled = false end
+                end
+                aaLine.Visible   = false
+                aaDot.Visible    = false
+                aaStatus.Visible = false
+                return
+            end
+
+            local oldCFrame   = hrp.CFrame
+            local desyncCFrame = oldCFrame
+
+            if aaDesync.Enabled then
+                local m = aaDesync.Mode
+                if m == "Destroy Cheaters" then
+                    desyncCFrame = CFrame.new(9e9, 1, 1) * oldCFrame.Rotation
+                elseif m == "Underground" then
+                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(0, 12, 0)) * oldCFrame.Rotation
+                elseif m == "Void Spam" then
+                    desyncCFrame = math.random(1,2)==1 and oldCFrame
+                        or CFrame.new(math.random(10000,50000), math.random(10000,50000), math.random(10000,50000)) * oldCFrame.Rotation
+                elseif m == "Void" then
+                    desyncCFrame = CFrame.new(hrp.Position + Vector3.new(
+                        math.random(-444444,444444),
+                        math.random(-444444,444444),
+                        math.random(-44444,44444)
+                    )) * oldCFrame.Rotation
+                elseif m == "Random" then
+                    local amt = aaDesync.RandomAmount
+                    desyncCFrame = CFrame.new(hrp.Position + Vector3.new(
+                        math.random(-amt, amt),
+                        math.random(-amt/2, amt/2),
+                        math.random(-amt, amt)
+                    )) * oldCFrame.Rotation
+                elseif m == "Safe Shoot" then
+                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(0,5,0))
+                        * CFrame.Angles(math.random(0,360), math.random(0,360), math.rad(180))
+                elseif m == "Custom" then
+                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(
+                        aaDesync.CustomX, aaDesync.CustomY, aaDesync.CustomZ
+                    )) * oldCFrame.Rotation
+                end
+
+                hrp.CFrame = desyncCFrame
+                Camera.CameraSubject = desync_setback
+                RunService.RenderStepped:Wait()
+                desync_setback.CFrame = oldCFrame * CFrame.new(0, hrp.Size.Y/2 + 0.5, 0)
+                hrp.CFrame = oldCFrame
+            end
+
+            -- Visualize clone
+            local vizCF = aaDesync.Enabled and desyncCFrame or oldCFrame
+            if aaDesync.Visualize and DesyncClone then
+                DesyncClone:SetPrimaryPartCFrame(vizCF)
+                if DesyncHighlight then DesyncHighlight.Enabled = true end
+            elseif DesyncClone then
+                if DesyncHighlight then DesyncHighlight.Enabled = false end
+                DesyncClone:SetPrimaryPartCFrame(CFrame.new(9999, 9999, 9999))
+            end
+
+            -- Line
+            if aaDesync.Line then
+                local sp, on = Camera:WorldToViewportPoint(vizCF.Position)
+                local mp = UserInputService:GetMouseLocation()
+                if on then
+                    aaLine.From    = mp
+                    aaLine.To      = Vector2.new(sp.X, sp.Y)
+                    aaLine.Visible = true
+                else
+                    aaLine.Visible = false
+                end
             else
-                v = Vector3.zero
+                aaLine.Visible = false
             end
-            hrp.AssemblyLinearVelocity = v
-            if AA.velocity_desync_rotate then
-                hrp.AssemblyAngularVelocity = v
-            end
-            -- Запоминаем для восстановления на следующем вызове (без Wait)
-            _aa_restore_hrp = hrp
-            _aa_restore_lv = old_lv
-            _aa_restore_av = old_av
-        end
 
-        local function aa_network_desync(hrp)
-            if not hrp then return end
-            AA_do_sleep = not AA_do_sleep
-            pcall(function()
-                sethiddenproperty(hrp, "NetworkIsSleeping", AA_do_sleep)
-            end)
-        end
-
-        local _aa_fp_restore_hrp = nil
-        local _aa_fp_restore_cf = nil
-
-        local function aa_fake_position(hrp)
-            if not hrp then return end
-            -- Восстанавливаем предыдущий кадр
-            if _aa_fp_restore_hrp then
-                pcall(function()
-                    _aa_fp_restore_hrp.CFrame = _aa_fp_restore_cf
-                end)
-                _aa_fp_restore_hrp = nil
-            end
-            local old_cf = hrp.CFrame
-            hrp.CFrame = CFrame.new(
-                math.random(-2147483647, 2147483647),
-                math.random(-400, 2147483647),
-                math.random(-2147483647, 2147483647)
-            ) * CFrame.Angles(
-                math.rad(math.random(1, 359)),
-                math.rad(math.random(1, 359)),
-                math.rad(math.random(1, 359))
-            )
-            -- Запоминаем для восстановления на следующем вызове
-            _aa_fp_restore_hrp = hrp
-            _aa_fp_restore_cf = old_cf
-        end
-
-        local function startAntiAim()
-            if AA_connection then return end
-            AA_connection = RunService.Stepped:Connect(function()
-                local char = LocalPlayer.Character
-                local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
-
-                if AA.velocity_desync then
-                    pcall(aa_velocity_desync, hrp)
+            -- Dot
+            if aaDesync.Dot then
+                local sp, on = Camera:WorldToViewportPoint(vizCF.Position)
+                if on then
+                    aaDot.Position = Vector2.new(sp.X, sp.Y)
+                    aaDot.Visible  = true
+                else
+                    aaDot.Visible = false
                 end
-                if AA.network_desync then
-                    pcall(aa_network_desync, hrp)
-                end
-                if AA.fake_position then
-                    pcall(aa_fake_position, hrp)
-                end
-            end)
-        end
-
-        local function stopAntiAim()
-            if AA_connection then
-                AA_connection:Disconnect()
-                AA_connection = nil
-            end
-        end
-
-        local function refreshConnection()
-            local anyOn = AA.velocity_desync or AA.network_desync or AA.fake_position
-            if anyOn then
-                startAntiAim()
             else
-                stopAntiAim()
+                aaDot.Visible = false
+            end
+
+            -- Status text
+            if aaDesync.Status then
+                aaStatus.Text    = "Desync: " .. (aaDesync.Enabled and "TRUE" or "FALSE")
+                aaStatus.Color   = aaDesync.Enabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+                aaStatus.Visible = true
+            else
+                aaStatus.Visible = false
+            end
+        end)
+
+        -- ── Fake Position helpers ─────────────────────────────────────
+        local function getFakePosOffset()
+            if aaFakePos.Version == "Version 1" then return CFrame.new(100000,100000,100000)
+            elseif aaFakePos.Version == "Version 2" then return CFrame.new(50000000,50000000,50000000)
+            elseif aaFakePos.Version == "Version 3" then return CFrame.new(9e9,9e9,9e9) end
+        end
+
+        local function applyFakePosition()
+            if aaFakePos.Active then return end
+            local char = LocalPlayer.Character
+            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            aaFakePos.Active = true
+            aaFakePos.OriginalPos = hrp.CFrame
+            local oldFall = Workspace.FallenPartsDestroyHeight
+            Workspace.FallenPartsDestroyHeight = -math.huge
+            pcall(function() getgenv().Desync = true end)
+            if aaFakePos.Mode == "Voidless" then
+                local off = getFakePosOffset()
+                if off then hrp.CFrame = off end
+                task.spawn(function()
+                    task.wait(aaFakePos.ReturnDelay)
+                    if hrp and aaFakePos.OriginalPos then
+                        hrp.CFrame = aaFakePos.OriginalPos
+                    end
+                    Workspace.FallenPartsDestroyHeight = oldFall
+                    aaFakePos.Active = false
+                end)
+            elseif aaFakePos.Mode == "On the spot" then
+                task.spawn(function()
+                    task.wait(aaFakePos.ReturnDelay)
+                    Workspace.FallenPartsDestroyHeight = oldFall
+                    aaFakePos.Active = false
+                end)
             end
         end
 
+        local function disableFakePosition()
+            aaFakePos.Active = false
+            Workspace.FallenPartsDestroyHeight = 0/0
+            pcall(function() getgenv().Desync = false end)
+        end
+
+        -- ── Camera reset ──────────────────────────────────────────────
+        local function resetCamera()
+            if LocalPlayer.Character then
+                Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            end
+        end
+
+        -- ══════════════════════════════════════════════════════════════
+        -- UI — Desync
+        -- ══════════════════════════════════════════════════════════════
         v304:Paragraph({
-            Title = "Anti-Aim",
-            Content = "Desync-based anti-aim. Velocity Desync и Fake Position меняют физику на 1 кадр, затем возвращают. Network Desync переключает NetworkIsSleeping.",
+            Title   = "Anti-Aim",
+            Content = "Продвинутый Desync: несколько режимов смещения позиции (Custom, Void, Random…) + Fake Position с визуализацией клона.",
         })
 
         v304:Toggle({
-            Title = "Velocity Desync",
+            Title   = "Desync",
             Default = false,
             Callback = function(val)
-                AA.velocity_desync = val
-                refreshConnection()
-                v18:Notify({ Title = "CrystalHub", Content = "Velocity Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                aaDesync.Enabled = val
+                if not val then resetCamera() end
+                v18:Notify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
         v304:Dropdown({
-            Title = "Velocity Desync Type",
-            Values = { "high", "low", "y high", "zero" },
-            Value = "high",
+            Title  = "Desync Mode",
+            Values = { "Destroy Cheaters", "Underground", "Void Spam", "Void", "Random", "Safe Shoot", "Custom" },
+            Value  = "Custom",
             Callback = function(val)
-                AA.velocity_desync_type = val
+                aaDesync.Mode = val
             end,
         })
 
-        v304:Toggle({
-            Title = "Velocity Rotate",
-            Default = false,
+        v304:Slider({
+            Title   = "Random Amount",
+            IsTooltip = true,
+            IsTextbox = true,
+            Value   = { Min = 1, Max = 1000000, Default = 20 },
             Callback = function(val)
-                AA.velocity_desync_rotate = val
+                aaDesync.RandomAmount = tonumber(val) or 20
+            end,
+        })
+
+        v304:Slider({
+            Title   = "Custom X",
+            IsTooltip = true,
+            IsTextbox = true,
+            Value   = { Min = -10000, Max = 10000, Default = 0 },
+            Callback = function(val)
+                aaDesync.CustomX = tonumber(val) or 0
+            end,
+        })
+
+        v304:Slider({
+            Title   = "Custom Y",
+            IsTooltip = true,
+            IsTextbox = true,
+            Value   = { Min = -10000, Max = 10000, Default = 0 },
+            Callback = function(val)
+                aaDesync.CustomY = tonumber(val) or 0
+            end,
+        })
+
+        v304:Slider({
+            Title   = "Custom Z",
+            IsTooltip = true,
+            IsTextbox = true,
+            Value   = { Min = -10000, Max = 10000, Default = 0 },
+            Callback = function(val)
+                aaDesync.CustomZ = tonumber(val) or 0
             end,
         })
 
         v304:Divider()
 
         v304:Toggle({
-            Title = "Network Desync",
+            Title   = "Visualize Desync",
             Default = false,
             Callback = function(val)
-                AA.network_desync = val
-                refreshConnection()
-                v18:Notify({ Title = "CrystalHub", Content = "Network Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                aaDesync.Visualize = val
+            end,
+        })
+
+        v304:Toggle({
+            Title   = "Desync Line",
+            Default = false,
+            Callback = function(val)
+                aaDesync.Line = val
+            end,
+        })
+
+        v304:Toggle({
+            Title   = "Desync Dot",
+            Default = false,
+            Callback = function(val)
+                aaDesync.Dot = val
+            end,
+        })
+
+        v304:Toggle({
+            Title   = "Desync Status Text",
+            Default = false,
+            Callback = function(val)
+                aaDesync.Status = val
             end,
         })
 
         v304:Divider()
 
+        -- ══════════════════════════════════════════════════════════════
+        -- UI — Fake Position
+        -- ══════════════════════════════════════════════════════════════
+        v304:Paragraph({
+            Title   = "Fake Position",
+            Content = "Телепортирует персонажа в фейковую позицию и возвращает назад через ReturnDelay сек.",
+        })
+
         v304:Toggle({
-            Title = "Fake Position",
+            Title   = "Enable Fake Position",
             Default = false,
             Callback = function(val)
-                AA.fake_position = val
-                refreshConnection()
+                aaFakePos.Enabled = val
+                if val then
+                    applyFakePosition()
+                else
+                    disableFakePosition()
+                end
                 v18:Notify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+            end,
+        })
+
+        v304:Dropdown({
+            Title  = "FakePos Version",
+            Values = { "Version 1", "Version 2", "Version 3" },
+            Value  = "Version 1",
+            Callback = function(val)
+                aaFakePos.Version = val
+            end,
+        })
+
+        v304:Dropdown({
+            Title  = "FakePos Mode",
+            Values = { "Voidless", "On the spot" },
+            Value  = "Voidless",
+            Callback = function(val)
+                aaFakePos.Mode = val
+            end,
+        })
+
+        v304:Slider({
+            Title   = "Return Delay (s)",
+            IsTooltip = true,
+            IsTextbox = true,
+            Value   = { Min = 0.1, Max = 3, Default = 0.5 },
+            Callback = function(val)
+                aaFakePos.ReturnDelay = tonumber(val) or 0.5
             end,
         })
     end
