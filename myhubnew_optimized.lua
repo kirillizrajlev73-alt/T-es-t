@@ -5736,6 +5736,140 @@ v301:Dropdown({
     end,
 })
 
+v301:Divider()
+v301:Paragraph({
+    Title = 'Invisible',
+    Content = 'Desync-based invisibility via network sleep',
+})
+
+do
+    local _invisThread = nil
+    local _invisRunning = false
+    local _velMax = 128 ^ 2
+
+    v301:Button({
+        Title = 'Invisible (Start)',
+        Description = 'Makes your character invisible to others',
+        Callback = function()
+            if _invisRunning then
+                v18:Notify({
+                    Title = 'CrystalHub',
+                    Content = 'Invisible already running!',
+                    Duration = 3,
+                    Icon = 'bell',
+                })
+                return
+            end
+
+            local char = Players.LocalPlayer.Character
+            if not char then
+                v18:Notify({
+                    Title = 'CrystalHub',
+                    Content = 'No character found!',
+                    Duration = 3,
+                    Icon = 'bell',
+                })
+                return
+            end
+
+            local Root = char:FindFirstChild('HumanoidRootPart')
+            if not Root then
+                v18:Notify({
+                    Title = 'CrystalHub',
+                    Content = 'HumanoidRootPart not found!',
+                    Duration = 3,
+                    Icon = 'bell',
+                })
+                return
+            end
+
+            _invisRunning = true
+
+            local timeRelease, timeChoke = 0.015, 0.105
+            local statPing = game:GetService('Stats').PerformanceStats.Ping
+
+            local function Sleep()
+                pcall(sethiddenproperty, Root, 'NetworkIsSleeping', true)
+            end
+
+            local function Init()
+                if not Root or not Root.Parent then return end
+                local rootVel = Root.Velocity
+                local rootAng = math.random(-180, 180)
+                local X = math.random(-_velMax, _velMax)
+                local Y = math.random(0, _velMax)
+                local Z = math.random(-_velMax, _velMax)
+
+                pcall(function()
+                    Root.CFrame = Root.CFrame * CFrame.Angles(0, math.rad(rootAng), 0)
+                    Root.Velocity = Vector3.new(X, -Y, Z)
+                    RunService.RenderStepped:Wait()
+                    Root.CFrame = Root.CFrame * CFrame.Angles(0, math.rad(-rootAng), 0)
+                    Root.Velocity = rootVel
+                end)
+            end
+
+            local initConn = RunService.Heartbeat:Connect(Init)
+
+            _invisThread = task.spawn(function()
+                while _invisRunning do
+                    local chokeClient = RunService.Heartbeat:Connect(Sleep)
+                    local chokeServer = RunService.RenderStepped:Connect(Sleep)
+
+                    local ping = 0
+                    pcall(function()
+                        ping = math.ceil(statPing:GetValue())
+                    end)
+
+                    task.wait(math.max(timeChoke, ping / 1000))
+
+                    chokeClient:Disconnect()
+                    chokeServer:Disconnect()
+
+                    task.wait(timeRelease)
+                end
+                initConn:Disconnect()
+            end)
+
+            v18:Notify({
+                Title = 'CrystalHub',
+                Content = 'Invisible ON',
+                Duration = 3,
+                Icon = 'bell',
+            })
+        end,
+    })
+
+    v301:Button({
+        Title = 'Invisible (Stop)',
+        Description = 'Stop invisibility',
+        Callback = function()
+            if not _invisRunning then
+                v18:Notify({
+                    Title = 'CrystalHub',
+                    Content = 'Invisible is not running',
+                    Duration = 3,
+                    Icon = 'bell',
+                })
+                return
+            end
+
+            _invisRunning = false
+
+            if _invisThread then
+                task.cancel(_invisThread)
+                _invisThread = nil
+            end
+
+            v18:Notify({
+                Title = 'CrystalHub',
+                Content = 'Invisible OFF',
+                Duration = 3,
+                Icon = 'bell',
+            })
+        end,
+    })
+end
 
 local t40 = {
     Title = 'Enable ESP',
