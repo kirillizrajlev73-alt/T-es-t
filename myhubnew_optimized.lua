@@ -1,4 +1,3 @@
---едит ранаоду
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -5062,6 +5061,211 @@ VisualsTab:Button({
         RuzCursorPicker:Destroy()
     end,
 })
+
+VisualsTab:Divider()
+VisualsTab:Paragraph({
+    Title = 'Lines Crosshair',
+    Content = 'Custom crosshair with 4 lines.\nWorks without ShiftLock. Rainbow mode cycles all colors.',
+})
+
+do
+    local _linesEnabled = false
+    local _rainbowLines = false
+    local _linesSize = 10
+    local _linesThickness = 2
+    local _linesGap = 4
+    local _linesColor = {
+        Top    = Color3.fromRGB(255, 255, 255),
+        Bottom = Color3.fromRGB(255, 255, 255),
+        Left   = Color3.fromRGB(255, 255, 255),
+        Right  = Color3.fromRGB(255, 255, 255),
+    }
+    local _lines = {}
+    local _linesConn = nil
+    local _linesRainbowConn = nil
+
+    local function _destroyLines()
+        for _, d in pairs(_lines) do
+            if d and d.Remove then pcall(function() d:Remove() end) end
+        end
+        _lines = {}
+        if _linesConn then _linesConn:Disconnect() _linesConn = nil end
+        if _linesRainbowConn then _linesRainbowConn:Disconnect() _linesRainbowConn = nil end
+    end
+
+    local function _createLines()
+        _destroyLines()
+        if not _linesEnabled then return end
+
+        local vp = Workspace.CurrentCamera.ViewportSize
+        local cx = vp.X / 2
+        local cy = vp.Y / 2
+        local gap = _linesGap
+        local sz  = _linesSize
+        local th  = _linesThickness
+
+        local function makeLine(ax, ay, bx, by, col)
+            local d = Drawing.new('Line')
+            d.From = Vector2.new(ax, ay)
+            d.To   = Vector2.new(bx, by)
+            d.Color = col
+            d.Thickness = th
+            d.Transparency = 1
+            d.Visible = true
+            return d
+        end
+
+        _lines.Top    = makeLine(cx, cy - gap - sz, cx, cy - gap, _linesColor.Top)
+        _lines.Bottom = makeLine(cx, cy + gap,      cx, cy + gap + sz, _linesColor.Bottom)
+        _lines.Left   = makeLine(cx - gap - sz, cy, cx - gap, cy, _linesColor.Left)
+        _lines.Right  = makeLine(cx + gap, cy,      cx + gap + sz, cy, _linesColor.Right)
+
+        _linesConn = RunService.RenderStepped:Connect(function()
+            local cam = Workspace.CurrentCamera
+            if not cam then return end
+            local v2 = cam.ViewportSize
+            local x, y = v2.X / 2, v2.Y / 2
+            local g, s = _linesGap, _linesSize
+
+            if _lines.Top    then _lines.Top.From    = Vector2.new(x, y - g - s) _lines.Top.To    = Vector2.new(x, y - g) end
+            if _lines.Bottom then _lines.Bottom.From = Vector2.new(x, y + g)     _lines.Bottom.To = Vector2.new(x, y + g + s) end
+            if _lines.Left   then _lines.Left.From   = Vector2.new(x - g - s, y) _lines.Left.To   = Vector2.new(x - g, y) end
+            if _lines.Right  then _lines.Right.From  = Vector2.new(x + g, y)     _lines.Right.To  = Vector2.new(x + g + s, y) end
+        end)
+    end
+
+    local function _applyColor(key, col)
+        _linesColor[key] = col
+        if _lines[key] and not _rainbowLines then
+            _lines[key].Color = col
+        end
+    end
+
+    -- Toggle Enable
+    VisualsTab:Toggle({
+        Title = 'Enable Lines Crosshair',
+        Description = 'Drawing-based crosshair, always visible',
+        Default = false,
+        Callback = function(state)
+            _linesEnabled = state
+            if state then
+                _createLines()
+                v18:Notify({ Title = 'CrystalHub', Content = 'Lines Crosshair ON', Duration = 3, Icon = 'bell' })
+            else
+                _destroyLines()
+                v18:Notify({ Title = 'CrystalHub', Content = 'Lines Crosshair OFF', Duration = 3, Icon = 'bell' })
+            end
+        end,
+    })
+
+    -- Size slider
+    VisualsTab:Button({
+        Title = 'Lines Size Slider',
+        Description = 'Adjust crosshair line length',
+        Callback = function()
+            v25('Lines Size', 4, 60, _linesSize, 1, function(val)
+                _linesSize = val
+                if _linesEnabled then _createLines() end
+            end, function()
+                _linesSize = 10
+                if _linesEnabled then _createLines() end
+                v18:Notify({ Title = 'CrystalHub', Content = 'Lines Size reset to 10', Duration = 3, Icon = 'bell' })
+            end)
+        end,
+    })
+
+    -- Thickness slider
+    VisualsTab:Button({
+        Title = 'Lines Thickness Slider',
+        Description = 'Adjust crosshair line width',
+        Callback = function()
+            v25('Lines Thickness', 1, 10, _linesThickness, 1, function(val)
+                _linesThickness = val
+                if _linesEnabled then _createLines() end
+            end, function()
+                _linesThickness = 2
+                if _linesEnabled then _createLines() end
+                v18:Notify({ Title = 'CrystalHub', Content = 'Lines Thickness reset to 2', Duration = 3, Icon = 'bell' })
+            end)
+        end,
+    })
+
+    -- Gap slider
+    VisualsTab:Button({
+        Title = 'Lines Gap Slider',
+        Description = 'Space between center and lines',
+        Callback = function()
+            v25('Lines Gap', 0, 30, _linesGap, 1, function(val)
+                _linesGap = val
+                if _linesEnabled then _createLines() end
+            end, function()
+                _linesGap = 4
+                if _linesEnabled then _createLines() end
+                v18:Notify({ Title = 'CrystalHub', Content = 'Lines Gap reset to 4', Duration = 3, Icon = 'bell' })
+            end)
+        end,
+    })
+
+    -- Rainbow toggle
+    VisualsTab:Toggle({
+        Title = 'Rainbow Lines',
+        Description = 'All lines cycle through colors',
+        Default = false,
+        Callback = function(state)
+            _rainbowLines = state
+            if _linesRainbowConn then
+                _linesRainbowConn:Disconnect()
+                _linesRainbowConn = nil
+            end
+            if state and _linesEnabled then
+                local hue = 0
+                _linesRainbowConn = RunService.RenderStepped:Connect(function()
+                    hue = (hue + 0.004) % 1
+                    local col = Color3.fromHSV(hue, 1, 1)
+                    for _, d in pairs(_lines) do
+                        if d then d.Color = col end
+                    end
+                end)
+            else
+                -- restore individual colors
+                for k, d in pairs(_lines) do
+                    if d then d.Color = _linesColor[k] end
+                end
+            end
+            v18:Notify({ Title = 'CrystalHub', Content = state and 'Rainbow Lines ON' or 'Rainbow Lines OFF', Duration = 3, Icon = 'bell' })
+        end,
+    })
+
+    -- Color pickers per line
+    VisualsTab:ColorPicker({
+        Title = 'Top Line Color',
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(col)
+            _applyColor('Top', col)
+        end,
+    })
+    VisualsTab:ColorPicker({
+        Title = 'Bottom Line Color',
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(col)
+            _applyColor('Bottom', col)
+        end,
+    })
+    VisualsTab:ColorPicker({
+        Title = 'Left Line Color',
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(col)
+            _applyColor('Left', col)
+        end,
+    })
+    VisualsTab:ColorPicker({
+        Title = 'Right Line Color',
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(col)
+            _applyColor('Right', col)
+        end,
+    })
+end
 
 
     v301:Paragraph({
