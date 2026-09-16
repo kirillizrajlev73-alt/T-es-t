@@ -1824,26 +1824,17 @@ do
                             u153:Disconnect()
                         end
 
-                        local _antiFlingLastTick = 0
                         u153 = u154.Stepped:Connect(function()
                             if u152 then
-                                local _now = tick()
-                                -- Throttle: запускать не чаще раза в 0.15 секунд
-                                if _now - _antiFlingLastTick < 0.15 then return end
-                                _antiFlingLastTick = _now
                                 for _, plr in ipairs(Players:GetPlayers()) do
-                                    if plr ~= LocalPlayer and plr.Character then
-                                        for _, part in ipairs(plr.Character:GetDescendants()) do
-                                            if part:IsA('BasePart') then
-                                                pcall(function()
-                                                    part.CanCollide = false
-                                                end)
+                                    if plr ~= u155 and plr.Character then
+                                        for _, v in ipairs(plr.Character:GetDescendants()) do
+                                            if v:IsA('BasePart') then
+                                                v.CanCollide = false
                                             end
                                         end
                                     end
                                 end
-
-                                return
                             end
                         end)
                     end
