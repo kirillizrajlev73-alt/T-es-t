@@ -4023,6 +4023,74 @@ do
         })
     end
 
+    -- ═══════════════════════════════════════════
+    -- RAGE TAB: SPINBOT
+    -- ═══════════════════════════════════════════
+    do
+        local sbEnabled  = false
+        local sbSpeed    = 16.67  -- ~50% из 1/3 * 50
+        local sbConnection = nil
+
+        v304:Divider()
+
+        v304:Paragraph({
+            Title   = "SpinBot",
+            Content = "Вращает персонажа по оси Y каждый кадр. Отключает AutoRotate пока активен.",
+        })
+
+        v304:Toggle({
+            Title   = "SpinBot",
+            Default = false,
+            Callback = function(val)
+                sbEnabled = val
+
+                local char     = LocalPlayer.Character
+                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+                if val then
+                    -- Отключаем автоповорот
+                    if humanoid then
+                        humanoid.AutoRotate = false
+                    end
+                    -- Запускаем соединение
+                    if not sbConnection then
+                        sbConnection = RunService.Heartbeat:Connect(function(dt)
+                            if not sbEnabled then return end
+                            local c   = LocalPlayer.Character
+                            local hrp = c and c:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                hrp.CFrame = hrp.CFrame * CFrame.fromEulerAnglesXYZ(0, sbSpeed * dt, 0)
+                            end
+                        end)
+                    end
+                else
+                    -- Останавливаем
+                    if sbConnection then
+                        sbConnection:Disconnect()
+                        sbConnection = nil
+                    end
+                    -- Восстанавливаем AutoRotate
+                    if humanoid then
+                        humanoid.AutoRotate = true
+                    end
+                end
+
+                v18:Notify({ Title = "CrystalHub", Content = "SpinBot " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+            end,
+        })
+
+        v304:Slider({
+            Title     = "Spin Speed",
+            IsTooltip = true,
+            IsTextbox = true,
+            Value     = { Min = 1, Max = 100, Default = 50 },
+            Callback  = function(val)
+                -- Масштаб как в оригинале juju: value * (1/3)
+                sbSpeed = (tonumber(val) or 50) * (1 / 3)
+            end,
+        })
+    end
+
     v303:Paragraph({
         Title = 'Teleport Players',
         Content = 'Select a player and teleport to them.',
