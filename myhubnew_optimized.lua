@@ -1,4 +1,3 @@
--- bild new ui update funnnnnn crystal hub)))) git obnovi alo
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -1277,6 +1276,7 @@ do
         local section = tab:AddSection({Name = 'Controls', Position = 'left'})
 
         function tab:Toggle(c)
+            c = type(c) == "table" and c or {}
             return section:AddToggle({
                 Name = c.Title or c.Name or 'Toggle',
                 Default = c.Default or false,
@@ -1286,6 +1286,7 @@ do
         end
 
         function tab:Button(c)
+            c = type(c) == "table" and c or {}
             return section:AddButton({
                 Name = c.Title or c.Name or 'Button',
                 Icon = c.Icon or 'chevron-large-right',
@@ -1295,6 +1296,7 @@ do
         end
 
         function tab:Slider(c)
+            c = type(c) == "table" and c or {}
             local value = c.Value or {}
             return section:AddSlider({
                 Name = c.Title or c.Name or 'Slider',
@@ -1309,6 +1311,7 @@ do
         end
 
         function tab:Dropdown(c)
+            c = type(c) == "table" and c or {}
             local d = section:AddDropdown({
                 Name = c.Title or c.Name or 'Dropdown',
                 Values = c.Values or {},
@@ -1329,6 +1332,7 @@ do
         end
 
         function tab:ColorPicker(c)
+            c = type(c) == "table" and c or {}
             return section:AddColorPicker({
                 Name = c.Title or c.Name or 'Color',
                 Default = c.Default,
