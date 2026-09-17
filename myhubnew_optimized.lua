@@ -36,7 +36,7 @@ do
                     u17 = true
                     --[[
     CrystalHub UI adapter
-    WindUI has been replaced by the supplied NeverLose UI.гитхыб обнови
+    WindUI has been replaced by the supplied NeverLose UI.
     Existing feature code keeps its original control API through this adapter.
 ]]
 local NeverLose = loadstring(game:HttpGet(
@@ -3108,6 +3108,98 @@ end
         Opened = true,
     })
 
+    -- Floating button to open/toggle the CrystalHub GUI.
+    -- Uses gethui when available so it also works in common executors.
+    do
+        local guiParent
+        pcall(function()
+            if typeof(gethui) == "function" then
+                guiParent = gethui()
+            end
+        end)
+        if not guiParent then
+            guiParent = game:GetService("CoreGui")
+        end
+
+        local oldButtonGui = guiParent:FindFirstChild("CrystalHubOpenButton")
+        if oldButtonGui then
+            oldButtonGui:Destroy()
+        end
+
+        local openGui = Instance.new("ScreenGui")
+        openGui.Name = "CrystalHubOpenButton"
+        openGui.ResetOnSpawn = false
+        openGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        openGui.Parent = guiParent
+
+        local openButton = Instance.new("TextButton")
+        openButton.Name = "OpenButton"
+        openButton.Size = UDim2.fromOffset(120, 42)
+        openButton.Position = UDim2.new(0, 18, 0.5, -21)
+        openButton.BackgroundTransparency = 0.08
+        openButton.Text = "OPEN GUI"
+        openButton.TextSize = 15
+        openButton.Font = Enum.Font.GothamBold
+        openButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        openButton.BackgroundColor3 = Color3.fromRGB(35, 38, 48)
+        openButton.BorderSizePixel = 0
+        openButton.AutoButtonColor = true
+        openButton.Parent = openGui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10)
+        corner.Parent = openButton
+
+        local stroke = Instance.new("UIStroke")
+        stroke.Thickness = 1.5
+        stroke.Color = Color3.fromRGB(80, 160, 255)
+        stroke.Transparency = 0.15
+        stroke.Parent = openButton
+
+        openButton.Activated:Connect(function()
+            pcall(function()
+                v300:ToggleInterface()
+            end)
+        end)
+
+        -- Make the button draggable on mouse/touch.
+        local dragging = false
+        local dragStart
+        local startPos
+
+        openButton.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = openButton.Position
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if not dragging then return end
+            if input.UserInputType ~= Enum.UserInputType.MouseMovement
+                and input.UserInputType ~= Enum.UserInputType.Touch then
+                return
+            end
+
+            local delta = input.Position - dragStart
+            openButton.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+    end
+
     v301 = v300:Tab({
         Title = 'Main',
         Icon = 'zap',
@@ -5869,4 +5961,4 @@ v18:Notify({
     Duration = 3,
     Icon = 'bell',
 })
-print('[CrystalHub] v1.0 loaded.')
+print('[CrysHub] v1.0 loaded.')
