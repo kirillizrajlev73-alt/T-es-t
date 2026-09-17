@@ -56,7 +56,7 @@ do
 
                         u141 = false
 
-                        u144:Notify({
+                        CHNotify({
                             Title = 'CrystalHub',
                             Content = tostring('Skybox restored to default.'),
                             Duration = 3,
@@ -231,7 +231,7 @@ do
                                                 if not v673 then
                                                     local v674 = p29.Name .. ' \u{2014} no valid fling part.'
 
-                                                    u159:Notify({
+                                                    CHNotify({
                                                         Title = 'CrystalHub',
                                                         Content = tostring(v674),
                                                         Duration = 3,
@@ -324,7 +324,7 @@ do
 
                                                     u160.FallenPartsDestroyHeight = getgenv().RuzFPDH
 
-                                                    u159:Notify({
+                                                    CHNotify({
                                                         Title = 'CrystalHub',
                                                         Content = tostring('Returned to previous position.'),
                                                         Duration = 3,
@@ -342,7 +342,7 @@ do
 
                                         local v680 = p29.Name .. ' is sitting, skipped.'
 
-                                        u159:Notify({
+                                        CHNotify({
                                             Title = 'CrystalHub',
                                             Content = tostring(v680),
                                             Duration = 3,
@@ -453,7 +453,7 @@ do
                     t16 = {}
                     u181.Visible = false
 
-                    u182:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring('Low Graphics OFF'),
                         Duration = 3,
@@ -722,7 +722,7 @@ do
                             return
                         end
 
-                        u230:Notify({
+                        CHNotify({
                             Title = 'CrystalHub',
                             Content = tostring('Gold Bomb on cooldown.'),
                             Duration = 3,
@@ -756,7 +756,7 @@ do
                             return
                         end
 
-                        u237:Notify({
+                        CHNotify({
                             Title = 'CrystalHub',
                             Content = tostring('Normal Bomb on cooldown.'),
                             Duration = 3,
@@ -825,7 +825,7 @@ do
 
                     local v927 = u61 and 'ESP ON' or 'ESP OFF'
 
-                    u251:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring(v927),
                         Duration = 3,
@@ -875,7 +875,7 @@ do
 
                     local v928 = u116 and 'Speed Glitch ON' or 'Speed Glitch OFF'
 
-                    u262:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring(v928),
                         Duration = 3,
@@ -909,7 +909,7 @@ do
 
                     local v929 = u120 and 'Stretch ON' or 'Stretch OFF'
 
-                    u269:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring(v929),
                         Duration = 3,
@@ -958,7 +958,7 @@ do
 
                     v611.CFrame = CFrame5
 
-                    u130:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring('Teleported to gun!'),
                         Duration = 3,
@@ -968,7 +968,7 @@ do
                     return
                 end
 
-                u130:Notify({
+                CHNotify({
                     Title = 'CrystalHub',
                     Content = tostring('Gun position not found!'),
                     Duration = 3,
@@ -981,7 +981,7 @@ do
             return
         end
 
-        u130:Notify({
+        CHNotify({
             Title = 'CrystalHub',
             Content = tostring('No gun on map!'),
             Duration = 3,
@@ -1036,7 +1036,7 @@ do
                     if Humanoid and Humanoid.Health > 0 then
                         local v684 = 'Flinging: ' .. player.Name
 
-                        u162:Notify({
+                        CHNotify({
                             Title = 'CrystalHub',
                             Content = tostring(v684),
                             Duration = 3,
@@ -1049,7 +1049,7 @@ do
                 end
             end
 
-            u162:Notify({
+            CHNotify({
                 Title = 'CrystalHub',
                 Content = tostring('No knife player found!'),
                 Duration = 3,
@@ -1059,7 +1059,7 @@ do
             return
         end
 
-        u162:Notify({
+        CHNotify({
             Title = 'CrystalHub',
             Content = tostring('Fling in progress...'),
             Duration = 3,
@@ -1095,7 +1095,7 @@ do
                     if Humanoid and Humanoid.Health > 0 then
                         local v688 = 'Flinging: ' .. player.Name
 
-                        u166:Notify({
+                        CHNotify({
                             Title = 'CrystalHub',
                             Content = tostring(v688),
                             Duration = 3,
@@ -1108,7 +1108,7 @@ do
                 end
             end
 
-            u166:Notify({
+            CHNotify({
                 Title = 'CrystalHub',
                 Content = tostring('No gun player found!'),
                 Duration = 3,
@@ -1118,7 +1118,7 @@ do
             return
         end
 
-        u166:Notify({
+        CHNotify({
             Title = 'CrystalHub',
             Content = tostring('Fling in progress...'),
             Duration = 3,
@@ -1244,8 +1244,14 @@ do
             _setColor('fs', u295.FlingSheriff.lbl, u295.FlingSheriff.stroke, v796)
         end
     end)
+    -- NeverLose uses CreateNotification().new(), not :Notify().
+    local CHNotifier = v18:CreateNotification()
+    local function CHNotify(config)
+        return CHNotifier.new(config)
+    end
+
     -- New NeverLose GUI compatibility layer for the existing CrystalHub controls.
-    v18:Notify({
+    CHNotify({
         Title = 'CrystalHub Mmv And Mm2',
         Content = 'v7.3 loaded!\nOpen menu to configure everything.',
         Duration = 3,
@@ -1875,7 +1881,7 @@ do
 
                 if value then
                     afStartFarming()
-                    v18:Notify({
+                    CHNotify({
                         Title = "CrystalHub",
                         Content = "AutoFarm ON",
                         Duration = 3,
@@ -1883,7 +1889,7 @@ do
                     })
                 else
                     afStopFarming()
-                    v18:Notify({
+                    CHNotify({
                         Title = "CrystalHub",
                         Content = "AutoFarm OFF",
                         Duration = 3,
@@ -2248,7 +2254,7 @@ do
             Callback = function(val)
                 aaDesync.Enabled = val
                 if not val then resetCamera() end
-                v18:Notify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                CHNotify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
@@ -2355,7 +2361,7 @@ do
                 else
                     disableFakePosition()
                 end
-                v18:Notify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                CHNotify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
@@ -2440,7 +2446,7 @@ do
                     end
                 end
 
-                v18:Notify({ Title = "CrystalHub", Content = "SpinBot " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                CHNotify({ Title = "CrystalHub", Content = "SpinBot " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
@@ -2501,7 +2507,7 @@ do
             Description = 'Teleport to the selected player',
             Callback = function()
                 if not teleportSelected then
-                    v18:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = 'Select a player first!',
                         Duration = 3,
@@ -2517,7 +2523,7 @@ do
                 local targetHRP = targetCharacter and targetCharacter:FindFirstChild('HumanoidRootPart')
 
                 if not (hrp and targetHRP) then
-                    v18:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = 'Player or character not found!',
                         Duration = 3,
@@ -2527,7 +2533,7 @@ do
                 end
 
                 hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
-                v18:Notify({
+                CHNotify({
                     Title = 'CrystalHub',
                     Content = tostring('Teleported to: ' .. target.Name),
                     Duration = 3,
@@ -2598,7 +2604,7 @@ do
             Description = 'Fling the selected player',
             Callback = function()
                 if not flingSelected then
-                    v18:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = 'Select a player first!',
                         Duration = 3,
@@ -2608,7 +2614,7 @@ do
                 end
 
                 if u157 then
-                    v18:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = 'Fling is already in progress!',
                         Duration = 3,
@@ -2620,7 +2626,7 @@ do
                 local target = Players:FindFirstChild(flingSelected)
 
                 if target and target.Character then
-                    v18:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring('Flinging: ' .. target.Name),
                         Duration = 3,
@@ -2628,7 +2634,7 @@ do
                     })
                     task.spawn(u165, target)
                 else
-                    v18:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = 'Player left or has no character!',
                         Duration = 3,
@@ -2828,7 +2834,7 @@ do
             Description = "Remove all aura effects from character",
             Callback = function()
                 clearAura()
-                v18:Notify({
+                CHNotify({
                     Title = "CrystalHub",
                     Content = "Auras cleared.",
                     Duration = 2,
@@ -2925,7 +2931,7 @@ VisualsTab:Button({
 
                     local v888 = 'Custom skybox applied \u{2014} ID: ' .. u636.Text
 
-                    u148:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring(v888),
                         Duration = 3,
@@ -3033,7 +3039,7 @@ VisualsTab:Button({
 
                     local v889 = 'Skybox applied: ' .. u651.name
 
-                    u148:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring(v889),
                         Duration = 3,
@@ -3183,7 +3189,7 @@ function t31.Callback(p69)
 
         u314.MouseIconEnabled = true
 
-        u313:Notify({
+        CHNotify({
             Title = 'CrystalHub',
             Content = tostring('Crosshair OFF'),
             Duration = 3,
@@ -3194,7 +3200,7 @@ function t31.Callback(p69)
     end
 
     u312()
-    u313:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring('Crosshair ON \u{2014} enable ShiftLock to see it!'),
         Duration = 3,
@@ -3285,7 +3291,7 @@ VisualsTab:Button({
                         u201.Image = 'rbxassetid://' .. u718.Text
                     end
 
-                    u209:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring('Custom cursor applied \u{2014} enable ShiftLock to see it!'),
                         Duration = 3,
@@ -3335,7 +3341,7 @@ VisualsTab:Button({
 
                 local v919 = 'Crosshair Spin: ' .. (u199 and 'ON' or 'OFF')
 
-                u209:Notify({
+                CHNotify({
                     Title = 'CrystalHub',
                     Content = tostring(v919),
                     Duration = 3,
@@ -3417,7 +3423,7 @@ VisualsTab:Button({
 
                     local v920 = 'Cursor: ' .. u737.name .. ' \u{2014} enable ShiftLock to see it!'
 
-                    u209:Notify({
+                    CHNotify({
                         Title = 'CrystalHub',
                         Content = tostring(v920),
                         Duration = 3,
@@ -3535,7 +3541,7 @@ v301:Button({
 
             local v886 = 'Stretch set to ' .. p64 .. '%  (1.0 = normal)'
 
-            u128:Notify({
+            CHNotify({
                 Title = 'CrystalHub',
                 Content = tostring(v886),
                 Duration = 3,
@@ -3548,7 +3554,7 @@ v301:Button({
                 u127(true)
             end
 
-            u128:Notify({
+            CHNotify({
                 Title = 'CrystalHub',
                 Content = tostring('Stretch reset to 50%'),
                 Duration = 3,
@@ -3640,7 +3646,7 @@ local function u316()
     end)
     u177.Visible = true
 
-    u178:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring('Low Graphics ON \u{2014} FPS boost active'),
         Duration = 3,
@@ -3700,7 +3706,7 @@ local function u319()
     v703.Contrast = 0.1
     v703.Brightness = 0.05
 
-    u186:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring('High Graphics ON'),
         Duration = 3,
@@ -3725,7 +3731,7 @@ local function u320()
         end
     end
 
-    u189:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring('High Graphics OFF'),
         Duration = 3,
@@ -3761,7 +3767,7 @@ function t34.Callback()
         n3 = 70
         u323.FieldOfView = 70
 
-        u324:Notify({
+        CHNotify({
             Title = 'CrystalHub',
             Content = tostring('FOV reset to 70'),
             Duration = 3,
@@ -3789,7 +3795,7 @@ function t35.Callback()
     end)
     local v814 = ok and 'Emotes GUI loaded!' or 'Error: ' .. tostring(result)
 
-    u326:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring(v814),
         Duration = 3,
@@ -3811,7 +3817,7 @@ function t36.Callback()
     end)
     local v817 = ok and 'Infinite Yield loaded!' or 'Error: ' .. tostring(result)
 
-    u328:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring(v817),
         Duration = 3,
@@ -3834,7 +3840,7 @@ function t37.Callback(p74)
 
     local v819 = p74 and 'Anti-Fling ON' or 'Anti-Fling OFF'
 
-    u330:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring(v819),
         Duration = 3,
@@ -3856,7 +3862,7 @@ function t38.Callback(p75)
 
     local v821 = p75 and 'Ping Prediction ON' or 'Ping Prediction OFF'
 
-    u332:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring(v821),
         Duration = 3,
@@ -3879,7 +3885,7 @@ function t39.Callback()
     end, function()
         n2 = 200
 
-        u335:Notify({
+        CHNotify({
             Title = 'CrystalHub',
             Content = tostring('Speed reset to 200'),
             Duration = 3,
@@ -3931,7 +3937,7 @@ function t40.Callback(p78)
 
     local v824 = p78 and 'ESP ON' or 'ESP OFF'
 
-    u339:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring(v824),
         Duration = 3,
@@ -4032,7 +4038,7 @@ function t46.Callback(p84)
 
     local v831 = p84 and 'Gun ESP ON' or 'Gun ESP OFF'
 
-    u351:Notify({
+    CHNotify({
         Title = 'CrystalHub',
         Content = tostring(v831),
         Duration = 3,
@@ -4094,7 +4100,7 @@ task.wait(0.4)
 v232(true)
 v239(true)
 v244(true)
-v18:Notify({
+CHNotify({
     Title = 'CrystalHub',
     Content = tostring('CrystalHub Ready!'),
     Duration = 3,
