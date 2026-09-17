@@ -1,7 +1,9 @@
---гит обнови сука 
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
+    -- Initialize the existing top-level local v18 before any nested scopes.
+    v18 = {}
+
     local u9, u10, u99, u105, u110, u116, u157
     local Players = game:GetService('Players')
     local Workspace, RunService, LocalPlayer, u129, u130, u131, u162, u163, u164, u165, u166, u167, u168, u169, t25, v220, uDim2, t26
@@ -44,20 +46,17 @@ local NeverLose = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/kirillizrajlev73-alt/Ul_onlypastamyneverlose/refs/heads/main/Ui.lua"
 ))()
 
-v18 = {}
-
 function v18:SetTheme(_) end
 
 function v18:Notify(cfg)
+    cfg = cfg or {}
     local notifier = NeverLose:CreateNotification()
-    if notifier and notifier.new then
-        notifier.new({
-            Title = cfg.Title or "CrystalHub",
-            Content = cfg.Content or "",
-            Duration = cfg.Duration or 3,
-            Logo = NeverLose.GlobalLogo,
-        })
-    end
+    notifier.new({
+        Title = cfg.Title or "CrystalHub",
+        Content = cfg.Content or "",
+        Duration = cfg.Duration or 3,
+        Logo = NeverLose.GlobalLogo,
+    })
 end
 
 local function makeControlAdapter(section)
@@ -67,7 +66,7 @@ local function makeControlAdapter(section)
         cfg = cfg or {}
         local text = tostring(cfg.Title or "")
         if cfg.Content and cfg.Content ~= "" then
-            text = text .. "\\n" .. tostring(cfg.Content)
+            text = text .. "\n" .. tostring(cfg.Content)
         end
         return section:AddLabel(text, true)
     end
