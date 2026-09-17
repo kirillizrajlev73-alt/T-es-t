@@ -1,3 +1,4 @@
+-- гитхаб обнови надеюсь обновиш)))
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -34,7 +35,1855 @@ do
                     u15 = false
                     u16 = false
                     u17 = true
-                    v18 = loadstring(game:HttpGet("https://raw.githubusercontent.com/kirillizrajlev73-alt/Ul_onlypastamyneverlose/refs/heads/main/Ui.lua"))()
+                    --[[
+    CrystalHub UI adapter
+    WindUI has been replaced by the supplied NeverLose UI.
+    Existing feature code keeps its original control API through this adapter.
+]]
+local NeverLose = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/kirillizrajlev73-alt/Ul_onlypastamyneverlose/refs/heads/main/Ui.lua"
+))()
+
+local v18 = {}
+
+function v18:SetTheme(_) end
+
+function v18:Notify(cfg)
+    local notifier = NeverLose:CreateNotification()
+    if notifier and notifier.new then
+        notifier.new({
+            Title = cfg.Title or "CrystalHub",
+            Content = cfg.Content or "",
+            Duration = cfg.Duration or 3,
+            Logo = NeverLose.GlobalLogo,
+        })
+    end
+end
+
+function v18:Popup(_) end
+
+local function makeControlAdapter(section)
+    local api = {}
+
+    function api:Paragraph(cfg)
+        cfg = cfg or {}
+        local text = tostring(cfg.Title or "")
+        if cfg.Content and cfg.Content ~= "" then
+            text = text .. "
+" .. tostring(cfg.Content)
+        end
+        return section:AddLabel(text, true)
+    end
+
+    function api:Toggle(cfg)
+        cfg = cfg or {}
+        return section:AddLabel(tostring(cfg.Title or "Toggle")):AddToggle({
+            Default = cfg.Default == true,
+            Flag = cfg.Flag,
+            Callback = cfg.Callback,
+        })
+    end
+
+    function api:Button(cfg)
+        cfg = cfg or {}
+        return section:AddLabel(tostring(cfg.Title or "Button")):AddButton({
+            Name = tostring(cfg.Title or "Button"),
+            Icon = cfg.Icon or "chevron-large-right",
+            Callback = cfg.Callback,
+            ToolTip = cfg.Description,
+        })
+    end
+
+    function api:Dropdown(cfg)
+        cfg = cfg or {}
+        local item = section:AddLabel(tostring(cfg.Title or "Dropdown"))
+        local control = item:AddDropdown({
+            Default = cfg.Value,
+            Values = cfg.Values or {},
+            Multi = cfg.Multi == true,
+            Flag = cfg.Flag,
+            Callback = cfg.Callback,
+        })
+
+        function control:Refresh(values)
+            self:SetValues(values or {})
+        end
+
+        function control:Select(value)
+            self:SetValue(value)
+        end
+
+        return control
+    end
+
+    function api:Slider(cfg)
+        cfg = cfg or {}
+        local value = cfg.Value or {}
+        return section:AddLabel(tostring(cfg.Title or "Slider")):AddSlider({
+            Min = value.Min or 0,
+            Max = value.Max or 100,
+            Default = value.Default or value.Min or 0,
+            Rounding = cfg.Rounding or 0,
+            Type = cfg.Suffix or "",
+            Callback = cfg.Callback,
+        })
+    end
+
+    function api:ColorPicker(cfg)
+        cfg = cfg or {}
+        return section:AddLabel(tostring(cfg.Title or "Color")):AddColorPicker({
+            Default = cfg.Default or Color3.fromRGB(255,255,255),
+            Flag = cfg.Flag,
+            Callback = cfg.Callback,
+        })
+    end
+
+    function api:Divider() end
+
+    return api
+end
+
+function v18:CreateWindow(cfg)
+    cfg = cfg or {}
+
+    local window = NeverLose:CreateWindow({
+        Logo = NeverLose.GlobalLogo,
+        Name = cfg.Title or "CrystalHub",
+        Content = cfg.Author or "Mmv And Mm2",
+        Size = cfg.Size or UDim2.fromOffset(700, 550),
+        ConfigFolder = cfg.Folder or "CrystalHub",
+        Enable3DRenderer = false,
+        Keybind = "Insert",
+    })
+
+    local adapter = {
+        _window = window,
+        _tabs = {},
+    }
+
+    function adapter:Section(_)
+        return self
+    end
+
+    function adapter:Tab(cfg2)
+        cfg2 = cfg2 or {}
+
+        local tab = window:AddTab({
+            Name = cfg2.Title or "Tab",
+            Icon = cfg2.Icon or "grid",
+            Type = "Single",
+        })
+
+        local section = tab:AddSection({
+            Name = cfg2.Title or "MAIN",
+            Position = "left",
+        })
+
+        local controls = makeControlAdapter(section)
+        controls._tab = tab
+        controls._section = section
+        self._tabs[#self._tabs + 1] = controls
+
+        return controls
+    end
+
+    function adapter:ToggleInterface()
+        return window:ToggleInterface()
+    end
+
+    return adapter
+end
+
+do
+    local _ = v18
+end
+                    do
+                        local u20 = UserInputService
+
+                        function v21(p1)
+                            local u362 = nil
+                            local p2Position = nil
+                            local Position = nil
+                            local InputBegan = p1.InputBegan
+                            local u366 = p1
+
+                            InputBegan:Connect(function(p2)
+                                if p2.UserInputType == Enum.UserInputType.MouseButton1 or p2.UserInputType == Enum.UserInputType.Touch then
+                                    u362 = true
+                                    p2Position = p2.Position
+                                    Position = u366.Position
+                                end
+                            end)
+
+                            local InputChanged = p1.InputChanged
+                            local u368 = p1
+
+                            InputChanged:Connect(function(p3)
+                                if u362 then
+                                    if p3.UserInputType == Enum.UserInputType.MouseMovement or p3.UserInputType == Enum.UserInputType.Touch then
+                                        local v838 = p3.Position - p2Position
+
+                                        u368.Position = UDim2.new(Position.X.Scale, Position.X.Offset + v838.X, Position.Y.Scale, Position.Y.Offset + v838.Y)
+                                    end
+
+                                    return
+                                end
+                            end)
+                            u20.InputEnded:Connect(function(input)
+                                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                    u362 = false
+                                end
+                            end)
+                        end
+                    end
+                    do
+                        local u22 = UserInputService
+                        local u23 = v18
+                        local u24 = v21
+
+                        function v25(p4, p5, p6, p7, p8, p9, p10)
+                            local v377 = 'RuzSlider_' .. p4:gsub('%s+', '_')
+                            local v378 = game.CoreGui:FindFirstChild(v377)
+
+                            if not v378 then
+                                local ScreenGui = Instance.new('ScreenGui', game.CoreGui)
+
+                                ScreenGui.Name = v377
+                                ScreenGui.ResetOnSpawn = false
+                                ScreenGui.DisplayOrder = 55
+                                ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+                                local Frame = Instance.new('Frame', ScreenGui)
+
+                                Frame.Size = UDim2.new(0, 300, 0, 175)
+                                Frame.Position = UDim2.new(0.5, -150, 0.35, 0)
+                                Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+                                Frame.BackgroundTransparency = 0.08
+                                Frame.BorderSizePixel = 0
+                                Instance.new('UICorner', Frame).CornerRadius = UDim.new(0, 10)
+
+                                local UIStroke = Instance.new('UIStroke', Frame)
+
+                                UIStroke.Color = Color3.fromRGB(220, 38, 38)
+                                UIStroke.Thickness = 1.5
+                                UIStroke.Transparency = 0.15
+
+                                local TextLabel2 = Instance.new('TextLabel', Frame)
+
+                                TextLabel2.Size = UDim2.new(1, -44, 0, 36)
+                                TextLabel2.Position = UDim2.new(0, 12, 0, 0)
+                                TextLabel2.BackgroundTransparency = 1
+                                TextLabel2.Text = 'CrystalHub  \u{2014}  ' .. p4
+                                TextLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                TextLabel2.Font = Enum.Font.GothamBold
+                                TextLabel2.TextSize = 14
+                                TextLabel2.TextXAlignment = Enum.TextXAlignment.Left
+
+                                local TextButton = Instance.new('TextButton', Frame)
+
+                                TextButton.Size = UDim2.new(0, 28, 0, 28)
+                                TextButton.Position = UDim2.new(1, -34, 0, 4)
+                                TextButton.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+                                TextButton.Text = 'X'
+                                TextButton.TextColor3 = Color3.new(1, 1, 1)
+                                TextButton.Font = Enum.Font.GothamBold
+                                TextButton.TextSize = 13
+                                Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, 6)
+
+                                local MouseButton1Click = TextButton.MouseButton1Click
+                                local u385 = ScreenGui
+
+                                MouseButton1Click:Connect(function()
+                                    u385:Destroy()
+                                end)
+
+                                local u386 = p7
+                                local TextLabel3 = Instance.new('TextLabel', Frame)
+
+                                TextLabel3.Size = UDim2.new(1, 0, 0, 22)
+                                TextLabel3.Position = UDim2.new(0, 0, 0, 38)
+                                TextLabel3.BackgroundTransparency = 1
+                                TextLabel3.Text = p4 .. ':  ' .. tostring(p7)
+                                TextLabel3.TextColor3 = Color3.fromRGB(210, 210, 210)
+                                TextLabel3.Font = Enum.Font.Gotham
+                                TextLabel3.TextSize = 13
+
+                                local Frame2 = Instance.new('Frame', Frame)
+
+                                Frame2.Size = UDim2.new(1, -30, 0, 10)
+                                Frame2.Position = UDim2.new(0, 15, 0, 72)
+                                Frame2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                                Frame2.BorderSizePixel = 0
+                                Instance.new('UICorner', Frame2).CornerRadius = UDim.new(1, 0)
+
+                                local v390 = (p7 - p5) / (p6 - p5)
+                                local Frame3 = Instance.new('Frame', Frame2)
+
+                                Frame3.Size = UDim2.new(v390, 0, 1, 0)
+                                Frame3.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
+                                Frame3.BorderSizePixel = 0
+                                Instance.new('UICorner', Frame3).CornerRadius = UDim.new(1, 0)
+
+                                local TextButton2 = Instance.new('TextButton', Frame2)
+
+                                TextButton2.Size = UDim2.new(0, 26, 0, 26)
+                                TextButton2.Position = UDim2.new(v390, -13, 0.5, -13)
+                                TextButton2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                                TextButton2.Text = ''
+                                TextButton2.AutoButtonColor = false
+                                TextButton2.BorderSizePixel = 0
+                                Instance.new('UICorner', TextButton2).CornerRadius = UDim.new(1, 0)
+
+                                local u393 = Frame2
+                                local u394 = p5
+                                local u395 = p6
+                                local u396 = p8
+                                local u397 = TextButton2
+                                local u398 = p4
+
+                                local function v399(p11)
+                                    local v841 = (p11 - u393.AbsolutePosition.X) / u393.AbsoluteSize.X
+                                    local v842 = math.clamp(v841, 0, 1)
+                                    local v843 = u394 + v842 * (u395 - u394)
+
+                                    u386 = math.round(v843)
+
+                                    if u396 and u396 > 0 then
+                                        local v844 = u386 / u396
+
+                                        u386 = math.round(v844) * u396
+                                    end
+
+                                    local v845 = (u386 - u394) / (u395 - u394)
+
+                                    Frame3.Size = UDim2.new(v845, 0, 1, 0)
+                                    u397.Position = UDim2.new(v845, -13, 0.5, -13)
+                                    TextLabel3.Text = u398 .. ':  ' .. tostring(u386)
+                                end
+
+                                local u400 = false
+
+                                TextButton2.InputBegan:Connect(function(input)
+                                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                        u400 = true
+                                    end
+                                end)
+
+                                local InputBegan = Frame2.InputBegan
+                                local u402 = v399
+
+                                InputBegan:Connect(function(p12)
+                                    if p12.UserInputType == Enum.UserInputType.MouseButton1 or p12.UserInputType == Enum.UserInputType.Touch then
+                                        u400 = true
+
+                                        u402(p12.Position.X)
+                                    end
+                                end)
+
+                                local InputChanged = u22.InputChanged
+                                local u404 = v399
+
+                                InputChanged:Connect(function(p13)
+                                    if u400 then
+                                        if p13.UserInputType == Enum.UserInputType.MouseMovement or p13.UserInputType == Enum.UserInputType.Touch then
+                                            u404(p13.Position.X)
+                                        end
+
+                                        return
+                                    end
+                                end)
+                                u22.InputEnded:Connect(function(input)
+                                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                        u400 = false
+                                    end
+                                end)
+
+                                local Frame4 = Instance.new('Frame', Frame)
+
+                                Frame4.Size = UDim2.new(1, -20, 0, 36)
+                                Frame4.Position = UDim2.new(0, 10, 0, 126)
+                                Frame4.BackgroundTransparency = 1
+
+                                local TextButton3 = Instance.new('TextButton', Frame4)
+
+                                TextButton3.Size = UDim2.new(0.48, 0, 1, 0)
+                                TextButton3.BackgroundColor3 = Color3.fromRGB(20, 160, 20)
+                                TextButton3.Text = 'Apply'
+                                TextButton3.TextColor3 = Color3.new(1, 1, 1)
+                                TextButton3.Font = Enum.Font.GothamBold
+                                TextButton3.TextSize = 13
+                                Instance.new('UICorner', TextButton3).CornerRadius = UDim.new(0, 6)
+
+                                local MouseButton1Click2 = TextButton3.MouseButton1Click
+                                local u408 = p9
+                                local u409 = p4
+
+                                MouseButton1Click2:Connect(function()
+                                    u408(u386)
+
+                                    local v853 = u409 .. ' set to ' .. u386
+
+                                    u23:Notify({
+                                        Title = 'CrystalHub',
+                                        Content = tostring(v853),
+                                        Duration = 3,
+                                        Icon = 'bell',
+                                    })
+                                end)
+
+                                local TextButton4 = Instance.new('TextButton', Frame4)
+
+                                TextButton4.Size = UDim2.new(0.48, 0, 1, 0)
+                                TextButton4.Position = UDim2.new(0.52, 0, 0, 0)
+                                TextButton4.BackgroundColor3 = Color3.fromRGB(160, 20, 20)
+                                TextButton4.Text = 'Reset'
+                                TextButton4.TextColor3 = Color3.new(1, 1, 1)
+                                TextButton4.Font = Enum.Font.GothamBold
+                                TextButton4.TextSize = 13
+                                Instance.new('UICorner', TextButton4).CornerRadius = UDim.new(0, 6)
+
+                                local MouseButton1Click3 = TextButton4.MouseButton1Click
+                                local u412 = ScreenGui
+
+                                MouseButton1Click3:Connect(function()
+                                    p10()
+                                    u412:Destroy()
+                                end)
+                                u24(Frame)
+
+                                return
+                            end
+
+                            v378:Destroy()
+                        end
+                    end
+                    do
+                        local ScreenGui = Instance.new('ScreenGui', game.CoreGui)
+
+                        ScreenGui.Name = 'RuzLGStar'
+                        ScreenGui.ResetOnSpawn = false
+                        ScreenGui.DisplayOrder = 40
+                        TextLabel = Instance.new('TextLabel', ScreenGui)
+                    end
+
+                    TextLabel.Size = UDim2.new(0, 28, 0, 28)
+                    TextLabel.Position = UDim2.new(1, -34, 0, 4)
+                    TextLabel.BackgroundTransparency = 1
+                    TextLabel.Text = '\u{2605}'
+                    TextLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+                    TextLabel.Font = Enum.Font.GothamBold
+                    TextLabel.TextSize = 22
+                    TextLabel.Visible = false
+
+                    do
+                        local t2, n4, u82
+                        local Part = Instance.new('Part')
+
+                        Part.Name = 'RuzPredictionPart'
+                        Part.Size = Vector3.new(0.5, 0.5, 0.5)
+                        Part.Anchored = true
+                        Part.CanCollide = false
+                        Part.Transparency = 1
+                        Part.Parent = Workspace
+                        u29 = nil
+
+                        do
+                            local v35
+
+                            do
+                                local u30 = Workspace
+
+                                u31 = nil
+                                u32 = nil
+
+                                local color3 = Color3.fromRGB(255, 215, 0)
+
+                                local function u34(p14)
+                                    if u29 then
+                                        u29:Destroy()
+
+                                        u29 = nil
+                                    end
+
+                                    local Part2 = Instance.new('Part')
+
+                                    Part2.Name = 'RuzGunMarker'
+                                    Part2.Size = Vector3.new(1.5, 0.15, 1.5)
+                                    Part2.Anchored = true
+                                    Part2.CanCollide = false
+                                    Part2.CastShadow = false
+                                    Part2.Material = Enum.Material.Neon
+                                    Part2.Color = Color3.fromRGB(50, 255, 80)
+                                    Part2.Transparency = 0.25
+                                    Part2.CFrame = CFrame.new(p14)
+                                    Part2.Parent = u30
+
+                                    local spawn = task.spawn
+                                    local u416 = Part2
+
+                                    spawn(function()
+                                        local _t = 0
+                                        while u416 and u416.Parent do
+                                            _t = _t + 0.05
+                                            if _t > 1 then _t = 0 end
+                                            u416.Transparency = 0.25 + 0.5 * math.sin(_t * math.pi)
+                                            task.wait(0.03)
+                                        end
+                                    end)
+
+                                    u29 = Part2
+                                end
+
+                                function v35(p15)
+                                    if u17 then
+                                        if u31 then
+                                            u31:Destroy()
+
+                                            u31 = nil
+                                        end
+                                        if u32 then
+                                            u32:Destroy()
+
+                                            u32 = nil
+                                        end
+
+                                        local Highlight = Instance.new('Highlight')
+
+                                        Highlight.Adornee = p15
+                                        Highlight.FillColor = color3
+                                        Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                                        Highlight.FillTransparency = 0.35
+                                        Highlight.OutlineTransparency = 0
+                                        Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                                        Highlight.Parent = p15
+                                        u31 = Highlight
+
+                                        local v419 = p15:FindFirstChild('Handle') or (p15:IsA('Model') and p15.PrimaryPart or p15:FindFirstChildWhichIsA('BasePart')) or p15:IsA('BasePart') and p15
+
+                                        if not v419 then
+                                            if p15:IsA('Model') then
+                                                u34(p15:GetModelCFrame().Position + Vector3.new(0, 0.1, 0))
+                                            end
+
+                                            return
+                                        end
+
+                                        u34(v419.Position + Vector3.new(0, 0.1, 0))
+
+                                        local BillboardGui = Instance.new('BillboardGui')
+
+                                        BillboardGui.Adornee = v419
+                                        BillboardGui.Size = UDim2.new(0, 130, 0, 36)
+                                        BillboardGui.StudsOffset = Vector3.new(0, 4, 0)
+                                        BillboardGui.AlwaysOnTop = true
+                                        BillboardGui.MaxDistance = 300
+                                        BillboardGui.Parent = v419
+
+                                        local Frame = Instance.new('Frame', BillboardGui)
+
+                                        Frame.Size = UDim2.new(1, 0, 1, 0)
+                                        Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                                        Frame.BackgroundTransparency = 0.4
+                                        Frame.BorderSizePixel = 0
+                                        Instance.new('UICorner', Frame).CornerRadius = UDim.new(0, 6)
+
+                                        local UIStroke = Instance.new('UIStroke', Frame)
+
+                                        UIStroke.Color = color3
+                                        UIStroke.Thickness = 1.5
+                                        UIStroke.Transparency = 0.1
+
+                                        local TextLabel4 = Instance.new('TextLabel', Frame)
+
+                                        TextLabel4.Size = UDim2.new(1, 0, 1, 0)
+                                        TextLabel4.BackgroundTransparency = 1
+                                        TextLabel4.Text = 'GUN ON MAP'
+                                        TextLabel4.TextColor3 = color3
+                                        TextLabel4.Font = Enum.Font.GothamBlack
+                                        TextLabel4.TextSize = 13
+                                        TextLabel4.TextStrokeTransparency = 0.4
+                                        TextLabel4.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                                        u32 = BillboardGui
+
+                                        return
+                                    end
+                                end
+                            end
+                            do
+                                local _ = Workspace
+                                local _ = v35
+                                local _ = v18
+                            end
+                            do
+                                local u42
+
+                                do
+                                    local t1 = {}
+                                    local u40 = v35
+                                    local u41 = v18
+
+                                    function u42(p16)
+                                        if not t1[p16] then
+                                            t1[p16] = true
+
+                                            p16.ChildAdded:Connect(function(child)
+                                                if child.Name == 'GunDrop' then
+                                                    task.wait(0.1)
+
+                                                    if u17 then
+                                                        u40(child)
+                                                    end
+
+                                                    u41:Notify({
+                                                        Title = 'CrystalHub',
+                                                        Content = tostring('Gun dropped on the map!'),
+                                                        Duration = 3,
+                                                        Icon = 'bell',
+                                                    })
+                                                end
+                                                if child:IsA('Model') or child:IsA('Folder') then
+                                                    u42(child)
+                                                end
+                                            end)
+                                            p16.ChildRemoved:Connect(function(child)
+                                                if child.Name == 'GunDrop' then
+                                                    if u31 then
+                                                        u31:Destroy()
+
+                                                        u31 = nil
+                                                    end
+                                                    if u32 then
+                                                        u32:Destroy()
+
+                                                        u32 = nil
+                                                    end
+                                                    if u29 then
+                                                        u29:Destroy()
+
+                                                        u29 = nil
+                                                    end
+                                                end
+                                            end)
+
+                                            for _, child in ipairs(p16:GetChildren())do
+                                                if child:IsA('Model') or child:IsA('Folder') then
+                                                    u42(child)
+                                                end
+                                            end
+
+                                            return
+                                        end
+                                    end
+                                end
+
+                                u42(Workspace)
+
+                                local ChildAdded = Workspace.ChildAdded
+                                local u44 = u42
+                                local u45 = v35
+                                local u46 = v18
+
+                                ChildAdded:Connect(function(p17)
+                                    if p17:IsA('Model') or p17:IsA('Folder') then
+                                        u44(p17)
+                                    end
+                                    if p17.Name == 'GunDrop' then
+                                        task.wait(0.1)
+
+                                        if u17 then
+                                            u45(p17)
+                                        end
+
+                                        u46:Notify({
+                                            Title = 'CrystalHub',
+                                            Content = tostring('Gun dropped on the map!'),
+                                            Duration = 3,
+                                            Icon = 'bell',
+                                        })
+                                    end
+                                end)
+                            end
+                            do
+                                local spawn = task.spawn
+                                local u48 = Workspace
+                                local u49 = v35
+                                local u50 = v18
+
+                                spawn(function()
+                                    task.wait(1.5)
+
+                                    local GunDrop = u48:FindFirstChild('GunDrop', true)
+
+                                    if GunDrop then
+                                        if u17 then
+                                            u49(GunDrop)
+                                        end
+
+                                        u50:Notify({
+                                            Title = 'CrystalHub',
+                                            Content = tostring('Gun dropped on the map!'),
+                                            Duration = 3,
+                                            Icon = 'bell',
+                                        })
+                                    end
+                                end)
+                            end
+                            do
+                                local u51 = Workspace
+                                local u52 = v35
+                                local u53 = v18
+
+                                for _, player in ipairs(Players:GetPlayers())do
+                                    if player ~= LocalPlayer then
+                                        task.spawn(function(p18)
+                                            local u431 = p18
+
+                                            if p18.Character then
+                                                local Character = p18.Character
+
+                                                if Character then
+                                                    local Humanoid = Character:WaitForChild('Humanoid', 5)
+
+                                                    if Humanoid then
+                                                        local Died = Humanoid.Died
+                                                        local u435 = p18
+                                                        local u436 = Character
+
+                                                        Died:Connect(function()
+                                                            if u435.Backpack:FindFirstChild('Gun') or u436:FindFirstChild('Gun') then
+                                                                task.delay(0.8, function()
+                                                                    local GunDrop = u51:FindFirstChild('GunDrop', true)
+
+                                                                    if GunDrop then
+                                                                        if u17 then
+                                                                            u52(GunDrop)
+                                                                        end
+
+                                                                        u53:Notify({
+                                                                            Title = 'CrystalHub',
+                                                                            Content = tostring('Gun dropped on the map!'),
+                                                                            Duration = 3,
+                                                                            Icon = 'bell',
+                                                                        })
+                                                                    end
+                                                                end)
+                                                            end
+                                                        end)
+                                                    end
+                                                end
+                                            end
+
+                                            p18.CharacterAdded:Connect(function(character)
+                                                if character then
+                                                    local Humanoid = character:WaitForChild('Humanoid', 5)
+
+                                                    if Humanoid then
+                                                        local Died = Humanoid.Died
+                                                        local u862 = character
+
+                                                        Died:Connect(function()
+                                                            if u431.Backpack:FindFirstChild('Gun') or u862:FindFirstChild('Gun') then
+                                                                task.delay(0.8, function()
+                                                                    local GunDrop = u51:FindFirstChild('GunDrop', true)
+
+                                                                    if GunDrop then
+                                                                        if u17 then
+                                                                            u52(GunDrop)
+                                                                        end
+
+                                                                        u53:Notify({
+                                                                            Title = 'CrystalHub',
+                                                                            Content = tostring('Gun dropped on the map!'),
+                                                                            Duration = 3,
+                                                                            Icon = 'bell',
+                                                                        })
+                                                                    end
+                                                                end)
+                                                            end
+                                                        end)
+
+                                                        return
+                                                    end
+
+                                                    return
+                                                end
+                                            end)
+                                        end, player)
+                                    end
+                                end
+                            end
+
+                            local PlayerAdded = Players.PlayerAdded
+                            local u57 = LocalPlayer
+                            local u58 = Workspace
+                            local u59 = v35
+                            local u60 = v18
+
+                            PlayerAdded:Connect(function(p19)
+                                if p19 ~= u57 then
+                                    local u438 = p19
+
+                                    if p19.Character then
+                                        local Character = p19.Character
+
+                                        if Character then
+                                            local Humanoid = Character:WaitForChild('Humanoid', 5)
+
+                                            if Humanoid then
+                                                local Died = Humanoid.Died
+                                                local u442 = p19
+                                                local u443 = Character
+
+                                                Died:Connect(function()
+                                                    if u442.Backpack:FindFirstChild('Gun') or u443:FindFirstChild('Gun') then
+                                                        task.delay(0.8, function()
+                                                            local GunDrop = u58:FindFirstChild('GunDrop', true)
+
+                                                            if GunDrop then
+                                                                if u17 then
+                                                                    u59(GunDrop)
+                                                                end
+
+                                                                u60:Notify({
+                                                                    Title = 'CrystalHub',
+                                                                    Content = tostring('Gun dropped on the map!'),
+                                                                    Duration = 3,
+                                                                    Icon = 'bell',
+                                                                })
+                                                            end
+                                                        end)
+                                                    end
+                                                end)
+                                            end
+                                        end
+                                    end
+
+                                    p19.CharacterAdded:Connect(function(character)
+                                        if character then
+                                            local Humanoid = character:WaitForChild('Humanoid', 5)
+
+                                            if Humanoid then
+                                                local Died = Humanoid.Died
+                                                local u866 = character
+
+                                                Died:Connect(function()
+                                                    if u438.Backpack:FindFirstChild('Gun') or u866:FindFirstChild('Gun') then
+                                                        task.delay(0.8, function()
+                                                            local GunDrop = u58:FindFirstChild('GunDrop', true)
+
+                                                            if GunDrop then
+                                                                if u17 then
+                                                                    u59(GunDrop)
+                                                                end
+
+                                                                u60:Notify({
+                                                                    Title = 'CrystalHub',
+                                                                    Content = tostring('Gun dropped on the map!'),
+                                                                    Duration = 3,
+                                                                    Icon = 'bell',
+                                                                })
+                                                            end
+                                                        end)
+                                                    end
+                                                end)
+
+                                                return
+                                            end
+
+                                            return
+                                        end
+                                    end)
+                                end
+                            end)
+
+                            u61 = false
+                            u62 = nil
+                            t2 = {}
+                            n4 = 0
+                            t3 = {
+                                Murderer = true,
+                                Sheriff = true,
+                                Hero = true,
+                                Innocent = true,
+                                Self = true,
+                            }
+                            t4 = {
+                                Murderer = Color3.fromRGB(255, 40, 40),
+                                Sheriff = Color3.fromRGB(40, 130, 255),
+                                Hero = Color3.fromRGB(255, 215, 0),
+                                Innocent = Color3.fromRGB(0, 220, 0),
+                            }
+
+                            local u67 = Players
+
+                            function v68()
+                                for _, player in ipairs(u67:GetPlayers())do
+                                    if player.Character then
+                                        local CrystalHub_ESP = player.Character:FindFirstChild('CrystalHub_ESP')
+
+                                        if CrystalHub_ESP then
+                                            CrystalHub_ESP:Destroy()
+                                        end
+                                    end
+                                end
+
+                                t2 = {}
+                                n4 = 0
+                            end
+                        end
+                        do
+                            local u69 = ReplicatedStorage
+                            local u70 = v18
+                            local u71 = RunService
+                            local u72 = Players
+
+                            local function u73(p20)
+                                local s1 = 'Innocent'
+                                local v446 = t2[p20.Name]
+
+                                if v446 then
+                                    local v447 = v446.Role or (v446.role or (v446.Team or ''))
+                                    local v448 = tostring(v447):lower()
+
+                                    if v448:find('murd') then
+                                        return 'Murderer'
+                                    end
+                                    if v448:find('sheriff') or v448:find('gun') then
+                                        return 'Sheriff'
+                                    end
+                                    if v448:find('hero') then
+                                        s1 = 'Hero'
+                                    end
+                                end
+
+                                return s1
+                            end
+
+                            local u74 = t3
+                            local u75 = LocalPlayer
+
+                            local function u76(p21, p22)
+                                local v451 = p21:FindFirstChild('CrystalHub_ESP') or Instance.new('Highlight')
+
+                                v451.Name = 'CrystalHub_ESP'
+                                v451.Parent = p21
+                                v451.FillColor = p22
+                                v451.FillTransparency = 0.7
+                                v451.OutlineColor = Color3.fromRGB(255, 255, 255)
+                                v451.OutlineTransparency = 0.15
+                                v451.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                            end
+
+                            local u77 = t4
+
+                            function v78()
+                                local GetCurrentPlayerData = u69:FindFirstChild('GetCurrentPlayerData', true)
+
+                                if GetCurrentPlayerData and GetCurrentPlayerData:IsA('RemoteFunction') then
+                                    if u62 then
+                                        u62:Disconnect()
+
+                                        u62 = nil
+                                    end
+
+                                    local Heartbeat = u71.Heartbeat
+                                    local u459 = GetCurrentPlayerData
+
+                                    u62 = Heartbeat:Connect(function()
+                                        if u61 then
+                                            if tick() - n4 > 0.5 then
+                                                local ok, result = pcall(function()
+                                                    return u459:InvokeServer()
+                                                end)
+
+                                                if ok and type(result) == 'table' then
+                                                    t2 = result
+                                                end
+
+                                                n4 = tick()
+                                            end
+
+                                            for _, player in ipairs(u72:GetPlayers())do
+                                                if player.Character then
+                                                    local v871 = u73(player)
+                                                    local v872 = u74[v871]
+
+                                                    if player == u75 and not u74.Self then
+                                                        v872 = false
+                                                    end
+                                                    if not v872 then
+                                                        local CrystalHub_ESP = player.Character:FindFirstChild('CrystalHub_ESP')
+
+                                                        if CrystalHub_ESP then
+                                                            CrystalHub_ESP:Destroy()
+                                                        end
+                                                    else
+                                                        u76(player.Character, u77[v871])
+                                                    end
+                                                end
+                                            end
+
+                                            return
+                                        end
+                                    end)
+
+                                    return
+                                end
+
+                                u70:Notify({
+                                    Title = 'CrystalHub',
+                                    Content = tostring('ESP remote not found!'),
+                                    Duration = 3,
+                                    Icon = 'bell',
+                                })
+
+                                u61 = false
+                            end
+                        end
+                        do
+                            local _ = v68
+                            local _ = v78
+                            local _ = v68
+
+                            u82 = nil
+
+                            local u83 = LocalPlayer
+                            local u84 = Players
+                            local RenderStepped = RunService.RenderStepped
+
+                            local function u86()
+                                local Character = u83.Character
+                                local v464 = Character and Character:FindFirstChild('HumanoidRootPart')
+
+                                if v464 then
+                                    local v466 = u83.Backpack:FindFirstChild('Knife') or u83.Character and u83.Character:FindFirstChild('Knife')
+                                    local v468 = u83.Backpack:FindFirstChild('Gun') or u83.Character and u83.Character:FindFirstChild('Gun')
+                                    local v469 = nil
+                                    local n5 = (1/0)
+
+                                    for _, player in ipairs(u84:GetPlayers())do
+                                        if player ~= u83 and player.Character then
+                                            local Character2 = player.Character
+                                            local Humanoid = Character2:FindFirstChildOfClass('Humanoid')
+
+                                            if Humanoid and Humanoid.Health > 0 then
+                                                local HumanoidRootPart = Character2:FindFirstChild('HumanoidRootPart')
+
+                                                if HumanoidRootPart then
+                                                    local v476 = player.Backpack:FindFirstChild('Knife') or player.Character and player.Character:FindFirstChild('Knife')
+                                                    local v477 = player.Backpack:FindFirstChild('Gun') or player.Character and player.Character:FindFirstChild('Gun')
+                                                    local Magnitude = (HumanoidRootPart.Position - v464.Position).Magnitude
+                                                    local v479 = false
+
+                                                    if not v466 then
+                                                        if not v468 then
+                                                            if v476 then
+                                                                v479 = true
+                                                                Magnitude = Magnitude - 1000
+                                                            end
+                                                            if v477 then
+                                                                v479 = true
+                                                            end
+                                                        elseif v477 or v476 then
+                                                            v479 = true
+                                                        end
+                                                    elseif v476 then
+                                                        v479 = true
+                                                    end
+                                                    if v479 and Magnitude < n5 then
+                                                        n5 = Magnitude
+                                                        v469 = Character2
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+
+                                    if not v469 then
+                                        for _, player in ipairs(u84:GetPlayers())do
+                                            if player ~= u83 and player.Character then
+                                                local Character3 = player.Character
+                                                local Humanoid = Character3:FindFirstChildOfClass('Humanoid')
+                                                local HumanoidRootPart = Character3:FindFirstChild('HumanoidRootPart')
+
+                                                if Humanoid and Humanoid.Health > 0 and HumanoidRootPart then
+                                                    local Magnitude = (HumanoidRootPart.Position - v464.Position).Magnitude
+
+                                                    if Magnitude < n5 then
+                                                        n5 = Magnitude
+                                                        v469 = Character3
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+
+                                    return v469
+                                end
+
+                                return nil
+                            end
+
+                            local u87 = LocalPlayer
+                            local u88 = Part
+
+                            -- Поиск цели вынесен в Heartbeat (не блокирует рендер)
+                            RunService.Heartbeat:Connect(function()
+                                u82 = u86()
+                            end)
+
+                            -- RenderStepped только обновляет позицию Part (лёгкая операция)
+                            RenderStepped:Connect(function()
+                                local v486 = u82
+
+                                if v486 then
+                                    local Character = u87.Character
+                                    local v488 = Character and Character:FindFirstChild('HumanoidRootPart')
+
+                                    if v488 then
+                                        local v489 = v486:FindFirstChild('UpperTorso') or (v486:FindFirstChild('Torso') or v486:FindFirstChild('HumanoidRootPart'))
+                                        local Humanoid = v486:FindFirstChildOfClass('Humanoid')
+
+                                        if v489 then
+                                            local Position = v489.Position
+                                            local v492 = (Position - v488.Position).Magnitude / 250
+
+                                            if u13 then
+                                                local ok, result = pcall(function()
+                                                    return u87:GetNetworkPing()
+                                                end)
+
+                                                if ok and result then
+                                                    v492 = v492 + result * 0.5
+                                                end
+                                            end
+
+                                            local AssemblyLinearVelocity = v489.AssemblyLinearVelocity
+
+                                            if Humanoid then
+                                                local State = Humanoid:GetState()
+
+                                                if State == Enum.HumanoidStateType.Freefall or State == Enum.HumanoidStateType.Jumping then
+                                                    AssemblyLinearVelocity = Vector3.new(AssemblyLinearVelocity.X, AssemblyLinearVelocity.Y * 0.35, AssemblyLinearVelocity.Z)
+                                                end
+                                            end
+
+                                            u88.CFrame = CFrame.new(Position + AssemblyLinearVelocity * v492)
+
+                                            return
+                                        end
+
+                                        return
+                                    end
+
+                                    return
+                                end
+                            end)
+                        end
+
+                        local u89 = LocalPlayer
+                        local u90 = v18
+                        local u91 = Part
+                        local u92 = LocalPlayer
+                        local u93 = v18
+                        local u94 = Players
+                        local u95 = LocalPlayer
+
+                        local function u96()
+                            local Character = u92.Character
+
+                            if Character then
+                                local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
+
+                                if HumanoidRootPart then
+                                    local v507 = u92.Backpack:FindFirstChild('Knife') or Character:FindFirstChild('Knife')
+
+                                    if v507 then
+                                        if Character ~= v507.Parent then
+                                            Character.Humanoid:EquipTool(v507)
+                                            task.wait(0)
+                                        end
+
+                                        local v508 = u82
+
+                                        if not u82 then
+                                            local n6 = (1/0)
+
+                                            for _, player in ipairs(u94:GetPlayers())do
+                                                if player ~= u92 and player.Character then
+                                                    local HumanoidRootPart2 = player.Character:FindFirstChild('HumanoidRootPart')
+                                                    local Humanoid = player.Character:FindFirstChildOfClass('Humanoid')
+
+                                                    if HumanoidRootPart2 and Humanoid and Humanoid.Health > 0 then
+                                                        local Magnitude = (HumanoidRootPart2.Position - HumanoidRootPart.Position).Magnitude
+
+                                                        if Magnitude < n6 then
+                                                            n6 = Magnitude
+                                                            v508 = player.Character
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        if v508 then
+                                            local HumanoidRootPart3 = v508:FindFirstChild('HumanoidRootPart')
+
+                                            if HumanoidRootPart3 then
+                                                local v516 = v508:FindFirstChild('UpperTorso') or (v508:FindFirstChild('Torso') or HumanoidRootPart3)
+                                                local AssemblyLinearVelocity = HumanoidRootPart3.AssemblyLinearVelocity
+                                                local Magnitude = (v516.Position - HumanoidRootPart.Position).Magnitude
+                                                local n7 = 0
+
+                                                if u13 then
+                                                    local ok, result = pcall(function()
+                                                        return u92:GetNetworkPing()
+                                                    end)
+
+                                                    n7 = ok and result or 0
+                                                end
+
+                                                local u522 = v516.Position + Vector3.new(AssemblyLinearVelocity.X, 0, AssemblyLinearVelocity.Z) * (Magnitude / 65 + n7 * 0.5)
+                                                local _pcall = pcall
+                                                local u524 = v507
+                                                local u525 = HumanoidRootPart
+
+                                                pcall(function()
+                                                    local KnifeThrown = u524:WaitForChild('Events'):WaitForChild('KnifeThrown')
+                                                    local cFrame = CFrame.new(u525.Position, u522)
+                                                    local v881 = (function(...)
+                                                        local t5 = {...}
+
+                                                        t5.n = select('#', ...)
+
+                                                        return t5
+                                                    end)(CFrame.new(u522))
+
+                                                    KnifeThrown:FireServer(cFrame, unpack(v881, 1, v881.n))
+                                                end)
+
+                                                return
+                                            end
+
+                                            return
+                                        end
+
+                                        u93:Notify({
+                                            Title = 'CrystalHub',
+                                            Content = tostring('No target found!'),
+                                            Duration = 3,
+                                            Icon = 'bell',
+                                        })
+
+                                        return
+                                    end
+
+                                    u93:Notify({
+                                        Title = 'CrystalHub',
+                                        Content = tostring('No knife in inventory!'),
+                                        Duration = 3,
+                                        Icon = 'bell',
+                                    })
+
+                                    return
+                                end
+
+                                return
+                            end
+                        end
+                        local function u97()
+                            local Character = u89.Character
+
+                            if Character then
+                                local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
+
+                                if HumanoidRootPart then
+                                    local v499 = u89.Backpack:FindFirstChild('Gun') or Character:FindFirstChild('Gun')
+
+                                    if v499 then
+                                        if u82 then
+                                            if Character ~= v499.Parent then
+                                                Character.Humanoid:EquipTool(v499)
+                                                task.wait(0)
+                                            end
+
+                                            local CFramePosition = u91.CFrame.Position
+                                            local v501 = HumanoidRootPart.Position + Vector3.new(0, 1, 0)
+                                            local cFrame = CFrame.new(v501, CFramePosition)
+                                            local _pcall = pcall
+                                            local u504 = v499
+
+                                            pcall(function()
+                                                local Shoot = u504:WaitForChild('Shoot')
+                                                local v876 = (function(...)
+                                                    local t6 = {...}
+
+                                                    t6.n = select('#', ...)
+
+                                                    return t6
+                                                end)(CFrame.new(CFramePosition))
+
+                                                Shoot:FireServer(cFrame, unpack(v876, 1, v876.n))
+                                            end)
+
+                                            return
+                                        end
+
+                                        u90:Notify({
+                                            Title = 'CrystalHub',
+                                            Content = tostring('No target found.'),
+                                            Duration = 3,
+                                            Icon = 'bell',
+                                        })
+
+                                        return
+                                    end
+
+                                    u90:Notify({
+                                        Title = 'CrystalHub',
+                                        Content = tostring('No gun in inventory!'),
+                                        Duration = 3,
+                                        Icon = 'bell',
+                                    })
+
+                                    return
+                                end
+
+                                return
+                            end
+                        end
+
+                        function u98()
+                            if u95.Character then
+                                if not u95.Backpack:FindFirstChild('Knife') and (not u95.Character or not u95.Character:FindFirstChild('Knife')) then
+                                    u97()
+
+                                    return
+                                end
+
+                                u96()
+
+                                return
+                            end
+                        end
+                    end
+
+                    u99 = false
+
+                    do
+                        local u100 = LocalPlayer
+                        local u101 = UserInputService
+                        local u102 = CurrentCamera
+                        local u103 = RunService
+
+                        function u104()
+                            if u99 then
+                                return
+                            end
+
+                            local Character = u100.Character
+
+                            if not Character then
+                                return
+                            end
+
+                            local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
+
+                            if not HumanoidRootPart then
+                                return
+                            end
+
+                            u99 = true
+
+                            local g539
+
+                            if u101.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+                                local HumanoidRootPartCFrame = HumanoidRootPart.CFrame
+                                local v530 = HumanoidRootPartCFrame * CFrame.Angles(0, 3.141592653589793, 0)
+
+                                for i = 1, 4 do
+                                    HumanoidRootPart.CFrame = HumanoidRootPartCFrame:Lerp(v530, i / 4)
+
+                                    u103.RenderStepped:Wait()
+                                end
+                            else
+                                local CFrame2 = u102.CFrame
+                                local LookVector = CFrame2.LookVector
+                                local vector3 = Vector3.new(-LookVector.X, LookVector.Y, -LookVector.Z)
+                                local cFrame = CFrame.lookAt(CFrame2.Position, CFrame2.Position + vector3)
+                                local n8 = 1
+                                local n9 = 5
+                                local n10 = 1
+
+                                g539 = nil
+
+                                if false then
+                                    if true then
+                                        g539 = true
+                                    end
+                                elseif not (n8 <= n9) then
+                                    g539 = true
+                                end
+                                if not g539 then
+                                    if not g539 then
+                                        repeat
+                                            while true do
+                                                u102.CFrame = CFrame2:Lerp(cFrame, n8 / 5)
+
+                                                u103.RenderStepped:Wait()
+
+                                                n8 = n8 + n10
+
+                                                if n10 > 0 then
+                                                    break
+                                                end
+                                                if not (n9 <= n8) then
+                                                    g539 = true
+                                                end
+                                                if g539 then
+                                                    break
+                                                end
+                                            end
+
+                                            if g539 then
+                                                break
+                                            end
+                                        until not (n8 <= n9)
+                                    end
+                                end
+                            end
+
+                            g539 = false
+
+                            task.wait(0.15)
+
+                            u99 = false
+                        end
+
+                        u105 = false
+
+                        local u106 = LocalPlayer
+                        local u107 = UserInputService
+                        local u108 = CurrentCamera
+                        local u109 = RunService
+
+                        function u110()
+                            local v540 = nil
+                            local RenderStepped = nil
+                            local v542 = nil
+                            local v543 = nil
+
+                            if u105 then
+                                return
+                            end
+
+                            local Character = u106.Character
+
+                            if not Character then
+                                return
+                            end
+
+                            local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
+
+                            if not HumanoidRootPart then
+                                return
+                            end
+
+                            local Humanoid = Character:FindFirstChildOfClass('Humanoid')
+
+                            if not Humanoid then
+                                return
+                            end
+
+                            u105 = true
+
+                            local v547 = u107.MouseBehavior == Enum.MouseBehavior.LockCenter
+                            local _, v549, _ = HumanoidRootPart.CFrame:ToEulerAnglesYXZ()
+                            local CFrame3 = u108.CFrame
+                            local g590 = nil
+                            local g566
+
+                            if not v547 then
+                                local v552 = v549 - 1.5707963267948966
+
+                                for i = 1, 7 do
+                                    local _ = i / 7
+                                    local _ = RenderStepped ^ 2
+                                    local cFrame = CFrame.new(HumanoidRootPart.Position)
+                                    local fromEulerAnglesYXZ = CFrame.fromEulerAnglesYXZ
+
+                                    v543 = v549 + (v552 - v549) * v540
+                                    v542 = fromEulerAnglesYXZ(0, v543, 0)
+                                    HumanoidRootPart.CFrame = cFrame * v542
+                                    RenderStepped = u109.RenderStepped
+
+                                    RenderStepped:Wait()
+                                end
+                            else
+                                local Unit = Vector3.new(CFrame3.LookVector.X, 0, CFrame3.LookVector.Z).Unit
+                                local new = Vector3.new
+                                local RightVectorX = CFrame3.RightVector.X
+                                local RightVectorZ = CFrame3.RightVector.Z
+                                local Unit2 = new(RightVectorX, 0, RightVectorZ).Unit
+                                local n11 = 1
+                                local n12 = 7
+                                local n13 = 1
+
+                                g566 = nil
+
+                                if false then
+                                    if true then
+                                        g566 = true
+                                    end
+                                elseif not (n11 <= n12) then
+                                    g566 = true
+                                end
+                                if not g566 then
+                                    if not g566 then
+                                        repeat
+                                            while true do
+                                                local _ = n11 / 7
+                                                local _ = v542 ^ 2
+                                                local lookAt = CFrame.lookAt
+                                                local CFramePosition = u108.CFrame.Position
+
+                                                v543 = u108.CFrame.Position + Unit:Lerp(Unit2, RightVectorZ).Unit
+                                                u108.CFrame = lookAt(CFramePosition, v543)
+                                                v542 = u109.RenderStepped
+
+                                                v542:Wait()
+
+                                                n11 = n11 + n13
+
+                                                if n13 > 0 then
+                                                    break
+                                                end
+                                                if not (n12 <= n11) then
+                                                    g566 = true
+                                                end
+                                                if g566 then
+                                                    break
+                                                end
+                                            end
+
+                                            if g566 then
+                                                break
+                                            end
+                                        until not (n11 <= n12)
+                                    end
+                                end
+                            end
+
+                            g566 = false
+
+                            local AssemblyLinearVelocity = HumanoidRootPart.AssemblyLinearVelocity
+
+                            HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(AssemblyLinearVelocity.X, 55, AssemblyLinearVelocity.Z)
+
+                            local _pcall = pcall
+                            local u574 = Humanoid
+
+                            pcall(function()
+                                u574:ChangeState(Enum.HumanoidStateType.Jumping)
+                            end)
+                            task.wait(0.12)
+
+                            if not v547 then
+                                local _, v576, _ = HumanoidRootPart.CFrame:ToEulerAnglesYXZ()
+
+                                for i = 1, 5 do
+                                    local _ = i / 5
+                                    local _ = v543 ^ 2
+
+                                    HumanoidRootPart.CFrame = CFrame.new(HumanoidRootPart.Position) * CFrame.fromEulerAnglesYXZ(0, v576 + (v549 - v576) * v542, 0)
+                                    v543 = u109.RenderStepped
+
+                                    v543:Wait()
+                                end
+                            else
+                                local Unit = Vector3.new(CFrame3.LookVector.X, 0, CFrame3.LookVector.Z).Unit
+                                local new = Vector3.new
+                                local LookVectorX = u108.CFrame.LookVector.X
+                                local CFrame4 = u108.CFrame
+                                local LookVectorZ = CFrame4.LookVector.Z
+                                local Unit3 = new(LookVectorX, 0, LookVectorZ).Unit
+                                local n14 = 1
+                                local n15 = 5
+                                local n16 = 1
+
+                                if false then
+                                    if true then
+                                        g590 = true
+                                    end
+                                elseif not (n14 <= n15) then
+                                    g590 = true
+                                end
+                                if not g590 then
+                                    if not g590 then
+                                        repeat
+                                            while true do
+                                                local _ = n14 / 5
+                                                local _ = CFrame4 ^ 2
+
+                                                u108.CFrame = CFrame.lookAt(u108.CFrame.Position, u108.CFrame.Position + Unit3:Lerp(Unit, LookVectorZ).Unit)
+                                                CFrame4 = u109.RenderStepped
+
+                                                CFrame4:Wait()
+
+                                                n14 = n14 + n16
+
+                                                if n16 > 0 then
+                                                    break
+                                                end
+                                                if not (n15 <= n14) then
+                                                    g590 = true
+                                                end
+                                                if g590 then
+                                                    break
+                                                end
+                                            end
+
+                                            if g590 then
+                                                break
+                                            end
+                                        until not (n14 <= n15)
+                                    end
+                                end
+                            end
+
+                            g590 = false
+
+                            task.wait(0.1)
+
+                            u105 = false
+                        end
+                    end
+
+                    local spawn = task.spawn
+                    local u112 = ReplicatedStorage
+
+                    spawn(function()
+                        while true do
+                            task.wait(2)
+                            pcall(function()
+                                u112.Remotes.Extras.ReplicateToy:InvokeServer('FakeBomb')
+                                u112.Remotes.Extras.ReplicateToy:InvokeServer('GoldBomb')
+                            end)
+                        end
+                    end)
+
+                    local u113 = LocalPlayer
+                    local u114 = v18
+
+                    function v115(p23, p24)
+                        local Character = u113.Character
+
+                        if Character then
+                            local v596 = u113.Backpack:FindFirstChild(p23) or Character:FindFirstChild(p23)
+
+                            if v596 then
+                                local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
+
+                                if HumanoidRootPart then
+                                    if Character ~= v596.Parent then
+                                        Character.Humanoid:EquipTool(v596)
+                                        task.wait()
+                                    end
+
+                                    local _pcall = pcall
+                                    local u599 = v596
+                                    local u600 = HumanoidRootPart
+
+                                    pcall(function()
+                                        u599.Remote:FireServer(CFrame.new(u600.Position + u600.CFrame.LookVector * 1.5 + Vector3.new(0, -3, 0)), 50)
+                                    end)
+                                    Character.Humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+
+                                    HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(HumanoidRootPart.AssemblyLinearVelocity.X, 62, HumanoidRootPart.AssemblyLinearVelocity.Z)
+
+                                    if not p24 then
+                                        task.spawn(function()
+                                            u10 = true
+
+                                            task.wait(21)
+
+                                            u10 = false
+                                        end)
+
+                                        return
+                                    end
+
+                                    task.spawn(function()
+                                        u9 = true
+
+                                        task.wait(4)
+
+                                        u9 = false
+                                    end)
+
+                                    return
+                                end
+
+                                return
+                            end
+
+                            local v601 = 'No ' .. p23 .. ' found!'
+
+                            u114:Notify({
+                                Title = 'CrystalHub',
+                                Content = tostring(v601),
+                                Duration = 3,
+                                Icon = 'bell',
+                            })
+
+                            return
+                        end
+                    end
+
+                    u116 = false
+
+                    local u117 = nil
+                    local u118 = RunService
+
+                    local function v119(p25)
+                        local Humanoid = p25:WaitForChild('Humanoid')
+
+                        if u117 then
+                            u117:Disconnect()
+                        end
+
+                        local RenderStepped = u118.RenderStepped
+                        local u605 = Humanoid
+
+                        local u901 = false
+
+                        u117 = RenderStepped:Connect(function()
+                            if u116 then
+                                u901 = true
+
+                                local State = u605:GetState()
+
+                                u605.WalkSpeed = (State == Enum.HumanoidStateType.Jumping or State == Enum.HumanoidStateType.Freefall) and (u605.MoveDirection.Magnitude > 0 and n2) or 16
+
+                                return
+                            end
+                            if u901 then
+                                u901 = false
+                                u605.WalkSpeed = 16
+                            end
+                        end)
+                    end
+
+                    LocalPlayer.CharacterAdded:Connect(v119)
+
+                    if LocalPlayer.Character then
+                        task.spawn(v119, LocalPlayer.Character)
+                    end
+
+                    u120 = false
+
+                    local u121 = nil
+
+                    n17 = 0.5
+
+                    local u123 = RunService
+                    local u124 = CurrentCamera
+
+                    function v125(p26)
+                        u120 = p26
+
+                        if not p26 then
+                            if u121 then
+                                u121:Disconnect()
+
+                                u121 = nil
+                            end
+
+                            return
+                        end
+                        if u121 then
+                            u121:Disconnect()
+                        end
+
+                        u121 = u123.RenderStepped:Connect(function()
+                            u124.CFrame = u124.CFrame * CFrame.new(0, 0, 0, 1, 0, 0, 0, n17, 0, 0, 0, 1)
+                        end)
+                    end
+                end
+
+                u126 = v25
+                u127 = v125
+                u128 = v18
+                u129 = Workspace
+                u130 = v18
+                u131 = LocalPlayer
+
+                do
+                    -- ===================== SKYBOX ASSETS =====================
+                    local SkyboxAssets = {
+                        ["Black Storm"] = { Bk="rbxassetid://15502511288", Dn="rbxassetid://15502508460", Ft="rbxassetid://15502510289", Lf="rbxassetid://15502507918", Rt="rbxassetid://15502509398", Up="rbxassetid://15502511911" },
+                        ["HD"] = { Bk="http://www.roblox.com/asset/?id=16553658937", Dn="http://www.roblox.com/asset/?id=16553660713", Ft="http://www.roblox.com/asset/?id=16553662144", Lf="http://www.roblox.com/asset/?id=16553664042", Rt="http://www.roblox.com/asset/?id=16553665766", Up="http://www.roblox.com/asset/?id=16553667750" },
+                        ["Snow"] = { Bk="http://www.roblox.com/asset/?id=155657655", Dn="http://www.roblox.com/asset/?id=155674246", Ft="http://www.roblox.com/asset/?id=155657609", Lf="http://www.roblox.com/asset/?id=155657671", Rt="http://www.roblox.com/asset/?id=155657619", Up="http://www.roblox.com/asset/?id=155674931" },
+                        ["Blue Space"] = { Bk="rbxassetid://15536110634", Dn="rbxassetid://15536112543", Ft="rbxassetid://15536116141", Lf="rbxassetid://15536114370", Rt="rbxassetid://15536118762", Up="rbxassetid://15536117282" },
+                        ["Realistic"] = { Bk="rbxassetid://653719502", Dn="rbxassetid://653718790", Ft="rbxassetid://653719067", Lf="rbxassetid://653719190", Rt="rbxassetid://653718931", Up="rbxassetid://653719321" },
+                        ["Stormy"] = { Bk="http://www.roblox.com/asset/?id=18703245834", Dn="http://www.roblox.com/asset/?id=18703243349", Ft="http://www.roblox.com/asset/?id=18703240532", Lf="http://www.roblox.com/asset/?id=18703237556", Rt="http://www.roblox.com/asset/?id=18703235430", Up="http://www.roblox.com/asset/?id=18703232671" },
+                        ["Pink"] = { Bk="rbxassetid://12216109205", Dn="rbxassetid://12216109875", Ft="rbxassetid://12216109489", Lf="rbxassetid://12216110170", Rt="rbxassetid://12216110471", Up="rbxassetid://12216108877" },
+                        ["Sunset"] = { Bk="rbxassetid://600830446", Dn="rbxassetid://600831635", Ft="rbxassetid://600832720", Lf="rbxassetid://600886090", Rt="rbxassetid://600833862", Up="rbxassetid://600835177" },
+                        ["Arctic"] = { Bk="http://www.roblox.com/asset/?id=225469390", Dn="http://www.roblox.com/asset/?id=225469395", Ft="http://www.roblox.com/asset/?id=225469403", Lf="http://www.roblox.com/asset/?id=225469450", Rt="http://www.roblox.com/asset/?id=225469471", Up="http://www.roblox.com/asset/?id=225469481" },
+                        ["Space"] = { Bk="http://www.roblox.com/asset/?id=166509999", Dn="http://www.roblox.com/asset/?id=166510057", Ft="http://www.roblox.com/asset/?id=166510116", Lf="http://www.roblox.com/asset/?id=166510092", Rt="http://www.roblox.com/asset/?id=166510131", Up="http://www.roblox.com/asset/?id=166510114" },
+                        ["Roblox Default"] = { Bk="rbxasset://textures/sky/sky512_bk.tex", Dn="rbxasset://textures/sky/sky512_dn.tex", Ft="rbxasset://textures/sky/sky512_ft.tex", Lf="rbxasset://textures/sky/sky512_lf.tex", Rt="rbxasset://textures/sky/sky512_rt.tex", Up="rbxasset://textures/sky/sky512_up.tex" },
+                        ["Red Night"] = { Bk="http://www.roblox.com/asset/?id=401664839", Dn="http://www.roblox.com/asset/?id=401664862", Ft="http://www.roblox.com/asset/?id=401664960", Lf="http://www.roblox.com/asset/?id=401664881", Rt="http://www.roblox.com/asset/?id=401664901", Up="http://www.roblox.com/asset/?id=401664936" },
+                        ["Deep Space 1"] = { Bk="http://www.roblox.com/asset/?id=149397692", Dn="http://www.roblox.com/asset/?id=149397686", Ft="http://www.roblox.com/asset/?id=149397697", Lf="http://www.roblox.com/asset/?id=149397684", Rt="http://www.roblox.com/asset/?id=149397688", Up="http://www.roblox.com/asset/?id=149397702" },
+                        ["Pink Skies"] = { Bk="http://www.roblox.com/asset/?id=151165214", Dn="http://www.roblox.com/asset/?id=151165197", Ft="http://www.roblox.com/asset/?id=151165224", Lf="http://www.roblox.com/asset/?id=151165191", Rt="http://www.roblox.com/asset/?id=151165206", Up="http://www.roblox.com/asset/?id=151165227" },
+                        ["Purple Sunset"] = { Bk="rbxassetid://264908339", Dn="rbxassetid://264907909", Ft="rbxassetid://264909420", Lf="rbxassetid://264909758", Rt="rbxassetid://264908886", Up="rbxassetid://264907379" },
+                        ["Blue Night"] = { Bk="http://www.roblox.com/asset/?id=12064107", Dn="http://www.roblox.com/asset/?id=12064152", Ft="http://www.roblox.com/asset/?id=12064121", Lf="http://www.roblox.com/asset/?id=12063984", Rt="http://www.roblox.com/asset/?id=12064115", Up="http://www.roblox.com/asset/?id=12064131" },
+                        ["Blossom Daylight"] = { Bk="http://www.roblox.com/asset/?id=271042516", Dn="http://www.roblox.com/asset/?id=271077243", Ft="http://www.roblox.com/asset/?id=271042556", Lf="http://www.roblox.com/asset/?id=271042310", Rt="http://www.roblox.com/asset/?id=271042467", Up="http://www.roblox.com/asset/?id=271077958" },
+                        ["Blue Nebula"] = { Bk="http://www.roblox.com/asset?id=135207744", Dn="http://www.roblox.com/asset?id=135207662", Ft="http://www.roblox.com/asset?id=135207770", Lf="http://www.roblox.com/asset?id=135207615", Rt="http://www.roblox.com/asset?id=135207695", Up="http://www.roblox.com/asset?id=135207794" },
+                        ["Blue Planet"] = { Bk="rbxassetid://218955819", Dn="rbxassetid://218953419", Ft="rbxassetid://218954524", Lf="rbxassetid://218958493", Rt="rbxassetid://218957134", Up="rbxassetid://218950090" },
+                        ["Deep Space 2"] = { Bk="http://www.roblox.com/asset/?id=159248188", Dn="http://www.roblox.com/asset/?id=159248183", Ft="http://www.roblox.com/asset/?id=159248187", Lf="http://www.roblox.com/asset/?id=159248173", Rt="http://www.roblox.com/asset/?id=159248192", Up="http://www.roblox.com/asset/?id=159248176" },
+                        ["Summer"] = { Bk="rbxassetid://16648590964", Dn="rbxassetid://16648617436", Ft="rbxassetid://16648595424", Lf="rbxassetid://16648566370", Rt="rbxassetid://16648577071", Up="rbxassetid://16648598180" },
+                        ["Galaxy"] = { Bk="rbxassetid://15983968922", Dn="rbxassetid://15983966825", Ft="rbxassetid://15983965025", Lf="rbxassetid://15983967420", Rt="rbxassetid://15983966246", Up="rbxassetid://15983964246" },
+                        ["Stylized"] = { Bk="rbxassetid://18351376859", Dn="rbxassetid://18351374919", Ft="rbxassetid://18351376800", Lf="rbxassetid://18351376469", Rt="rbxassetid://18351376457", Up="rbxassetid://18351377189" },
+                        ["Minecraft"] = { Bk="rbxassetid://8735166756", Dn="http://www.roblox.com/asset/?id=8735166707", Ft="http://www.roblox.com/asset/?id=8735231668", Lf="http://www.roblox.com/asset/?id=8735166755", Rt="http://www.roblox.com/asset/?id=8735166751", Up="http://www.roblox.com/asset/?id=8735166729" },
+                        ["Cloudy Rain"] = { Bk="http://www.roblox.com/asset/?id=4498828382", Dn="http://www.roblox.com/asset/?id=4498828812", Ft="http://www.roblox.com/asset/?id=4498829917", Lf="http://www.roblox.com/asset/?id=4498830911", Rt="http://www.roblox.com/asset/?id=4498830417", Up="http://www.roblox.com/asset/?id=4498831746" },
+                        ["Black Cloudy Rain"] = { Bk="http://www.roblox.com/asset/?id=149679669", Dn="http://www.roblox.com/asset/?id=149681979", Ft="http://www.roblox.com/asset/?id=149679690", Lf="http://www.roblox.com/asset/?id=149679709", Rt="http://www.roblox.com/asset/?id=149679722", Up="http://www.roblox.com/asset/?id=149680199" },
+                    }
+                    -- Build t7 list for picker (using Up face as color preview reference)
+                    local t7 = {}
+                    local skyColorMap = {
+                        ["Black Storm"]={30,30,40}, ["HD"]={100,160,220}, ["Snow"]={200,220,240},
+                        ["Blue Space"]={40,80,180}, ["Realistic"]={120,170,220}, ["Stormy"]={60,60,80},
+                        ["Pink"]={220,100,160}, ["Sunset"]={230,120,60}, ["Arctic"]={180,210,240},
+                        ["Space"]={20,20,60}, ["Roblox Default"]={100,180,255}, ["Red Night"]={160,30,30},
+                        ["Deep Space 1"]={20,20,50}, ["Pink Skies"]={220,140,180}, ["Purple Sunset"]={140,60,180},
+                        ["Blue Night"]={30,60,140}, ["Blossom Daylight"]={180,220,200}, ["Blue Nebula"]={60,100,200},
+                        ["Blue Planet"]={60,120,200}, ["Deep Space 2"]={20,20,60}, ["Summer"]={100,200,240},
+                        ["Galaxy"]={80,40,160}, ["Stylized"]={120,180,240}, ["Minecraft"]={100,180,240},
+                        ["Cloudy Rain"]={100,110,120}, ["Black Cloudy Rain"]={30,30,35},
+                    }
+                    local skyboxOrder = {"Black Storm","HD","Snow","Blue Space","Realistic","Stormy","Pink","Sunset","Arctic","Space","Roblox Default","Red Night","Deep Space 1","Pink Skies","Purple Sunset","Blue Night","Blossom Daylight","Blue Nebula","Blue Planet","Deep Space 2","Summer","Galaxy","Stylized","Minecraft","Cloudy Rain","Black Cloudy Rain"}
+                    for i, name in ipairs(skyboxOrder) do
+                        local c = skyColorMap[name] or {128,128,128}
+                        t7[i] = { name=name, id=name, color=Color3.fromRGB(c[1],c[2],c[3]) }
+                    end
+
+                    local u140 = nil
+                    local u141 = false
+                    local u142 = Lighting;
+
+                    (function()
+                        local Sky = u142:FindFirstChildOfClass('Sky')
+
+                        if Sky then
+                            u140 = {
+                                SkyboxBk = Sky.SkyboxBk,
+                                SkyboxDn = Sky.SkyboxDn,
+                                SkyboxFt = Sky.SkyboxFt,
+                                SkyboxLf = Sky.SkyboxLf,
+                                SkyboxRt = Sky.SkyboxRt,
+                                SkyboxUp = Sky.SkyboxUp,
+                            }
+                        end
+                    end)()
 
                     local u143 = Lighting
                     local u144 = v18
@@ -56,7 +1905,7 @@ do
 
                         u141 = false
 
-                        CHNotify({
+                        u144:Notify({
                             Title = 'CrystalHub',
                             Content = tostring('Skybox restored to default.'),
                             Duration = 3,
@@ -231,7 +2080,7 @@ do
                                                 if not v673 then
                                                     local v674 = p29.Name .. ' \u{2014} no valid fling part.'
 
-                                                    CHNotify({
+                                                    u159:Notify({
                                                         Title = 'CrystalHub',
                                                         Content = tostring(v674),
                                                         Duration = 3,
@@ -324,7 +2173,7 @@ do
 
                                                     u160.FallenPartsDestroyHeight = getgenv().RuzFPDH
 
-                                                    CHNotify({
+                                                    u159:Notify({
                                                         Title = 'CrystalHub',
                                                         Content = tostring('Returned to previous position.'),
                                                         Duration = 3,
@@ -342,7 +2191,7 @@ do
 
                                         local v680 = p29.Name .. ' is sitting, skipped.'
 
-                                        CHNotify({
+                                        u159:Notify({
                                             Title = 'CrystalHub',
                                             Content = tostring(v680),
                                             Duration = 3,
@@ -453,7 +2302,7 @@ do
                     t16 = {}
                     u181.Visible = false
 
-                    CHNotify({
+                    u182:Notify({
                         Title = 'CrystalHub',
                         Content = tostring('Low Graphics OFF'),
                         Duration = 3,
@@ -722,7 +2571,7 @@ do
                             return
                         end
 
-                        CHNotify({
+                        u230:Notify({
                             Title = 'CrystalHub',
                             Content = tostring('Gold Bomb on cooldown.'),
                             Duration = 3,
@@ -756,7 +2605,7 @@ do
                             return
                         end
 
-                        CHNotify({
+                        u237:Notify({
                             Title = 'CrystalHub',
                             Content = tostring('Normal Bomb on cooldown.'),
                             Duration = 3,
@@ -825,7 +2674,7 @@ do
 
                     local v927 = u61 and 'ESP ON' or 'ESP OFF'
 
-                    CHNotify({
+                    u251:Notify({
                         Title = 'CrystalHub',
                         Content = tostring(v927),
                         Duration = 3,
@@ -875,7 +2724,7 @@ do
 
                     local v928 = u116 and 'Speed Glitch ON' or 'Speed Glitch OFF'
 
-                    CHNotify({
+                    u262:Notify({
                         Title = 'CrystalHub',
                         Content = tostring(v928),
                         Duration = 3,
@@ -909,7 +2758,7 @@ do
 
                     local v929 = u120 and 'Stretch ON' or 'Stretch OFF'
 
-                    CHNotify({
+                    u269:Notify({
                         Title = 'CrystalHub',
                         Content = tostring(v929),
                         Duration = 3,
@@ -958,7 +2807,7 @@ do
 
                     v611.CFrame = CFrame5
 
-                    CHNotify({
+                    u130:Notify({
                         Title = 'CrystalHub',
                         Content = tostring('Teleported to gun!'),
                         Duration = 3,
@@ -968,7 +2817,7 @@ do
                     return
                 end
 
-                CHNotify({
+                u130:Notify({
                     Title = 'CrystalHub',
                     Content = tostring('Gun position not found!'),
                     Duration = 3,
@@ -981,7 +2830,7 @@ do
             return
         end
 
-        CHNotify({
+        u130:Notify({
             Title = 'CrystalHub',
             Content = tostring('No gun on map!'),
             Duration = 3,
@@ -1036,7 +2885,7 @@ do
                     if Humanoid and Humanoid.Health > 0 then
                         local v684 = 'Flinging: ' .. player.Name
 
-                        CHNotify({
+                        u162:Notify({
                             Title = 'CrystalHub',
                             Content = tostring(v684),
                             Duration = 3,
@@ -1049,7 +2898,7 @@ do
                 end
             end
 
-            CHNotify({
+            u162:Notify({
                 Title = 'CrystalHub',
                 Content = tostring('No knife player found!'),
                 Duration = 3,
@@ -1059,7 +2908,7 @@ do
             return
         end
 
-        CHNotify({
+        u162:Notify({
             Title = 'CrystalHub',
             Content = tostring('Fling in progress...'),
             Duration = 3,
@@ -1095,7 +2944,7 @@ do
                     if Humanoid and Humanoid.Health > 0 then
                         local v688 = 'Flinging: ' .. player.Name
 
-                        CHNotify({
+                        u166:Notify({
                             Title = 'CrystalHub',
                             Content = tostring(v688),
                             Duration = 3,
@@ -1108,7 +2957,7 @@ do
                 end
             end
 
-            CHNotify({
+            u166:Notify({
                 Title = 'CrystalHub',
                 Content = tostring('No gun player found!'),
                 Duration = 3,
@@ -1118,7 +2967,7 @@ do
             return
         end
 
-        CHNotify({
+        u166:Notify({
             Title = 'CrystalHub',
             Content = tostring('Fling in progress...'),
             Duration = 3,
@@ -1244,131 +3093,50 @@ do
             _setColor('fs', u295.FlingSheriff.lbl, u295.FlingSheriff.stroke, v796)
         end
     end)
-    -- NeverLose uses CreateNotification().new(), not :Notify().
-    local CHNotifier = v18:CreateNotification()
-    local function CHNotify(config)
-        return CHNotifier.new(config)
-    end
-
-    -- New NeverLose GUI compatibility layer for the existing CrystalHub controls.
-    CHNotify({
+    v18:Popup({
         Title = 'CrystalHub Mmv And Mm2',
-        Content = 'v7.3 loaded!\nOpen menu to configure everything.',
-        Duration = 3,
-        Logo = v18.GlobalLogo,
+        Icon = 'sparkles',
+        Content = 'v7.3 loaded!\nBombs and Shoot auto-loaded.\nOpen menu to configure everything.',
+        Buttons = {
+            {
+                Title = 'Start',
+                Icon = 'arrow-right',
+                Variant = 'Primary',
+                Callback = function() end,
+            },
+        },
     })
+
 
     local v300 = v18:CreateWindow({
-        Name = 'CrystalHub',
-        Content = 'Mmv And Mm2',
-        Logo = v18.GlobalLogo,
-        ConfigFolder = 'CrystalHub',
+        Title = 'CrystalHub',
+        Author = 'Mmv And Mm2',
+        Folder = 'CrystalHub',
         Size = UDim2.fromOffset(700, 550),
-        Enable3DRenderer = false,
-        Keybind = 'Insert',
+    }):Section({
+        Title = 'CrystalHub',
+        Opened = true,
     })
 
-    function v300:Section(_)
-        return self
-    end
+    v301 = v300:Tab({
+        Title = 'Main',
+        Icon = 'zap',
+    })
+    v302 = v300:Tab({
+        Title = 'ESP',
+        Icon = 'eye',
+    })
 
-    local function AdaptTab(tab)
-        local section = tab:AddSection({Name = 'Controls', Position = 'left'})
+    v303 = v300:Tab({
+        Title = 'Fling/Teleport',
+        Icon = 'target',
+    })
 
-        function tab:Toggle(c)
-            c = type(c) == "table" and c or {}
-            return section:AddToggle({
-                Name = c.Title or c.Name or 'Toggle',
-                Default = c.Default or false,
-                Flag = c.Flag,
-                Callback = c.Callback,
-            })
-        end
+    local v304 = v300:Tab({
+        Title = 'Rage',
+        Icon = 'shield',
+    })
 
-        function tab:Button(c)
-            c = type(c) == "table" and c or {}
-            return section:AddButton({
-                Name = c.Title or c.Name or 'Button',
-                Icon = c.Icon or 'chevron-large-right',
-                ToolTip = c.ToolTip,
-                Callback = c.Callback,
-            })
-        end
-
-        function tab:Slider(c)
-            c = type(c) == "table" and c or {}
-            local value = c.Value or {}
-            return section:AddSlider({
-                Name = c.Title or c.Name or 'Slider',
-                Default = value.Default or c.Default or 0,
-                Min = value.Min or c.Min or 0,
-                Max = value.Max or c.Max or 100,
-                Rounding = c.Rounding or 0,
-                Type = c.Type or '',
-                Size = 125,
-                Callback = c.Callback,
-            })
-        end
-
-        function tab:Dropdown(c)
-            c = type(c) == "table" and c or {}
-            local d = section:AddDropdown({
-                Name = c.Title or c.Name or 'Dropdown',
-                Values = c.Values or {},
-                Default = c.Value ~= nil and c.Value or c.Default,
-                Multi = c.Multi or false,
-                AutoUpdate = c.AutoUpdate or false,
-                Size = c.Size or 125,
-                Flag = c.Flag,
-                Callback = c.Callback,
-            })
-            function d:Refresh(values)
-                self:SetValues(values or {})
-            end
-            function d:Select(value)
-                self:SetValue(value)
-            end
-            return d
-        end
-
-        function tab:ColorPicker(c)
-            c = type(c) == "table" and c or {}
-            return section:AddColorPicker({
-                Name = c.Title or c.Name or 'Color',
-                Default = c.Default,
-                Flag = c.Flag,
-                Callback = c.Callback,
-            })
-        end
-
-        function tab:Paragraph(c)
-            local title = c.Title or c.Name or 'Info'
-            local content = c.Content
-            if content and content ~= '' then
-                title = title .. ': ' .. tostring(content)
-            end
-            return section:AddLabel(title, true)
-        end
-
-        function tab:Divider()
-            return section:AddLabel('────────────────', false)
-        end
-
-        return tab
-    end
-
-    function v300:Tab(c)
-        return AdaptTab(self:AddTab({
-            Name = c.Title or c.Name or 'Tab',
-            Icon = c.Icon or 'crosshairs',
-            Type = 'Double',
-        }))
-    end
-
-    local v301 = v300:Tab({Title = 'Main', Icon = 'lightning-bolt'})
-    local v302 = v300:Tab({Title = 'ESP', Icon = 'eye'})
-    local v303 = v300:Tab({Title = 'Fling/Teleport', Icon = 'person-teleport'})
-    local v304 = v300:Tab({Title = 'Rage', Icon = 'shield-lock'})
 
     -- CrystalHub AutoFarm
     do
@@ -1886,7 +3654,7 @@ do
 
                 if value then
                     afStartFarming()
-                    CHNotify({
+                    v18:Notify({
                         Title = "CrystalHub",
                         Content = "AutoFarm ON",
                         Duration = 3,
@@ -1894,7 +3662,7 @@ do
                     })
                 else
                     afStopFarming()
-                    CHNotify({
+                    v18:Notify({
                         Title = "CrystalHub",
                         Content = "AutoFarm OFF",
                         Duration = 3,
@@ -2259,7 +4027,7 @@ do
             Callback = function(val)
                 aaDesync.Enabled = val
                 if not val then resetCamera() end
-                CHNotify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                v18:Notify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
@@ -2366,7 +4134,7 @@ do
                 else
                     disableFakePosition()
                 end
-                CHNotify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                v18:Notify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
@@ -2451,7 +4219,7 @@ do
                     end
                 end
 
-                CHNotify({ Title = "CrystalHub", Content = "SpinBot " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                v18:Notify({ Title = "CrystalHub", Content = "SpinBot " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
             end,
         })
 
@@ -2512,7 +4280,7 @@ do
             Description = 'Teleport to the selected player',
             Callback = function()
                 if not teleportSelected then
-                    CHNotify({
+                    v18:Notify({
                         Title = 'CrystalHub',
                         Content = 'Select a player first!',
                         Duration = 3,
@@ -2528,7 +4296,7 @@ do
                 local targetHRP = targetCharacter and targetCharacter:FindFirstChild('HumanoidRootPart')
 
                 if not (hrp and targetHRP) then
-                    CHNotify({
+                    v18:Notify({
                         Title = 'CrystalHub',
                         Content = 'Player or character not found!',
                         Duration = 3,
@@ -2538,7 +4306,7 @@ do
                 end
 
                 hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
-                CHNotify({
+                v18:Notify({
                     Title = 'CrystalHub',
                     Content = tostring('Teleported to: ' .. target.Name),
                     Duration = 3,
@@ -2609,7 +4377,7 @@ do
             Description = 'Fling the selected player',
             Callback = function()
                 if not flingSelected then
-                    CHNotify({
+                    v18:Notify({
                         Title = 'CrystalHub',
                         Content = 'Select a player first!',
                         Duration = 3,
@@ -2619,7 +4387,7 @@ do
                 end
 
                 if u157 then
-                    CHNotify({
+                    v18:Notify({
                         Title = 'CrystalHub',
                         Content = 'Fling is already in progress!',
                         Duration = 3,
@@ -2631,7 +4399,7 @@ do
                 local target = Players:FindFirstChild(flingSelected)
 
                 if target and target.Character then
-                    CHNotify({
+                    v18:Notify({
                         Title = 'CrystalHub',
                         Content = tostring('Flinging: ' .. target.Name),
                         Duration = 3,
@@ -2639,7 +4407,7 @@ do
                     })
                     task.spawn(u165, target)
                 else
-                    CHNotify({
+                    v18:Notify({
                         Title = 'CrystalHub',
                         Content = 'Player left or has no character!',
                         Duration = 3,
@@ -2839,7 +4607,7 @@ do
             Description = "Remove all aura effects from character",
             Callback = function()
                 clearAura()
-                CHNotify({
+                v18:Notify({
                     Title = "CrystalHub",
                     Content = "Auras cleared.",
                     Duration = 2,
@@ -2936,7 +4704,7 @@ VisualsTab:Button({
 
                     local v888 = 'Custom skybox applied \u{2014} ID: ' .. u636.Text
 
-                    CHNotify({
+                    u148:Notify({
                         Title = 'CrystalHub',
                         Content = tostring(v888),
                         Duration = 3,
@@ -3044,7 +4812,7 @@ VisualsTab:Button({
 
                     local v889 = 'Skybox applied: ' .. u651.name
 
-                    CHNotify({
+                    u148:Notify({
                         Title = 'CrystalHub',
                         Content = tostring(v889),
                         Duration = 3,
@@ -3194,7 +4962,7 @@ function t31.Callback(p69)
 
         u314.MouseIconEnabled = true
 
-        CHNotify({
+        u313:Notify({
             Title = 'CrystalHub',
             Content = tostring('Crosshair OFF'),
             Duration = 3,
@@ -3205,7 +4973,7 @@ function t31.Callback(p69)
     end
 
     u312()
-    CHNotify({
+    u313:Notify({
         Title = 'CrystalHub',
         Content = tostring('Crosshair ON \u{2014} enable ShiftLock to see it!'),
         Duration = 3,
@@ -3296,7 +5064,7 @@ VisualsTab:Button({
                         u201.Image = 'rbxassetid://' .. u718.Text
                     end
 
-                    CHNotify({
+                    u209:Notify({
                         Title = 'CrystalHub',
                         Content = tostring('Custom cursor applied \u{2014} enable ShiftLock to see it!'),
                         Duration = 3,
@@ -3346,7 +5114,7 @@ VisualsTab:Button({
 
                 local v919 = 'Crosshair Spin: ' .. (u199 and 'ON' or 'OFF')
 
-                CHNotify({
+                u209:Notify({
                     Title = 'CrystalHub',
                     Content = tostring(v919),
                     Duration = 3,
@@ -3428,7 +5196,7 @@ VisualsTab:Button({
 
                     local v920 = 'Cursor: ' .. u737.name .. ' \u{2014} enable ShiftLock to see it!'
 
-                    CHNotify({
+                    u209:Notify({
                         Title = 'CrystalHub',
                         Content = tostring(v920),
                         Duration = 3,
@@ -3546,7 +5314,7 @@ v301:Button({
 
             local v886 = 'Stretch set to ' .. p64 .. '%  (1.0 = normal)'
 
-            CHNotify({
+            u128:Notify({
                 Title = 'CrystalHub',
                 Content = tostring(v886),
                 Duration = 3,
@@ -3559,7 +5327,7 @@ v301:Button({
                 u127(true)
             end
 
-            CHNotify({
+            u128:Notify({
                 Title = 'CrystalHub',
                 Content = tostring('Stretch reset to 50%'),
                 Duration = 3,
@@ -3651,7 +5419,7 @@ local function u316()
     end)
     u177.Visible = true
 
-    CHNotify({
+    u178:Notify({
         Title = 'CrystalHub',
         Content = tostring('Low Graphics ON \u{2014} FPS boost active'),
         Duration = 3,
@@ -3711,7 +5479,7 @@ local function u319()
     v703.Contrast = 0.1
     v703.Brightness = 0.05
 
-    CHNotify({
+    u186:Notify({
         Title = 'CrystalHub',
         Content = tostring('High Graphics ON'),
         Duration = 3,
@@ -3736,7 +5504,7 @@ local function u320()
         end
     end
 
-    CHNotify({
+    u189:Notify({
         Title = 'CrystalHub',
         Content = tostring('High Graphics OFF'),
         Duration = 3,
@@ -3772,7 +5540,7 @@ function t34.Callback()
         n3 = 70
         u323.FieldOfView = 70
 
-        CHNotify({
+        u324:Notify({
             Title = 'CrystalHub',
             Content = tostring('FOV reset to 70'),
             Duration = 3,
@@ -3800,7 +5568,7 @@ function t35.Callback()
     end)
     local v814 = ok and 'Emotes GUI loaded!' or 'Error: ' .. tostring(result)
 
-    CHNotify({
+    u326:Notify({
         Title = 'CrystalHub',
         Content = tostring(v814),
         Duration = 3,
@@ -3822,7 +5590,7 @@ function t36.Callback()
     end)
     local v817 = ok and 'Infinite Yield loaded!' or 'Error: ' .. tostring(result)
 
-    CHNotify({
+    u328:Notify({
         Title = 'CrystalHub',
         Content = tostring(v817),
         Duration = 3,
@@ -3845,7 +5613,7 @@ function t37.Callback(p74)
 
     local v819 = p74 and 'Anti-Fling ON' or 'Anti-Fling OFF'
 
-    CHNotify({
+    u330:Notify({
         Title = 'CrystalHub',
         Content = tostring(v819),
         Duration = 3,
@@ -3867,7 +5635,7 @@ function t38.Callback(p75)
 
     local v821 = p75 and 'Ping Prediction ON' or 'Ping Prediction OFF'
 
-    CHNotify({
+    u332:Notify({
         Title = 'CrystalHub',
         Content = tostring(v821),
         Duration = 3,
@@ -3890,7 +5658,7 @@ function t39.Callback()
     end, function()
         n2 = 200
 
-        CHNotify({
+        u335:Notify({
             Title = 'CrystalHub',
             Content = tostring('Speed reset to 200'),
             Duration = 3,
@@ -3942,7 +5710,7 @@ function t40.Callback(p78)
 
     local v824 = p78 and 'ESP ON' or 'ESP OFF'
 
-    CHNotify({
+    u339:Notify({
         Title = 'CrystalHub',
         Content = tostring(v824),
         Duration = 3,
@@ -4043,7 +5811,7 @@ function t46.Callback(p84)
 
     local v831 = p84 and 'Gun ESP ON' or 'Gun ESP OFF'
 
-    CHNotify({
+    u351:Notify({
         Title = 'CrystalHub',
         Content = tostring(v831),
         Duration = 3,
@@ -4105,7 +5873,7 @@ task.wait(0.4)
 v232(true)
 v239(true)
 v244(true)
-CHNotify({
+v18:Notify({
     Title = 'CrystalHub',
     Content = tostring('CrystalHub Ready!'),
     Duration = 3,
