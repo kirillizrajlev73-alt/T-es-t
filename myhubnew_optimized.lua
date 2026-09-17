@@ -36,7 +36,7 @@ do
                     u17 = true
                     --[[
     CrystalHub UI adapter
-    WindUI has been replaced by the supplied NeverLose UI.
+    WindUI has been replaced by the supplied NeverLose UI.гитхыб обнови
     Existing feature code keeps its original control API through this adapter.
 ]]
 local NeverLose = loadstring(game:HttpGet(
