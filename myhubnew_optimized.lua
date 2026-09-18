@@ -1,4 +1,3 @@
---1123492
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -282,12 +281,17 @@ end
 
                                 TextButton.Size = UDim2.new(0, 28, 0, 28)
                                 TextButton.Position = UDim2.new(1, -34, 0, 4)
-                                TextButton.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+                                TextButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                                 TextButton.Text = 'X'
-                                TextButton.TextColor3 = Color3.new(1, 1, 1)
+                                TextButton.TextColor3 = Color3.fromRGB(200, 200, 200)
                                 TextButton.Font = Enum.Font.GothamBold
                                 TextButton.TextSize = 13
                                 Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, 6)
+                                do
+                                    local _stroke = Instance.new('UIStroke', TextButton)
+                                    _stroke.Color = Color3.fromRGB(60, 60, 60)
+                                    _stroke.Thickness = 1
+                                end
 
                                 local MouseButton1Click = TextButton.MouseButton1Click
                                 local u385 = ScreenGui
@@ -406,12 +410,17 @@ end
                                 local TextButton3 = Instance.new('TextButton', Frame4)
 
                                 TextButton3.Size = UDim2.new(0.48, 0, 1, 0)
-                                TextButton3.BackgroundColor3 = Color3.fromRGB(20, 160, 20)
+                                TextButton3.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                                 TextButton3.Text = 'Apply'
-                                TextButton3.TextColor3 = Color3.new(1, 1, 1)
+                                TextButton3.TextColor3 = Color3.fromRGB(200, 200, 200)
                                 TextButton3.Font = Enum.Font.GothamBold
                                 TextButton3.TextSize = 13
                                 Instance.new('UICorner', TextButton3).CornerRadius = UDim.new(0, 6)
+                                do
+                                    local _stroke3 = Instance.new('UIStroke', TextButton3)
+                                    _stroke3.Color = Color3.fromRGB(60, 60, 60)
+                                    _stroke3.Thickness = 1
+                                end
 
                                 local MouseButton1Click2 = TextButton3.MouseButton1Click
                                 local u408 = p9
@@ -434,12 +443,17 @@ end
 
                                 TextButton4.Size = UDim2.new(0.48, 0, 1, 0)
                                 TextButton4.Position = UDim2.new(0.52, 0, 0, 0)
-                                TextButton4.BackgroundColor3 = Color3.fromRGB(160, 20, 20)
+                                TextButton4.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                                 TextButton4.Text = 'Reset'
-                                TextButton4.TextColor3 = Color3.new(1, 1, 1)
+                                TextButton4.TextColor3 = Color3.fromRGB(200, 200, 200)
                                 TextButton4.Font = Enum.Font.GothamBold
                                 TextButton4.TextSize = 13
                                 Instance.new('UICorner', TextButton4).CornerRadius = UDim.new(0, 6)
+                                do
+                                    local _stroke4 = Instance.new('UIStroke', TextButton4)
+                                    _stroke4.Color = Color3.fromRGB(60, 60, 60)
+                                    _stroke4.Thickness = 1
+                                end
 
                                 local MouseButton1Click3 = TextButton4.MouseButton1Click
                                 local u412 = ScreenGui
