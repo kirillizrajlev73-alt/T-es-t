@@ -1,4 +1,3 @@
---ебать мёрдер
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -2764,6 +2763,253 @@ end
                 }
 
                 return u219[p38]
+            end
+
+            -- Per-button individual settings (position X/Y, size, text color, bg color)
+            local RuzPerBtnCfg = {}
+
+            local function RuzGetBtnCfg(btnKey)
+                if not RuzPerBtnCfg[btnKey] then
+                    RuzPerBtnCfg[btnKey] = {
+                        Scale     = 1.0,
+                        TextColor = RuzBtnCfg.TextColor,
+                        BgColor   = RuzBtnCfg.BgColor,
+                        PosOffX   = 0,
+                        PosOffY   = 0,
+                    }
+                end
+                return RuzPerBtnCfg[btnKey]
+            end
+
+            local function RuzApplyBtnCfg(btnKey)
+                local cfg = RuzGetBtnCfg(btnKey)
+                local entry = u219[btnKey]
+                if not entry or not entry.btn or not entry.btn.Parent then return end
+                local btn = entry.btn
+                local baseH = btn:GetAttribute('RuzBaseSize') or 80
+                local newSz = math.max(30, math.floor(baseH * cfg.Scale * RuzBtnCfg.Scale))
+                btn.Size = UDim2.new(0, newSz, 0, newSz)
+                local c = btn:FindFirstChild('UICorner')
+                if c then c.CornerRadius = UDim.new(0, math.floor(newSz * 0.22)) end
+                local basePos = t26[btnKey]
+                if basePos then
+                    btn.Position = UDim2.new(
+                        basePos.X.Scale, basePos.X.Offset + cfg.PosOffX,
+                        basePos.Y.Scale, basePos.Y.Offset + cfg.PosOffY
+                    )
+                end
+                btn.BackgroundColor3 = cfg.BgColor
+                local lbl = btn:FindFirstChild('Lbl')
+                if lbl then
+                    lbl.TextColor3 = cfg.TextColor
+                    lbl.TextSize = math.max(10, math.floor(newSz * 0.18))
+                end
+            end
+
+            local function RuzOpenPerBtnSettings(btnKey, btnLabel)
+                local winName = 'RuzPerBtnCfg_' .. btnKey
+                local existing = game.CoreGui:FindFirstChild(winName)
+                if existing then existing:Destroy() return end
+
+                local cfg = RuzGetBtnCfg(btnKey)
+
+                local SG = Instance.new('ScreenGui', game.CoreGui)
+                SG.Name = winName
+                SG.ResetOnSpawn = false
+                SG.DisplayOrder = 75
+
+                local F = Instance.new('Frame', SG)
+                F.Size = UDim2.new(0, 300, 0, 308)
+                F.Position = UDim2.new(0.5, -150, 0.14, 0)
+                F.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+                F.BackgroundTransparency = 0.04
+                F.BorderSizePixel = 0
+                Instance.new('UICorner', F).CornerRadius = UDim.new(0, 16)
+                local FS = Instance.new('UIStroke', F)
+                FS.Color = Color3.fromRGB(220, 38, 38)
+                FS.Thickness = 1.5
+
+                local TitleLbl = Instance.new('TextLabel', F)
+                TitleLbl.Size = UDim2.new(1, -44, 0, 36)
+                TitleLbl.Position = UDim2.new(0, 12, 0, 0)
+                TitleLbl.BackgroundTransparency = 1
+                TitleLbl.Text = 'o  ' .. btnLabel
+                TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+                TitleLbl.Font = Enum.Font.GothamBold
+                TitleLbl.TextSize = 14
+                TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+                local CloseBtn = Instance.new('TextButton', F)
+                CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+                CloseBtn.Position = UDim2.new(1, -34, 0, 4)
+                CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+                CloseBtn.Text = 'X'
+                CloseBtn.TextColor3 = Color3.new(1,1,1)
+                CloseBtn.Font = Enum.Font.GothamBold
+                CloseBtn.TextSize = 13
+                Instance.new('UICorner', CloseBtn).CornerRadius = UDim.new(0, 6)
+                CloseBtn.MouseButton1Click:Connect(function() SG:Destroy() end)
+
+                local function makeLbl(text, y)
+                    local l = Instance.new('TextLabel', F)
+                    l.Size = UDim2.new(1, -20, 0, 16)
+                    l.Position = UDim2.new(0, 10, 0, y)
+                    l.BackgroundTransparency = 1
+                    l.Text = text
+                    l.TextColor3 = Color3.fromRGB(180, 180, 180)
+                    l.Font = Enum.Font.Gotham
+                    l.TextSize = 12
+                    l.TextXAlignment = Enum.TextXAlignment.Left
+                    return l
+                end
+
+                local function makeSlider(yPos, minV, maxV, current, onChanged)
+                    local track = Instance.new('Frame', F)
+                    track.Size = UDim2.new(1, -20, 0, 10)
+                    track.Position = UDim2.new(0, 10, 0, yPos)
+                    track.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    track.BorderSizePixel = 0
+                    Instance.new('UICorner', track).CornerRadius = UDim.new(1, 0)
+                    local fill = Instance.new('Frame', track)
+                    fill.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
+                    fill.BorderSizePixel = 0
+                    Instance.new('UICorner', fill).CornerRadius = UDim.new(1, 0)
+                    local knob = Instance.new('TextButton', track)
+                    knob.Size = UDim2.new(0, 20, 0, 20)
+                    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    knob.Text = ''
+                    knob.AutoButtonColor = false
+                    knob.BorderSizePixel = 0
+                    Instance.new('UICorner', knob).CornerRadius = UDim.new(1, 0)
+                    local rel = math.clamp((current - minV) / (maxV - minV), 0, 1)
+                    fill.Size = UDim2.new(rel, 0, 1, 0)
+                    knob.Position = UDim2.new(rel, -10, 0.5, -10)
+                    local drag = false
+                    local function applyPos(px)
+                        local r = math.clamp((px - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+                        local v = math.floor(minV + r * (maxV - minV))
+                        fill.Size = UDim2.new(r, 0, 1, 0)
+                        knob.Position = UDim2.new(r, -10, 0.5, -10)
+                        onChanged(v)
+                    end
+                    knob.InputBegan:Connect(function(i)
+                        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true end
+                    end)
+                    track.InputBegan:Connect(function(i)
+                        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = true applyPos(i.Position.X) end
+                    end)
+                    UserInputService.InputEnded:Connect(function(i)
+                        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end
+                    end)
+                    UserInputService.InputChanged:Connect(function(i)
+                        if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then applyPos(i.Position.X) end
+                    end)
+                end
+
+                local sizeLbl = makeLbl('Размер:  ' .. tostring(math.floor(cfg.Scale * 100)) .. '%', 42)
+                makeSlider(60, 50, 200, math.floor(cfg.Scale * 100), function(v)
+                    cfg.Scale = v / 100
+                    sizeLbl.Text = 'Размер:  ' .. v .. '%'
+                    RuzApplyBtnCfg(btnKey)
+                end)
+
+                local posXLbl = makeLbl('X смещение:  ' .. tostring(cfg.PosOffX), 84)
+                makeSlider(102, -300, 300, cfg.PosOffX, function(v)
+                    cfg.PosOffX = v
+                    posXLbl.Text = 'X смещение:  ' .. v
+                    RuzApplyBtnCfg(btnKey)
+                end)
+
+                local posYLbl = makeLbl('Y смещение:  ' .. tostring(cfg.PosOffY), 126)
+                makeSlider(144, -300, 300, cfg.PosOffY, function(v)
+                    cfg.PosOffY = v
+                    posYLbl.Text = 'Y смещение:  ' .. v
+                    RuzApplyBtnCfg(btnKey)
+                end)
+
+                makeLbl('Цвет текста', 170)
+                local txtCols = {
+                    Color3.fromRGB(255,255,255), Color3.fromRGB(220,38,38),
+                    Color3.fromRGB(40,200,40),   Color3.fromRGB(40,130,255),
+                    Color3.fromRGB(255,215,0),   Color3.fromRGB(200,80,255),
+                }
+                local tcRow = Instance.new('Frame', F)
+                tcRow.Size = UDim2.new(1, -20, 0, 34)
+                tcRow.Position = UDim2.new(0, 10, 0, 188)
+                tcRow.BackgroundTransparency = 1
+                Instance.new('UIListLayout', tcRow).FillDirection = Enum.FillDirection.Horizontal
+                tcRow:FindFirstChildOfClass('UIListLayout').Padding = UDim.new(0, 5)
+                local tcBtns = {}
+                for _, col in ipairs(txtCols) do
+                    local cb = Instance.new('TextButton', tcRow)
+                    cb.Size = UDim2.new(0, 34, 0, 34)
+                    cb.BackgroundColor3 = col
+                    cb.Text = ''
+                    cb.AutoButtonColor = false
+                    cb.BorderSizePixel = 0
+                    Instance.new('UICorner', cb).CornerRadius = UDim.new(0, 7)
+                    local str = Instance.new('UIStroke', cb)
+                    str.Color = Color3.fromRGB(255,255,255)
+                    str.Thickness = (col == cfg.TextColor) and 2.5 or 0
+                    tcBtns[#tcBtns+1] = {str=str, c=col}
+                    cb.MouseButton1Click:Connect(function()
+                        cfg.TextColor = col
+                        for _, b in ipairs(tcBtns) do b.str.Thickness = (b.c == col) and 2.5 or 0 end
+                        RuzApplyBtnCfg(btnKey)
+                    end)
+                end
+
+                makeLbl('Цвет фона', 232)
+                local bgCols2 = {
+                    Color3.fromRGB(15,15,15),  Color3.fromRGB(50,5,5),
+                    Color3.fromRGB(5,30,5),    Color3.fromRGB(5,15,50),
+                    Color3.fromRGB(40,30,5),   Color3.fromRGB(30,5,50),
+                }
+                local bgRow2 = Instance.new('Frame', F)
+                bgRow2.Size = UDim2.new(1, -20, 0, 34)
+                bgRow2.Position = UDim2.new(0, 10, 0, 250)
+                bgRow2.BackgroundTransparency = 1
+                Instance.new('UIListLayout', bgRow2).FillDirection = Enum.FillDirection.Horizontal
+                bgRow2:FindFirstChildOfClass('UIListLayout').Padding = UDim.new(0, 5)
+                local bgBtns2 = {}
+                for _, col in ipairs(bgCols2) do
+                    local cb = Instance.new('TextButton', bgRow2)
+                    cb.Size = UDim2.new(0, 34, 0, 34)
+                    cb.BackgroundColor3 = col
+                    cb.Text = ''
+                    cb.AutoButtonColor = false
+                    cb.BorderSizePixel = 0
+                    Instance.new('UICorner', cb).CornerRadius = UDim.new(0, 7)
+                    local str = Instance.new('UIStroke', cb)
+                    str.Color = Color3.fromRGB(255,255,255)
+                    str.Thickness = (col == cfg.BgColor) and 2.5 or 0
+                    bgBtns2[#bgBtns2+1] = {str=str, c=col}
+                    cb.MouseButton1Click:Connect(function()
+                        cfg.BgColor = col
+                        for _, b in ipairs(bgBtns2) do b.str.Thickness = (b.c == col) and 2.5 or 0 end
+                        RuzApplyBtnCfg(btnKey)
+                    end)
+                end
+
+                -- Reset
+                local rb = Instance.new('TextButton', F)
+                rb.Size = UDim2.new(1, -20, 0, 26)
+                rb.Position = UDim2.new(0, 10, 1, -32)
+                rb.BackgroundColor3 = Color3.fromRGB(55, 12, 12)
+                rb.Text = 'Сбросить'
+                rb.TextColor3 = Color3.fromRGB(255, 180, 180)
+                rb.Font = Enum.Font.GothamBold
+                rb.TextSize = 12
+                rb.AutoButtonColor = false
+                rb.BorderSizePixel = 0
+                Instance.new('UICorner', rb).CornerRadius = UDim.new(0, 7)
+                rb.MouseButton1Click:Connect(function()
+                    RuzPerBtnCfg[btnKey] = nil
+                    RuzApplyBtnCfg(btnKey)
+                    SG:Destroy()
+                end)
+
+                v21(F)
             end
 
             local u221 = RunService
@@ -5567,6 +5813,13 @@ VisualsTab:Button({
     end
 
     v301:Toggle(t27)
+    v301:Button({
+        Title = '··· Настроить: Gold Bomb',
+        Description = 'Размер, позиция, цвет кнопки',
+        Callback = function()
+            RuzOpenPerBtnSettings('GoldBomb', 'Gold Bomb')
+        end,
+    })
 
     local t28 = {
         Title = 'Show Normal Bomb',
@@ -5579,6 +5832,13 @@ VisualsTab:Button({
     end
 
     v301:Toggle(t28)
+    v301:Button({
+        Title = '··· Настроить: Normal Bomb',
+        Description = 'Размер, позиция, цвет кнопки',
+        Callback = function()
+            RuzOpenPerBtnSettings('NormalBomb', 'Normal Bomb')
+        end,
+    })
 
     local t29 = {
         Title = 'Show Shoot/Throw',
@@ -5591,6 +5851,13 @@ VisualsTab:Button({
     end
 
     v301:Toggle(t29)
+    v301:Button({
+        Title = '··· Настроить: Shoot/Throw',
+        Description = 'Размер, позиция, цвет кнопки',
+        Callback = function()
+            RuzOpenPerBtnSettings('Shoot', 'Shoot / Throw')
+        end,
+    })
 end
 
 v301:Divider()
@@ -5604,11 +5871,25 @@ v301:Toggle({
         u252(p59)
     end,
 })
+v301:Button({
+    Title = '··· Настроить: ESP',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('ESP', 'ESP Toggle')
+    end,
+})
 v301:Toggle({
     Title = 'Load Flick',
     Default = false,
     Callback = function(p60)
         u257(p60)
+    end,
+})
+v301:Button({
+    Title = '··· Настроить: Flick',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('Flick', 'Flick')
     end,
 })
 v301:Toggle({
@@ -5618,6 +5899,13 @@ v301:Toggle({
         u276(p61)
     end,
 })
+v301:Button({
+    Title = '··· Настроить: Grab Gun',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('GrabGun', 'Grab Gun')
+    end,
+})
 v301:Toggle({
     Title = 'Load Speed Glitch',
     Default = false,
@@ -5625,11 +5913,25 @@ v301:Toggle({
         u263(p62)
     end,
 })
+v301:Button({
+    Title = '··· Настроить: Speed',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('Speed', 'Speed Glitch')
+    end,
+})
 v301:Toggle({
     Title = 'Load Stretch',
     Default = false,
     Callback = function(p63)
         u270(p63)
+    end,
+})
+v301:Button({
+    Title = '··· Настроить: Stretch',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('Stretch', 'Stretch')
     end,
 })
 v301:Button({
@@ -5677,6 +5979,13 @@ v301:Toggle({
         u287(p65)
     end,
 })
+v301:Button({
+    Title = '··· Настроить: Fling Murderer',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('FlingMurderer', 'Fling Murderer')
+    end,
+})
 v301:Toggle({
     Title = 'Load Fling Sheriff',
     Default = false,
@@ -5684,11 +5993,25 @@ v301:Toggle({
         u293(p66)
     end,
 })
+v301:Button({
+    Title = '··· Настроить: Fling Sheriff',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('FlingSheriff', 'Fling Sheriff')
+    end,
+})
 v301:Toggle({
     Title = 'Load Wall Hop',
     Default = false,
     Callback = function(p67)
         u281(p67)
+    end,
+})
+v301:Button({
+    Title = '··· Настроить: Wall Hop',
+    Description = 'Размер, позиция, цвет кнопки',
+    Callback = function()
+        RuzOpenPerBtnSettings('WallHop', 'Wall Hop')
     end,
 })
 v301:Divider()
