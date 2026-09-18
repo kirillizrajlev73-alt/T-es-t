@@ -1,3 +1,4 @@
+--1123492
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -3713,8 +3714,7 @@ end
         })
 
         AutoFarmTab:Paragraph({
-            Title = "CrystalHub AutoFarm",
-            Content = "Автоматический сбор монет. Настройки применяются сразу.",
+            Title = "AutoFarm",
         })
 
         AutoFarmTab:Toggle({
@@ -4100,7 +4100,6 @@ end
         -- ══════════════════════════════════════════════════════════════
         v304:Paragraph({
             Title   = "Anti-Aim",
-            Content = "Продвинутый Desync: несколько режимов смещения позиции (Custom, Void, Random…) + Fake Position с визуализацией клона.",
         })
 
         v304:Toggle({
@@ -4203,7 +4202,6 @@ end
         -- ══════════════════════════════════════════════════════════════
         v304:Paragraph({
             Title   = "Fake Position",
-            Content = "Телепортирует персонажа в фейковую позицию и возвращает назад через ReturnDelay сек.",
         })
 
         v304:Toggle({
@@ -4261,7 +4259,6 @@ end
 
         v304:Paragraph({
             Title   = "SpinBot",
-            Content = "Вращает персонажа по оси Y каждый кадр. Отключает AutoRotate пока активен.",
         })
 
         v304:Toggle({
@@ -4319,7 +4316,6 @@ end
 
     v303:Paragraph({
         Title = 'Teleport Players',
-        Content = 'Select a player and teleport to them.',
     })
 
     do
@@ -4415,7 +4411,6 @@ end
 
     v303:Paragraph({
         Title = 'Fling Players',
-        Content = 'Select a player from the list and press Fling.',
     })
 
     do
@@ -4609,7 +4604,6 @@ end
         -- ── WindUI Controls ───────────────────────────────────
         VisualsTab:Paragraph({
             Title = "Aura Selector",
-            Content = "Toggle auras below, pick color, then enable. Supports mixing multiple auras.",
         })
 
         -- Master ON/OFF
@@ -4626,7 +4620,6 @@ end
         -- Individual aura toggles
         VisualsTab:Paragraph({
             Title = "Aura List",
-            Content = "Select one or more auras to stack on your character.",
         })
 
         for _, name in ipairs(aura_order) do
@@ -4644,7 +4637,6 @@ end
         -- Quick presets
         VisualsTab:Paragraph({
             Title = "Color Presets",
-            Content = "One-click color presets for your aura.",
         })
 
         local colorPresets = {"Default (Blue)","Red","Green","Gold","Purple","White","Rainbow (cycle)"}
@@ -4704,7 +4696,6 @@ end
 VisualsTab:Divider()
 VisualsTab:Paragraph({
     Title = 'Skybox',
-    Content = 'Click the button below to open the visual skybox picker.\nSelecting a preset applies it instantly.',
 })
 VisualsTab:Button({
     Title = 'Open Skybox Picker',
@@ -4943,7 +4934,6 @@ VisualsTab:Button(t30)
 VisualsTab:Divider()
 VisualsTab:Paragraph({
     Title = 'Crosshair',
-    Content = 'Visible only when ShiftLock is active.\nSpin option is inside the picker.',
 })
 
 local t31 = {
@@ -5300,7 +5290,6 @@ VisualsTab:Button({
 
     v301:Paragraph({
         Title = 'Auto-Loaded Buttons',
-        Content = 'Gold Bomb, Normal Bomb and Shoot/Throw are disabled by default. Enable manually.',
     })
 
     local t27 = {
@@ -5343,7 +5332,6 @@ end
 v301:Divider()
 v301:Paragraph({
     Title = 'Optional Buttons',
-    Content = 'Toggle to add or remove from screen.',
 })
 v301:Toggle({
     Title = 'Load ESP Toggle',
@@ -5442,7 +5430,6 @@ v301:Toggle({
 v301:Divider()
 v301:Paragraph({
     Title = 'Graphics',
-    Content = 'Low: removes textures, map looks flat, boosts FPS.\nHigh: Bloom, SunRays, enhanced lighting.',
 })
 
 local t32 = {
@@ -5635,7 +5622,6 @@ v301:Button(t34)
 v301:Divider()
 v301:Paragraph({
     Title = 'Extra Scripts',
-    Content = 'Universal scripts and additional tools.',
 })
 
 local t35 = {
