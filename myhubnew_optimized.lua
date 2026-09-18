@@ -1,3 +1,4 @@
+--ебать мёрдер
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -281,17 +282,12 @@ end
 
                                 TextButton.Size = UDim2.new(0, 28, 0, 28)
                                 TextButton.Position = UDim2.new(1, -34, 0, 4)
-                                TextButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                                TextButton.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
                                 TextButton.Text = 'X'
-                                TextButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+                                TextButton.TextColor3 = Color3.new(1, 1, 1)
                                 TextButton.Font = Enum.Font.GothamBold
                                 TextButton.TextSize = 13
                                 Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, 6)
-                                do
-                                    local _stroke = Instance.new('UIStroke', TextButton)
-                                    _stroke.Color = Color3.fromRGB(60, 60, 60)
-                                    _stroke.Thickness = 1
-                                end
 
                                 local MouseButton1Click = TextButton.MouseButton1Click
                                 local u385 = ScreenGui
@@ -410,17 +406,12 @@ end
                                 local TextButton3 = Instance.new('TextButton', Frame4)
 
                                 TextButton3.Size = UDim2.new(0.48, 0, 1, 0)
-                                TextButton3.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                                TextButton3.BackgroundColor3 = Color3.fromRGB(20, 160, 20)
                                 TextButton3.Text = 'Apply'
-                                TextButton3.TextColor3 = Color3.fromRGB(200, 200, 200)
+                                TextButton3.TextColor3 = Color3.new(1, 1, 1)
                                 TextButton3.Font = Enum.Font.GothamBold
                                 TextButton3.TextSize = 13
                                 Instance.new('UICorner', TextButton3).CornerRadius = UDim.new(0, 6)
-                                do
-                                    local _stroke3 = Instance.new('UIStroke', TextButton3)
-                                    _stroke3.Color = Color3.fromRGB(60, 60, 60)
-                                    _stroke3.Thickness = 1
-                                end
 
                                 local MouseButton1Click2 = TextButton3.MouseButton1Click
                                 local u408 = p9
@@ -443,17 +434,12 @@ end
 
                                 TextButton4.Size = UDim2.new(0.48, 0, 1, 0)
                                 TextButton4.Position = UDim2.new(0.52, 0, 0, 0)
-                                TextButton4.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                                TextButton4.BackgroundColor3 = Color3.fromRGB(160, 20, 20)
                                 TextButton4.Text = 'Reset'
-                                TextButton4.TextColor3 = Color3.fromRGB(200, 200, 200)
+                                TextButton4.TextColor3 = Color3.new(1, 1, 1)
                                 TextButton4.Font = Enum.Font.GothamBold
                                 TextButton4.TextSize = 13
                                 Instance.new('UICorner', TextButton4).CornerRadius = UDim.new(0, 6)
-                                do
-                                    local _stroke4 = Instance.new('UIStroke', TextButton4)
-                                    _stroke4.Color = Color3.fromRGB(60, 60, 60)
-                                    _stroke4.Thickness = 1
-                                end
 
                                 local MouseButton1Click3 = TextButton4.MouseButton1Click
                                 local u412 = ScreenGui
@@ -2464,6 +2450,260 @@ end
 
             local u219 = t25
 
+            -- [[ CrystalHub Mobile Button Settings ]]
+            local RuzBtnCfg = {
+                BgColor   = Color3.fromRGB(15, 15, 15),
+                BgAlpha   = 0.08,
+                TextColor = Color3.fromRGB(255, 255, 255),
+                Scale     = 1.0,
+            }
+
+            -- Settings GUI for mobile buttons (size & color)
+            local function RuzOpenBtnSettings()
+                local existing = game.CoreGui:FindFirstChild('RuzBtnSettings')
+                if existing then existing:Destroy() return end
+
+                local SG = Instance.new('ScreenGui', game.CoreGui)
+                SG.Name = 'RuzBtnSettings'
+                SG.ResetOnSpawn = false
+                SG.DisplayOrder = 70
+
+                local F = Instance.new('Frame', SG)
+                F.Size = UDim2.new(0, 280, 0, 230)
+                F.Position = UDim2.new(0.5, -140, 0.3, 0)
+                F.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+                F.BackgroundTransparency = 0.05
+                F.BorderSizePixel = 0
+                Instance.new('UICorner', F).CornerRadius = UDim.new(0, 16)
+                local FS = Instance.new('UIStroke', F)
+                FS.Color = Color3.fromRGB(220, 38, 38)
+                FS.Thickness = 1.5
+
+                local Title = Instance.new('TextLabel', F)
+                Title.Size = UDim2.new(1, -44, 0, 36)
+                Title.Position = UDim2.new(0, 12, 0, 0)
+                Title.BackgroundTransparency = 1
+                Title.Text = 'CrystalHub  —  Button Style'
+                Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Title.Font = Enum.Font.GothamBold
+                Title.TextSize = 14
+                Title.TextXAlignment = Enum.TextXAlignment.Left
+
+                local CloseBtn = Instance.new('TextButton', F)
+                CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+                CloseBtn.Position = UDim2.new(1, -34, 0, 4)
+                CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+                CloseBtn.Text = 'X'
+                CloseBtn.TextColor3 = Color3.new(1,1,1)
+                CloseBtn.Font = Enum.Font.GothamBold
+                CloseBtn.TextSize = 13
+                Instance.new('UICorner', CloseBtn).CornerRadius = UDim.new(0, 6)
+                CloseBtn.MouseButton1Click:Connect(function() SG:Destroy() end)
+
+                -- SIZE LABEL
+                local SizeLbl = Instance.new('TextLabel', F)
+                SizeLbl.Size = UDim2.new(1, -20, 0, 20)
+                SizeLbl.Position = UDim2.new(0, 10, 0, 44)
+                SizeLbl.BackgroundTransparency = 1
+                SizeLbl.Text = 'Button Size: ' .. tostring(math.floor(RuzBtnCfg.Scale * 100)) .. '%'
+                SizeLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+                SizeLbl.Font = Enum.Font.Gotham
+                SizeLbl.TextSize = 13
+                SizeLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+                -- SIZE SLIDER TRACK
+                local Track = Instance.new('Frame', F)
+                Track.Size = UDim2.new(1, -20, 0, 10)
+                Track.Position = UDim2.new(0, 10, 0, 70)
+                Track.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                Track.BorderSizePixel = 0
+                Instance.new('UICorner', Track).CornerRadius = UDim.new(1, 0)
+
+                local Fill = Instance.new('Frame', Track)
+                Fill.Size = UDim2.new(RuzBtnCfg.Scale / 2, 0, 1, 0)
+                Fill.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
+                Fill.BorderSizePixel = 0
+                Instance.new('UICorner', Fill).CornerRadius = UDim.new(1, 0)
+
+                local Knob = Instance.new('TextButton', Track)
+                Knob.Size = UDim2.new(0, 22, 0, 22)
+                Knob.Position = UDim2.new(RuzBtnCfg.Scale / 2, -11, 0.5, -11)
+                Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Knob.Text = ''
+                Knob.AutoButtonColor = false
+                Knob.BorderSizePixel = 0
+                Instance.new('UICorner', Knob).CornerRadius = UDim.new(1, 0)
+
+                local dragging = false
+                Knob.InputBegan:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                        dragging = true
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+                        dragging = false
+                    end
+                end)
+                UserInputService.InputChanged:Connect(function(i)
+                    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+                        local rel = math.clamp((i.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                        RuzBtnCfg.Scale = 0.5 + rel * 1.5
+                        Fill.Size = UDim2.new(rel, 0, 1, 0)
+                        Knob.Position = UDim2.new(rel, -11, 0.5, -11)
+                        SizeLbl.Text = 'Button Size: ' .. tostring(math.floor(RuzBtnCfg.Scale * 100)) .. '%'
+                        -- live-update all existing buttons
+                        for _, child in ipairs(u215:GetChildren()) do
+                            if child.Name:sub(1,7) == 'RuzBtn_' then
+                                local base = tonumber(child:GetAttribute('RuzBaseSize')) or 80
+                                local newSz = math.floor(base * RuzBtnCfg.Scale)
+                                child.Size = UDim2.new(0, newSz, 0, newSz)
+                                local c = child:FindFirstChild('UICorner')
+                                if c then c.CornerRadius = UDim.new(0, math.floor(newSz * 0.22)) end
+                                local lbl = child:FindFirstChild('Lbl')
+                                if lbl then lbl.TextSize = math.max(10, math.floor(newSz * 0.18)) end
+                            end
+                        end
+                    end
+                end)
+
+                -- COLOR BUTTONS ROW
+                local ColorLbl = Instance.new('TextLabel', F)
+                ColorLbl.Size = UDim2.new(1, -20, 0, 20)
+                ColorLbl.Position = UDim2.new(0, 10, 0, 100)
+                ColorLbl.BackgroundTransparency = 1
+                ColorLbl.Text = 'Text Color'
+                ColorLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+                ColorLbl.Font = Enum.Font.Gotham
+                ColorLbl.TextSize = 13
+                ColorLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+                local colors = {
+                    {Color3.fromRGB(255,255,255), 'White'},
+                    {Color3.fromRGB(220,38,38),   'Red'},
+                    {Color3.fromRGB(40,180,40),   'Green'},
+                    {Color3.fromRGB(40,130,255),  'Blue'},
+                    {Color3.fromRGB(255,215,0),   'Gold'},
+                    {Color3.fromRGB(200,80,255),  'Purple'},
+                }
+                local colorRow = Instance.new('Frame', F)
+                colorRow.Size = UDim2.new(1, -20, 0, 36)
+                colorRow.Position = UDim2.new(0, 10, 0, 124)
+                colorRow.BackgroundTransparency = 1
+                local rowLayout = Instance.new('UIListLayout', colorRow)
+                rowLayout.FillDirection = Enum.FillDirection.Horizontal
+                rowLayout.Padding = UDim.new(0, 6)
+
+                for _, cv in ipairs(colors) do
+                    local cb = Instance.new('TextButton', colorRow)
+                    cb.Size = UDim2.new(0, 36, 0, 36)
+                    cb.BackgroundColor3 = cv[1]
+                    cb.Text = ''
+                    cb.AutoButtonColor = false
+                    cb.BorderSizePixel = 0
+                    Instance.new('UICorner', cb).CornerRadius = UDim.new(0, 8)
+                    local cbStr = Instance.new('UIStroke', cb)
+                    cbStr.Color = Color3.fromRGB(255,255,255)
+                    cbStr.Thickness = (cv[1] == RuzBtnCfg.TextColor) and 2 or 0
+                    cb.MouseButton1Click:Connect(function()
+                        RuzBtnCfg.TextColor = cv[1]
+                        for _, sib in ipairs(colorRow:GetChildren()) do
+                            if sib:IsA('TextButton') then
+                                local s = sib:FindFirstChildOfClass('UIStroke')
+                                if s then s.Thickness = 0 end
+                            end
+                        end
+                        cbStr.Thickness = 2
+                        -- live-update all existing buttons
+                        for _, child in ipairs(u215:GetChildren()) do
+                            if child.Name:sub(1,7) == 'RuzBtn_' then
+                                local lbl = child:FindFirstChild('Lbl')
+                                if lbl then lbl.TextColor3 = cv[1] end
+                                local s = child:FindFirstChildOfClass('UIStroke')
+                                if s then s.Color = cv[1] end
+                            end
+                        end
+                    end)
+                end
+
+                -- BG COLOR LABEL
+                local BgLbl = Instance.new('TextLabel', F)
+                BgLbl.Size = UDim2.new(1, -20, 0, 20)
+                BgLbl.Position = UDim2.new(0, 10, 0, 170)
+                BgLbl.BackgroundTransparency = 1
+                BgLbl.Text = 'Background Color'
+                BgLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+                BgLbl.Font = Enum.Font.Gotham
+                BgLbl.TextSize = 13
+                BgLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+                local bgColors = {
+                    {Color3.fromRGB(15,15,15),   'Black'},
+                    {Color3.fromRGB(30,10,10),   'Dark Red'},
+                    {Color3.fromRGB(10,25,10),   'Dark Green'},
+                    {Color3.fromRGB(10,15,35),   'Dark Blue'},
+                    {Color3.fromRGB(35,25,5),    'Dark Gold'},
+                    {Color3.fromRGB(25,10,35),   'Dark Purple'},
+                }
+                local bgRow = Instance.new('Frame', F)
+                bgRow.Size = UDim2.new(1, -20, 0, 36)
+                bgRow.Position = UDim2.new(0, 10, 0, 192)
+                bgRow.BackgroundTransparency = 1
+                local bgLayout = Instance.new('UIListLayout', bgRow)
+                bgLayout.FillDirection = Enum.FillDirection.Horizontal
+                bgLayout.Padding = UDim.new(0, 6)
+
+                for _, cv in ipairs(bgColors) do
+                    local cb = Instance.new('TextButton', bgRow)
+                    cb.Size = UDim2.new(0, 36, 0, 36)
+                    cb.BackgroundColor3 = cv[1]
+                    cb.Text = ''
+                    cb.AutoButtonColor = false
+                    cb.BorderSizePixel = 0
+                    Instance.new('UICorner', cb).CornerRadius = UDim.new(0, 8)
+                    local cbStr = Instance.new('UIStroke', cb)
+                    cbStr.Color = Color3.fromRGB(255,255,255)
+                    cbStr.Thickness = (cv[1] == RuzBtnCfg.BgColor) and 2 or 0
+                    cb.MouseButton1Click:Connect(function()
+                        RuzBtnCfg.BgColor = cv[1]
+                        for _, sib in ipairs(bgRow:GetChildren()) do
+                            if sib:IsA('TextButton') then
+                                local s = sib:FindFirstChildOfClass('UIStroke')
+                                if s then s.Thickness = 0 end
+                            end
+                        end
+                        cbStr.Thickness = 2
+                        for _, child in ipairs(u215:GetChildren()) do
+                            if child.Name:sub(1,7) == 'RuzBtn_' then
+                                child.BackgroundColor3 = cv[1]
+                            end
+                        end
+                    end)
+                end
+
+                v21(F)
+            end
+
+            -- Settings button (gear icon) in corner
+            local CfgBtn = Instance.new('TextButton', u215)
+            CfgBtn.Name = 'RuzBtnCfgOpen'
+            CfgBtn.Size = UDim2.new(0, 38, 0, 38)
+            CfgBtn.Position = UDim2.new(0, 8, 0.78, 0)
+            CfgBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+            CfgBtn.BackgroundTransparency = 0.1
+            CfgBtn.Text = '⚙'
+            CfgBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            CfgBtn.Font = Enum.Font.GothamBold
+            CfgBtn.TextSize = 20
+            CfgBtn.AutoButtonColor = false
+            CfgBtn.BorderSizePixel = 0
+            Instance.new('UICorner', CfgBtn).CornerRadius = UDim.new(0, 10)
+            local CfgStroke = Instance.new('UIStroke', CfgBtn)
+            CfgStroke.Color = Color3.fromRGB(220, 38, 38)
+            CfgStroke.Thickness = 1.2
+            CfgStroke.Transparency = 0.4
+            CfgBtn.MouseButton1Click:Connect(RuzOpenBtnSettings)
+
             function v220(p38, p39, p40, p41, p42)
                 if u219[p38] then
                     u219[p38].btn:Destroy()
@@ -2471,23 +2711,34 @@ end
                     u219[p38] = nil
                 end
 
+                -- Apply scale to size
+                local baseW = p40.X.Offset
+                local baseH = p40.Y.Offset
+                local scaledW = math.floor(baseW * RuzBtnCfg.Scale)
+                local scaledH = math.floor(baseH * RuzBtnCfg.Scale)
+                local scaledSize = UDim2.new(0, scaledW, 0, scaledH)
+
                 local TextButton = Instance.new('TextButton', u215)
 
                 TextButton.Name = 'RuzBtn_' .. p38
-                TextButton.Size = p40
+                TextButton.Size = scaledSize
                 TextButton.Position = p39
-                TextButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                TextButton.BackgroundTransparency = 0.6
+                -- Dark opaque background like the image style
+                TextButton.BackgroundColor3 = RuzBtnCfg.BgColor
+                TextButton.BackgroundTransparency = RuzBtnCfg.BgAlpha
                 TextButton.Text = ''
                 TextButton.AutoButtonColor = false
                 TextButton.BorderSizePixel = 0
-                Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, p40.Y.Offset * 0.2)
+                -- Store base size for live scaling
+                TextButton:SetAttribute('RuzBaseSize', baseH)
+                -- Large corner radius for pill/rounded rect look
+                Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, math.floor(scaledH * 0.22))
 
                 local UIStroke = Instance.new('UIStroke', TextButton)
 
-                UIStroke.Color = p41
-                UIStroke.Thickness = 1.3
-                UIStroke.Transparency = 0.5
+                UIStroke.Color = RuzBtnCfg.TextColor
+                UIStroke.Thickness = 0
+                UIStroke.Transparency = 1
                 UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
                 local TextLabel = Instance.new('TextLabel', TextButton)
@@ -2496,14 +2747,13 @@ end
                 TextLabel.Size = UDim2.new(1, 0, 1, 0)
                 TextLabel.BackgroundTransparency = 1
                 TextLabel.Text = p42
-                TextLabel.TextColor3 = p41
-                TextLabel.Font = Enum.Font.GothamBold
-
-                local v755 = p40.Y.Offset * 0.14
-
-                TextLabel.TextSize = math.max(10, v755)
+                -- Always white bold text matching the image style; color can be changed via settings
+                TextLabel.TextColor3 = RuzBtnCfg.TextColor
+                TextLabel.Font = Enum.Font.GothamBlack
+                TextLabel.TextSize = math.max(10, math.floor(scaledH * 0.18))
                 TextLabel.TextYAlignment = Enum.TextYAlignment.Center
                 TextLabel.TextXAlignment = Enum.TextXAlignment.Center
+                TextLabel.TextStrokeTransparency = 0.6
 
                 u218(TextButton)
 
