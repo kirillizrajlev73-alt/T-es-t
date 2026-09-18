@@ -1,3 +1,4 @@
+--71717
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -2449,10 +2450,237 @@ end
 
             local u219 = t25
 
+            -- Per-button settings storage: color, size multiplier, keybind
+            local RuzBtnSettings = {}
+
+            -- Opens the settings popup for a given button entry
+            local function RuzOpenBtnSettings(btnName, entry)
+                local existingGui = game.CoreGui:FindFirstChild('RuzBtnSettings_' .. btnName)
+                if existingGui then existingGui:Destroy() return end
+
+                local cfg = RuzBtnSettings[btnName] or { colorR=255, colorG=255, colorB=255, sizeMul=1.0, keybind=nil }
+                RuzBtnSettings[btnName] = cfg
+
+                -- ── Popup window ──
+                local SGui = Instance.new('ScreenGui', game.CoreGui)
+                SGui.Name = 'RuzBtnSettings_' .. btnName
+                SGui.ResetOnSpawn = false
+                SGui.DisplayOrder = 99
+                SGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+                local W, H = 260, 230
+                local Panel = Instance.new('Frame', SGui)
+                Panel.Size = UDim2.new(0, W, 0, H)
+                Panel.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+                Panel.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+                Panel.BackgroundTransparency = 0.04
+                Panel.BorderSizePixel = 0
+                Instance.new('UICorner', Panel).CornerRadius = UDim.new(0, 12)
+                local PanelStroke = Instance.new('UIStroke', Panel)
+                PanelStroke.Color = Color3.fromRGB(60, 60, 60)
+                PanelStroke.Thickness = 1.2
+
+                -- Drag
+                local _drag, _dragStart, _startPos = false, nil, nil
+                Panel.InputBegan:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                        _drag = true; _dragStart = i.Position; _startPos = Panel.Position
+                    end
+                end)
+                UserInputService.InputChanged:Connect(function(i)
+                    if _drag and i.UserInputType == Enum.UserInputType.MouseMovement then
+                        local d = i.Position - _dragStart
+                        Panel.Position = UDim2.new(_startPos.X.Scale, _startPos.X.Offset+d.X, _startPos.Y.Scale, _startPos.Y.Offset+d.Y)
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton1 then _drag = false end
+                end)
+
+                -- Title bar
+                local TitleLbl = Instance.new('TextLabel', Panel)
+                TitleLbl.Size = UDim2.new(1, -36, 0, 32)
+                TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+                TitleLbl.BackgroundTransparency = 1
+                TitleLbl.Text = '⚙  ' .. btnName
+                TitleLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+                TitleLbl.Font = Enum.Font.GothamBold
+                TitleLbl.TextSize = 13
+                TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+                local CloseBtn = Instance.new('TextButton', Panel)
+                CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+                CloseBtn.Position = UDim2.new(1, -30, 0, 4)
+                CloseBtn.BackgroundColor3 = Color3.fromRGB(160, 30, 30)
+                CloseBtn.Text = '✕'
+                CloseBtn.TextColor3 = Color3.new(1,1,1)
+                CloseBtn.Font = Enum.Font.GothamBold
+                CloseBtn.TextSize = 12
+                Instance.new('UICorner', CloseBtn).CornerRadius = UDim.new(0, 5)
+                CloseBtn.MouseButton1Click:Connect(function() SGui:Destroy() end)
+
+                -- Separator line
+                local Sep = Instance.new('Frame', Panel)
+                Sep.Size = UDim2.new(1, -20, 0, 1)
+                Sep.Position = UDim2.new(0, 10, 0, 33)
+                Sep.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                Sep.BorderSizePixel = 0
+
+                -- Helper: section label
+                local function makeSectionLbl(text, yPos)
+                    local lbl = Instance.new('TextLabel', Panel)
+                    lbl.Size = UDim2.new(1, -20, 0, 18)
+                    lbl.Position = UDim2.new(0, 10, 0, yPos)
+                    lbl.BackgroundTransparency = 1
+                    lbl.Text = text
+                    lbl.TextColor3 = Color3.fromRGB(160, 160, 160)
+                    lbl.Font = Enum.Font.Gotham
+                    lbl.TextSize = 11
+                    lbl.TextXAlignment = Enum.TextXAlignment.Left
+                    return lbl
+                end
+
+                -- ── COLOR SECTION ──
+                makeSectionLbl('ЦВЕТ КНОПКИ', 42)
+
+                local colorPresets = {
+                    {255,255,255}, {255,60,60}, {60,180,255}, {80,255,80},
+                    {255,210,0}, {200,80,255}, {255,140,0},
+                }
+                local swatchSize = 26
+                local swatchPad = 4
+                for i, col in ipairs(colorPresets) do
+                    local Sw = Instance.new('TextButton', Panel)
+                    Sw.Size = UDim2.new(0, swatchSize, 0, swatchSize)
+                    Sw.Position = UDim2.new(0, 10 + (i-1)*(swatchSize+swatchPad), 0, 62)
+                    Sw.BackgroundColor3 = Color3.fromRGB(col[1], col[2], col[3])
+                    Sw.Text = ''
+                    Sw.AutoButtonColor = false
+                    Sw.BorderSizePixel = 0
+                    Instance.new('UICorner', Sw).CornerRadius = UDim.new(0, 5)
+                    local _c = col
+                    Sw.MouseButton1Click:Connect(function()
+                        cfg.colorR, cfg.colorG, cfg.colorB = _c[1], _c[2], _c[3]
+                        local newCol = Color3.fromRGB(_c[1], _c[2], _c[3])
+                        entry.btn.BackgroundColor3 = newCol
+                        entry.lbl.TextColor3 = Color3.fromRGB(255,255,255)
+                        -- tint background slightly
+                        entry.btn.BackgroundColor3 = Color3.fromRGB(
+                            math.floor(_c[1]*0.12 + 5),
+                            math.floor(_c[2]*0.12 + 5),
+                            math.floor(_c[3]*0.12 + 5)
+                        )
+                        -- recolor label
+                        entry.lbl.TextColor3 = newCol
+                        if entry.img then entry.img.ImageColor3 = newCol end
+                    end)
+                end
+
+                -- ── SIZE SECTION ──
+                makeSectionLbl('РАЗМЕР', 100)
+
+                local sizeSteps = { {0.7, 'XS'}, {0.85, 'S'}, {1.0, 'M'}, {1.2, 'L'}, {1.5, 'XL'} }
+                for i, step in ipairs(sizeSteps) do
+                    local SzBtn = Instance.new('TextButton', Panel)
+                    SzBtn.Size = UDim2.new(0, 42, 0, 24)
+                    SzBtn.Position = UDim2.new(0, 10 + (i-1)*48, 0, 118)
+                    SzBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    SzBtn.Text = step[2]
+                    SzBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    SzBtn.Font = Enum.Font.GothamBold
+                    SzBtn.TextSize = 12
+                    SzBtn.BorderSizePixel = 0
+                    Instance.new('UICorner', SzBtn).CornerRadius = UDim.new(0, 5)
+                    local _mul = step[1]
+                    SzBtn.MouseButton1Click:Connect(function()
+                        cfg.sizeMul = _mul
+                        local baseSize = entry.btn.Size
+                        local baseW = math.floor(baseSize.X.Offset / (cfg.sizeMul or 1) * _mul + 0.5)
+                        local baseH = math.floor(baseSize.Y.Offset / (cfg.sizeMul or 1) * _mul + 0.5)
+                        -- store original base from settings table
+                        if not cfg._baseW then
+                            cfg._baseW = baseSize.X.Offset
+                            cfg._baseH = baseSize.Y.Offset
+                        end
+                        cfg.sizeMul = _mul
+                        local nW = math.floor(cfg._baseW * _mul)
+                        local nH = math.floor(cfg._baseH * _mul)
+                        entry.btn.Size = UDim2.new(0, nW, 0, nH)
+                        entry.lbl.TextSize = math.max(12, nH * 0.19)
+                    end)
+                end
+
+                -- ── KEYBIND SECTION ──
+                makeSectionLbl('КЛАВИША (ПК)', 154)
+
+                local isBinding = false
+                local BindBtn = Instance.new('TextButton', Panel)
+                BindBtn.Size = UDim2.new(1, -20, 0, 30)
+                BindBtn.Position = UDim2.new(0, 10, 0, 172)
+                BindBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                BindBtn.Text = cfg.keybind and tostring(cfg.keybind) or 'Нажми чтобы задать...'
+                BindBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+                BindBtn.Font = Enum.Font.GothamBold
+                BindBtn.TextSize = 12
+                BindBtn.BorderSizePixel = 0
+                local BindStroke = Instance.new('UIStroke', BindBtn)
+                BindStroke.Color = Color3.fromRGB(70, 70, 70)
+                BindStroke.Thickness = 1
+                Instance.new('UICorner', BindBtn).CornerRadius = UDim.new(0, 6)
+
+                BindBtn.MouseButton1Click:Connect(function()
+                    if isBinding then return end
+                    isBinding = true
+                    BindBtn.Text = '[ Жди клавишу... ]'
+                    BindBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
+                    BindStroke.Color = Color3.fromRGB(255, 215, 0)
+
+                    local conn
+                    conn = UserInputService.InputBegan:Connect(function(input, processed)
+                        if processed then return end
+                        if input.UserInputType == Enum.UserInputType.Keyboard then
+                            cfg.keybind = input.KeyCode
+                            BindBtn.Text = tostring(input.KeyCode):gsub('Enum%.KeyCode%.', '')
+                            BindBtn.TextColor3 = Color3.fromRGB(80, 255, 80)
+                            BindStroke.Color = Color3.fromRGB(70, 70, 70)
+                            isBinding = false
+                            conn:Disconnect()
+
+                            -- Connect keybind to button action
+                            if entry._keybindConn then entry._keybindConn:Disconnect() end
+                            entry._keybindConn = UserInputService.InputBegan:Connect(function(ki, gp)
+                                if not gp and ki.KeyCode == cfg.keybind then
+                                    entry.btn.MouseButton1Click:Fire()
+                                end
+                            end)
+                        end
+                    end)
+                end)
+
+                -- Clear keybind button
+                local ClearBind = Instance.new('TextButton', Panel)
+                ClearBind.Size = UDim2.new(0, 18, 0, 18)
+                ClearBind.Position = UDim2.new(1, -28, 0, 176)
+                ClearBind.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
+                ClearBind.Text = '✕'
+                ClearBind.TextColor3 = Color3.new(1,1,1)
+                ClearBind.Font = Enum.Font.GothamBold
+                ClearBind.TextSize = 10
+                ClearBind.BorderSizePixel = 0
+                Instance.new('UICorner', ClearBind).CornerRadius = UDim.new(0, 4)
+                ClearBind.MouseButton1Click:Connect(function()
+                    if entry._keybindConn then entry._keybindConn:Disconnect() entry._keybindConn = nil end
+                    cfg.keybind = nil
+                    BindBtn.Text = 'Нажми чтобы задать...'
+                    BindBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+                end)
+            end
+
             function v220(p38, p39, p40, p41, p42)
                 if u219[p38] then
                     u219[p38].btn:Destroy()
-
+                    local sg = game.CoreGui:FindFirstChild('RuzBtnSettings_' .. p38)
+                    if sg then sg:Destroy() end
                     u219[p38] = nil
                 end
 
@@ -2490,13 +2718,41 @@ end
                 TextLabel.TextYAlignment = Enum.TextYAlignment.Center
                 TextLabel.TextXAlignment = Enum.TextXAlignment.Center
 
+                -- ── "..." settings dot button ──
+                local DotBtn = Instance.new('TextButton', u215)
+                DotBtn.Name = 'RuzDot_' .. p38
+                DotBtn.Size = UDim2.new(0, 18, 0, 18)
+                -- position: top-right corner of the main button
+                DotBtn.Position = UDim2.new(
+                    p39.X.Scale, p39.X.Offset + p40.X.Offset - 10,
+                    p39.Y.Scale, p39.Y.Offset - 8
+                )
+                DotBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                DotBtn.BackgroundTransparency = 0.0
+                DotBtn.Text = '···'
+                DotBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+                DotBtn.Font = Enum.Font.GothamBold
+                DotBtn.TextSize = 10
+                DotBtn.BorderSizePixel = 0
+                DotBtn.ZIndex = 5
+                Instance.new('UICorner', DotBtn).CornerRadius = UDim.new(0, 5)
+
                 u218(TextButton)
 
                 u219[p38] = {
                     btn = TextButton,
                     stroke = UIStroke,
                     lbl = TextLabel,
+                    dot = DotBtn,
+                    _baseW = p40.X.Offset,
+                    _baseH = p40.Y.Offset,
                 }
+
+                -- Connect dot button after entry is built
+                local _entry = u219[p38]
+                DotBtn.MouseButton1Click:Connect(function()
+                    RuzOpenBtnSettings(p38, _entry)
+                end)
 
                 return u219[p38]
             end
@@ -2581,6 +2837,7 @@ end
                 end
                 if u226.GoldBomb then
                     u226.GoldBomb.btn:Destroy()
+                    if u226.GoldBomb.dot then u226.GoldBomb.dot:Destroy() end
 
                     u226.GoldBomb = nil
                 end
@@ -2615,6 +2872,7 @@ end
                 end
                 if u233.NormalBomb then
                     u233.NormalBomb.btn:Destroy()
+                    if u233.NormalBomb.dot then u233.NormalBomb.dot:Destroy() end
 
                     u233.NormalBomb = nil
                 end
@@ -2637,6 +2895,7 @@ end
             end
             if u240.Shoot then
                 u240.Shoot.btn:Destroy()
+                if u240.Shoot.dot then u240.Shoot.dot:Destroy() end
 
                 u240.Shoot = nil
             end
@@ -2684,6 +2943,7 @@ end
             end
             if u245.ESP then
                 u245.ESP.btn:Destroy()
+                if u245.ESP.dot then u245.ESP.dot:Destroy() end
 
                 u245.ESP = nil
             end
@@ -2703,6 +2963,7 @@ end
             end
             if u253.Flick then
                 u253.Flick.btn:Destroy()
+                if u253.Flick.dot then u253.Flick.dot:Destroy() end
 
                 u253.Flick = nil
             end
@@ -2734,6 +2995,7 @@ end
             end
             if u258.Speed then
                 u258.Speed.btn:Destroy()
+                if u258.Speed.dot then u258.Speed.dot:Destroy() end
 
                 u258.Speed = nil
             end
@@ -2768,6 +3030,7 @@ end
             end
             if u264.Stretch then
                 u264.Stretch.btn:Destroy()
+                if u264.Stretch.dot then u264.Stretch.dot:Destroy() end
 
                 u264.Stretch = nil
             end
@@ -2845,6 +3108,7 @@ end
         end
         if u271.GrabGun then
             u271.GrabGun.btn:Destroy()
+            if u271.GrabGun.dot then u271.GrabGun.dot:Destroy() end
 
             u271.GrabGun = nil
         end
@@ -2864,6 +3128,7 @@ end
         end
         if u277.WallHop then
             u277.WallHop.btn:Destroy()
+            if u277.WallHop.dot then u277.WallHop.dot:Destroy() end
 
             u277.WallHop = nil
         end
@@ -2923,6 +3188,7 @@ end
         end
         if u282.FlingMurderer then
             u282.FlingMurderer.btn:Destroy()
+            if u282.FlingMurderer.dot then u282.FlingMurderer.dot:Destroy() end
 
             u282.FlingMurderer = nil
         end
@@ -2982,6 +3248,7 @@ end
         end
         if u288.FlingSheriff then
             u288.FlingSheriff.btn:Destroy()
+            if u288.FlingSheriff.dot then u288.FlingSheriff.dot:Destroy() end
 
             u288.FlingSheriff = nil
         end
