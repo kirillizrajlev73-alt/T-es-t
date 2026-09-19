@@ -1,3 +1,4 @@
+--лыды
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -2512,6 +2513,9 @@ end
                 return default
             end
 
+            -- Shared button-position state for creation, dragging and NeverLose config.
+            local _buttonConfigPositions = {}
+
             local u217 = UserInputService
 
             -- Single global drag-end listener: saves positions on every mouse release
@@ -2521,6 +2525,20 @@ end
                 or input.UserInputType == Enum.UserInputType.Touch then
                     if _dragActive then
                         _dragActive = false
+
+                        -- Keep the NeverLose flag state in sync immediately after dragging.
+                        for name, entry in pairs(t25) do
+                            if entry and entry.btn and entry.btn.Parent then
+                                local pos = entry.btn.Position
+                                _buttonConfigPositions[name] = {
+                                    XScale = pos.X.Scale,
+                                    XOffset = pos.X.Offset,
+                                    YScale = pos.Y.Scale,
+                                    YOffset = pos.Y.Offset,
+                                }
+                            end
+                        end
+
                         task.defer(_saveBtnPositions)
                     end
                 end
@@ -2564,9 +2582,6 @@ end
             end
 
             local u219 = t25
-
-            -- Shared button-position state for creation and NeverLose config load/save.
-            local _buttonConfigPositions = {}
 
             function v220(p38, p39, p40, p41, p42)
                 if u219[p38] then
@@ -2681,60 +2696,76 @@ end
                 FlingSheriff = UDim2.new(0.5, -214, 0.68, 16),
             }
 
-            -- Button positions are stored as ONE normal NeverLose config flag.
-            -- This keeps the original button creation/click logic untouched.
-            local _NL = getgenv().CrystalHubNeverLose
-            if _NL and _NL.Flags then
-                _NL.Flags["crystalhub_button_positions"] = {
-                GetValue = function()
-                    local result = {}
+            -- Store each button position as a primitive STRING flag.
+            -- NeverLose configs serialize primitive values reliably.
+            local _buttonPositionFlags = {
+                GoldBomb = "crystalhub_pos_GoldBomb",
+                NormalBomb = "crystalhub_pos_NormalBomb",
+                Shoot = "crystalhub_pos_Shoot",
+                ESP = "crystalhub_pos_ESP",
+                Flick = "crystalhub_pos_Flick",
+                Speed = "crystalhub_pos_Speed",
+                Stretch = "crystalhub_pos_Stretch",
+                GrabGun = "crystalhub_pos_GrabGun",
+                WallHop = "crystalhub_pos_WallHop",
+                FlingMurderer = "crystalhub_pos_FlingMurderer",
+                FlingSheriff = "crystalhub_pos_FlingSheriff",
+            }
 
-                    for name, entry in pairs(t25) do
+            local function _encodeButtonPos(pos)
+                if not pos then return "" end
+                return tostring(pos.XScale or 0) .. ";" ..
+                       tostring(pos.XOffset or 0) .. ";" ..
+                       tostring(pos.YScale or 0) .. ";" ..
+                       tostring(pos.YOffset or 0)
+            end
+
+            local function _decodeButtonPos(value)
+                if type(value) ~= "string" then return nil end
+                local xs, xo, ys, yo = value:match("^([^;]+);([^;]+);([^;]+);([^;]+)$")
+                if not xs then return nil end
+                return {
+                    XScale = tonumber(xs) or 0,
+                    XOffset = tonumber(xo) or 0,
+                    YScale = tonumber(ys) or 0,
+                    YOffset = tonumber(yo) or 0,
+                }
+            end
+
+            if _NL and _NL.Flags then
+                for name, flagName in pairs(_buttonPositionFlags) do
+                    _NL.Flags[flagName] = {
+                    GetValue = function()
+                        local entry = t25[name]
                         if entry and entry.btn and entry.btn.Parent then
                             local pos = entry.btn.Position
-                            result[name] = {
+                            return _encodeButtonPos({
                                 XScale = pos.X.Scale,
                                 XOffset = pos.X.Offset,
                                 YScale = pos.Y.Scale,
                                 YOffset = pos.Y.Offset,
-                            }
-                        elseif _buttonConfigPositions[name] then
-                            result[name] = _buttonConfigPositions[name]
+                            })
                         end
-                    end
 
-                    return result
-                end,
+                        return _encodeButtonPos(_buttonConfigPositions[name])
+                    end,
 
-                SetValue = function(value)
-                    if type(value) ~= "table" then
-                        return
-                    end
+                    SetValue = function(value)
+                        local saved = _decodeButtonPos(value)
+                        if not saved then return end
 
-                    for name, pos in pairs(value) do
-                        if type(pos) == "table" then
-                            local saved = {
-                                XScale = tonumber(pos.XScale) or 0,
-                                XOffset = tonumber(pos.XOffset) or 0,
-                                YScale = tonumber(pos.YScale) or 0,
-                                YOffset = tonumber(pos.YOffset) or 0,
-                            }
+                        _buttonConfigPositions[name] = saved
 
-                            _buttonConfigPositions[name] = saved
-
-                            local entry = t25[name]
-                            if entry and entry.btn and entry.btn.Parent then
-                                entry.btn.Position = UDim2.new(
-                                    saved.XScale,
-                                    saved.XOffset,
-                                    saved.YScale,
-                                    saved.YOffset
-                                )
-                            end
+                        local entry = t25[name]
+                        if entry and entry.btn and entry.btn.Parent then
+                            entry.btn.Position = UDim2.new(
+                                saved.XScale, saved.XOffset,
+                                saved.YScale, saved.YOffset
+                            )
                         end
-                    end
-                end,
-            }
+                    end,
+                    }
+                end
             end
 
             local u226 = t25
