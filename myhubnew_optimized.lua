@@ -5353,13 +5353,13 @@ do
     local mt = getrawmetatable(game)
     local oldNamecall = mt.__namecall
 
+    local btBypassing = false
     setreadonly(mt, false)
     mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
 
-        if method == "FireServer" and BT.Enabled and self == shootRemoteRef then
+        if method == "FireServer" and BT.Enabled and self == shootRemoteRef and not btBypassing then
             local args = { ... }
-            -- args[1] = shootCF (направление), args[2] = targetCF (цель)
             local dirCF    = args[1]
             local targetCF = args[2]
 
@@ -5381,6 +5381,12 @@ do
             if startPos and endPos then
                 task.spawn(bullettracerlol, startPos, endPos)
             end
+
+            -- Вызываем оригинал через флаг чтобы не зациклиться
+            btBypassing = true
+            local results = table.pack(oldNamecall(self, ...))
+            btBypassing = false
+            return table.unpack(results, 1, results.n)
         end
 
         return oldNamecall(self, ...)
