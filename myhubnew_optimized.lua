@@ -1,4 +1,3 @@
---bildnewwww
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -174,9 +173,21 @@ local function CrystalOpenStylePopup(title, btnRef)
         Preview.TextSize         = style.textSize
         if btnRef then
             pcall(function()
-                btnRef.BackgroundColor3 = style.bgColor
-                btnRef.TextColor3       = style.textColor
-                btnRef.TextSize         = style.textSize
+                -- Обходим всех потомков Root-фрейма и красим TextButton/TextLabel
+                for _, desc in ipairs(btnRef:GetDescendants()) do
+                    if desc:IsA("TextButton") or desc:IsA("TextLabel") then
+                        -- Пропускаем системные элементы типа CrystalDot
+                        if desc.Name ~= "CrystalDot" then
+                            pcall(function() desc.BackgroundColor3 = style.bgColor end)
+                            pcall(function() desc.TextColor3       = style.textColor end)
+                            pcall(function() desc.TextSize         = style.textSize end)
+                        end
+                    elseif desc:IsA("Frame") then
+                        pcall(function() desc.BackgroundColor3 = style.bgColor end)
+                    end
+                end
+                -- Сам Root тоже красим
+                pcall(function() btnRef.BackgroundColor3 = style.bgColor end)
             end)
         end
     end
