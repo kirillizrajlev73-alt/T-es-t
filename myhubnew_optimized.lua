@@ -1,3 +1,4 @@
+--дыды
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -2573,7 +2574,17 @@ end
 
                 TextButton.Name = 'RuzBtn_' .. p38
                 TextButton.Size = p40
-                TextButton.Position = _loadBtnPos(p38, p39)
+                local _cfgPos = _buttonConfigPositions[p38]
+                if _cfgPos then
+                    TextButton.Position = UDim2.new(
+                        _cfgPos.XScale,
+                        _cfgPos.XOffset,
+                        _cfgPos.YScale,
+                        _cfgPos.YOffset
+                    )
+                else
+                    TextButton.Position = _loadBtnPos(p38, p39)
+                end
                 TextButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                 TextButton.BackgroundTransparency = 0.08
                 TextButton.Text = ''
@@ -2610,71 +2621,6 @@ end
                     stroke = UIStroke,
                     lbl = TextLabel,
                 }
-
-                -- Save button positions inside the normal NeverLose config.
-                local _posFlagName = "crystalhub_btnpos_" .. tostring(p38)
-                NeverLose.Flags[_posFlagName] = {
-                    GetValue = function()
-                        local entry = u219[p38]
-                        if entry and entry.btn and entry.btn.Parent then
-                            local pos = entry.btn.Position
-                            return {
-                                XScale = pos.X.Scale,
-                                XOffset = math.round(pos.X.Offset),
-                                YScale = pos.Y.Scale,
-                                YOffset = math.round(pos.Y.Offset),
-                            }
-                        end
-
-                        local saved = _btnSavedPos[p38]
-                        if saved then
-                            return {
-                                XScale = saved.xs,
-                                XOffset = saved.xo,
-                                YScale = saved.ys,
-                                YOffset = saved.yo,
-                            }
-                        end
-
-                        return nil
-                    end,
-
-                    SetValue = function(value)
-                        if type(value) ~= "table" then
-                            return
-                        end
-
-                        local pos = UDim2.new(
-                            tonumber(value.XScale) or 0,
-                            tonumber(value.XOffset) or 0,
-                            tonumber(value.YScale) or 0,
-                            tonumber(value.YOffset) or 0
-                        )
-
-                        _btnSavedPos[p38] = {
-                            xs = pos.X.Scale,
-                            xo = math.round(pos.X.Offset),
-                            ys = pos.Y.Scale,
-                            yo = math.round(pos.Y.Offset),
-                        }
-
-                        local entry = u219[p38]
-                        if entry and entry.btn and entry.btn.Parent then
-                            entry.btn.Position = pos
-                        end
-                    end,
-                }
-
-                -- Apply a position that was loaded before this button was recreated.
-                local _pendingPos = _btnSavedPos[p38]
-                if _pendingPos then
-                    TextButton.Position = UDim2.new(
-                        _pendingPos.xs,
-                        _pendingPos.xo,
-                        _pendingPos.ys,
-                        _pendingPos.yo
-                    )
-                end
 
                 return u219[p38]
             end
@@ -2728,6 +2674,61 @@ end
                 WallHop = UDim2.new(0.5, 154, 0.68, 16),
                 FlingMurderer = UDim2.new(0.5, -278, 0.68, 16),
                 FlingSheriff = UDim2.new(0.5, -214, 0.68, 16),
+            }
+
+            -- Button positions are stored as ONE normal NeverLose config flag.
+            -- This keeps the original button creation/click logic untouched.
+            local _buttonConfigPositions = {}
+
+            NeverLose.Flags["crystalhub_button_positions"] = {
+                GetValue = function()
+                    local result = {}
+
+                    for name, entry in pairs(t25) do
+                        if entry and entry.btn and entry.btn.Parent then
+                            local pos = entry.btn.Position
+                            result[name] = {
+                                XScale = pos.X.Scale,
+                                XOffset = pos.X.Offset,
+                                YScale = pos.Y.Scale,
+                                YOffset = pos.Y.Offset,
+                            }
+                        elseif _buttonConfigPositions[name] then
+                            result[name] = _buttonConfigPositions[name]
+                        end
+                    end
+
+                    return result
+                end,
+
+                SetValue = function(value)
+                    if type(value) ~= "table" then
+                        return
+                    end
+
+                    for name, pos in pairs(value) do
+                        if type(pos) == "table" then
+                            local saved = {
+                                XScale = tonumber(pos.XScale) or 0,
+                                XOffset = tonumber(pos.XOffset) or 0,
+                                YScale = tonumber(pos.YScale) or 0,
+                                YOffset = tonumber(pos.YOffset) or 0,
+                            }
+
+                            _buttonConfigPositions[name] = saved
+
+                            local entry = t25[name]
+                            if entry and entry.btn and entry.btn.Parent then
+                                entry.btn.Position = UDim2.new(
+                                    saved.XScale,
+                                    saved.XOffset,
+                                    saved.YScale,
+                                    saved.YOffset
+                                )
+                            end
+                        end
+                    end
+                end,
             }
 
             local u226 = t25
