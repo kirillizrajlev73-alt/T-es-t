@@ -1,3 +1,4 @@
+--дыдыд
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -2450,12 +2451,20 @@ end
             end
 
             -- Resolve file API (differs between exploits)
-            local _writefile = writefile or (syn and syn.write_file) or savefile or nil
-            local _readfile  = readfile  or (syn and syn.read_file)  or nil
-            local _isfile    = isfile    or (syn and syn.is_file)    or function(p)
-                local ok = pcall(function() _readfile(p) end)
-                return ok
-            end
+            local _writefile = (typeof(writefile) == "function" and writefile)
+                            or (syn and syn.write_file)
+                            or (typeof(savefile) == "function" and savefile)
+                            or nil
+            local _readfile  = (typeof(readfile)  == "function" and readfile)
+                            or (syn and syn.read_file)
+                            or nil
+            local _isfile    = (typeof(isfile)    == "function" and isfile)
+                            or (syn and syn.is_file)
+                            or function(p)
+                                if not _readfile then return false end
+                                local ok = pcall(_readfile, p)
+                                return ok
+                            end
 
             local function _saveBtnPositions()
                 if not _writefile then
@@ -2486,7 +2495,8 @@ end
             pcall(function()
                 if _readfile and _isfile(_BTN_POS_FILE) then
                     _btnSavedPos = _deserializePos(_readfile(_BTN_POS_FILE))
-                    local n = 0 for _ in pairs(_btnSavedPos) do n = n + 1 end
+                    local n = 0
+                    for _ in pairs(_btnSavedPos) do n = n + 1 end
                     print("[CrystalHub] Button positions loaded: " .. n .. " entries")
                 end
             end)
@@ -2502,6 +2512,18 @@ end
 
             local u217 = UserInputService
 
+            -- Single global drag-end listener: saves positions on every mouse release
+            local _dragActive = false
+            u217.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                or input.UserInputType == Enum.UserInputType.Touch then
+                    if _dragActive then
+                        _dragActive = false
+                        task.defer(_saveBtnPositions)
+                    end
+                end
+            end)
+
             function u218(p35)
                 local u740 = nil
                 local p36Position = nil
@@ -2512,6 +2534,7 @@ end
                 InputBegan:Connect(function(p36)
                     if p36.UserInputType == Enum.UserInputType.MouseButton1 or p36.UserInputType == Enum.UserInputType.Touch then
                         u740 = true
+                        _dragActive = true
                         p36Position = p36.Position
                         Position = u744.Position
                     end
@@ -2533,10 +2556,7 @@ end
                 end)
                 u217.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        if u740 then
-                            u740 = false
-                            _saveBtnPositions()
-                        end
+                        u740 = false
                     end
                 end)
             end
