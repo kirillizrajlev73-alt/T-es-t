@@ -1,4 +1,5 @@
- local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
+--178181
+local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
     local u9, u10, u99, u105, u110, u116, u157
@@ -1354,13 +1355,22 @@ end
 
                             local MainEvent = game:GetService('ReplicatedStorage'):FindFirstChild('MainEvent')
                             if MainEvent then
+                                -- Apply velocity prediction (headshots.cc style)
+                                local _predictedPos = targetHead.Position
+                                pcall(function()
+                                    local _vel = _CrystalCustomVelocities and _CrystalCustomVelocities[targetChar]
+                                    local _pred = _CrystalPredictionValue and _CrystalPredictionValue() or 0.229
+                                    if _vel then
+                                        _predictedPos = targetHead.Position + _vel * _pred
+                                    end
+                                end)
                                 MainEvent:FireServer(
                                     'ShootGun',
                                     Tool.Handle,
                                     Tool.Handle.Position,
-                                    targetHead.Position,
+                                    _predictedPos,
                                     targetHead,
-                                    Vector3.new(0, 1, 0)
+                                    Vector3.new(0, 0, 0)
                                 )
                             else
                                 pcall(function()
@@ -6068,6 +6078,238 @@ do
                 end)
             end
         end,
+    })
+end
+-- ═══════════════════════════════════════════════════════════════
+
+
+-- ═══════════════════════════════════════════════════════════════
+-- PREDICTION SYSTEM (ported from headshots.cc)
+-- ═══════════════════════════════════════════════════════════════
+do
+    local _pingvalue = nil
+    local _ping      = nil
+    local _PredictionValue = 0.229
+
+    local _GlobalPredictionMultiplier = 0.80
+    local _customVelocities   = {}
+    local _previousPositions  = {}
+
+    -- Ping → base prediction lookup (from headshots.cc)
+    local _basePredictionTable = {
+        {ping = 130, value = 0.51},
+        {ping = 125, value = 0.49},
+        {ping = 110, value = 0.46},
+        {ping = 105, value = 0.38},
+        {ping = 90,  value = 0.36},
+        {ping = 80,  value = 0.34},
+        {ping = 70,  value = 0.31},
+        {ping = 60,  value = 0.229},
+        {ping = 50,  value = 0.225},
+        {ping = 40,  value = 0.256},
+    }
+
+    -- Update ping + PredictionValue every Stepped
+    RunService.Stepped:Connect(function()
+        pcall(function()
+            local stats = game:GetService('Stats')
+            local raw = stats.Network.ServerStatsItem['Data Ping']:GetValueString()
+            local split = string.split(raw, '(')
+            _ping = tonumber(split[1]) or 0
+            for _, data in ipairs(_basePredictionTable) do
+                if _ping < data.ping then
+                    _PredictionValue = data.value * _GlobalPredictionMultiplier
+                    break
+                end
+            end
+        end)
+    end)
+
+    -- Expose for use in headshot aim (u97 will read these globals)
+    getgenv()._CrystalPredictionValue    = function() return _PredictionValue end
+    getgenv()._CrystalCustomVelocities   = _customVelocities
+    getgenv()._CrystalPreviousPositions  = _previousPositions
+
+    -- Velocity smoother (called from Heartbeat in aim)
+    getgenv()._CrystalUpdateVelocity = function(target, dt)
+        local char = target and (target.Character or target)
+        local head = char and char:FindFirstChild('Head')
+        if not head then return Vector3.zero end
+        local cur  = head.Position
+        local last = _previousPositions[target] or cur
+        local est  = (cur - last) / math.max(dt, 0.001)
+        local alpha = 0.5
+        _customVelocities[target] = (_customVelocities[target] or Vector3.zero) * alpha + est * (1 - alpha)
+        _previousPositions[target] = cur
+        return _customVelocities[target]
+    end
+
+    -- UI settings in Rage tab (v304)
+    v304:Divider()
+    v304:Paragraph({ Title = 'Prediction Settings' })
+
+    v304:Slider({
+        Title       = 'Prediction Multiplier',
+        Description = 'Scales the velocity offset (0.1 = min, 3.0 = max)',
+        IsTooltip   = true,
+        IsTextbox   = true,
+        Value       = { Min = 0.1, Max = 3.0, Default = 0.80 },
+        Callback    = function(val)
+            _GlobalPredictionMultiplier = tonumber(val) or 0.80
+            v18:Notify({ Title = 'CrystalHub', Content = 'Prediction Multiplier: ' .. tostring(_GlobalPredictionMultiplier), Duration = 2, Icon = 'bell' })
+        end,
+    })
+
+    v304:Toggle({
+        Title       = 'Auto Prediction',
+        Description = 'Auto-adjusts prediction from ping table',
+        Default     = true,
+        Callback    = function(val)
+            -- when off, lock to a fixed value
+            if not val then
+                _PredictionValue = 0.229
+            end
+        end,
+    })
+end
+-- ═══════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════
+-- BULLET TRACKER (ported from headshots.cc bullettracerlol)
+-- Creates Beam between start and end of each shot via MainEvent hook
+-- ═══════════════════════════════════════════════════════════════
+do
+    local _btEnabled     = false
+    local _btColor       = Color3.fromRGB(255, 80, 0)
+    local _btSize        = 0.4
+    local _btTimeAlive   = 3
+    local _btTexture     = 'rbxassetid://12781852245'
+    local TweenService   = game:GetService('TweenService')
+
+    local function _bulletTracerDraw(startPos, endPos)
+        local startPart = Instance.new('Part')
+        startPart.Name        = 'CrystalBulletStart'
+        startPart.Anchored    = true
+        startPart.CanCollide  = false
+        startPart.CanTouch    = false
+        startPart.Massless    = true
+        startPart.Size        = Vector3.new(0.2, 0.2, 0.2)
+        startPart.Transparency = 1
+        startPart.Position    = startPos
+        startPart.Parent      = workspace
+
+        local endPart = Instance.new('Part')
+        endPart.Name        = 'CrystalBulletEnd'
+        endPart.Anchored    = true
+        endPart.CanCollide  = false
+        endPart.CanTouch    = false
+        endPart.Massless    = true
+        endPart.Size        = Vector3.new(0.2, 0.2, 0.2)
+        endPart.Transparency = 1
+        endPart.Position    = endPos
+        endPart.Parent      = workspace
+
+        local beam = Instance.new('Beam')
+        beam.Attachment0   = Instance.new('Attachment', startPart)
+        beam.Attachment1   = Instance.new('Attachment', endPart)
+        beam.FaceCamera    = true
+        beam.LightEmission = 1
+        beam.Color         = ColorSequence.new(_btColor)
+        beam.Texture       = _btTexture
+        beam.Transparency  = NumberSequence.new(0)
+        beam.Width0        = _btSize
+        beam.Width1        = _btSize
+        beam.Parent        = startPart
+
+        task.delay(_btTimeAlive, function()
+            pcall(function()
+                if beam and beam.Parent then
+                    local tw = TweenService:Create(
+                        beam,
+                        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                        { Width0 = 0, Width1 = 0 }
+                    )
+                    tw:Play()
+                    tw.Completed:Wait()
+                end
+            end)
+            pcall(function() if startPart and startPart.Parent then startPart:Destroy() end end)
+            pcall(function() if endPart   and endPart.Parent   then endPart:Destroy()   end end)
+        end)
+    end
+
+    -- Hook MainEvent:FireServer to intercept ShootGun calls
+    local function _hookBulletTracer()
+        pcall(function()
+            local MainEvent = game:GetService('ReplicatedStorage'):FindFirstChild('MainEvent')
+            if not MainEvent then return end
+            if not getrawmetatable then return end
+
+            local mt = getrawmetatable(MainEvent)
+            setreadonly(mt, false)
+            local cloned_mt = table.clone(mt)
+            local oldnamecall = cloned_mt.__namecall
+
+            setrawmetatable(MainEvent, {
+                __namecall = function(self, ...)
+                    local args = { ... }
+                    if getnamecallmethod and getnamecallmethod() == 'FireServer' then
+                        if args[1] == 'ShootGun' and _btEnabled then
+                            -- args[3] = startPos (Handle.Position), args[4] = endPos (target head)
+                            local sPos = args[3]
+                            local ePos = args[4]
+                            if typeof(sPos) == 'Vector3' and typeof(ePos) == 'Vector3' then
+                                task.spawn(_bulletTracerDraw, sPos, ePos)
+                            end
+                        end
+                    end
+                    return oldnamecall(self, unpack(args))
+                end,
+                __index    = cloned_mt.__index,
+                __newindex = cloned_mt.__newindex,
+                __call     = cloned_mt.__call,
+                __tostring = cloned_mt.__tostring,
+            })
+        end)
+    end
+
+    -- Hook on load
+    task.spawn(_hookBulletTracer)
+
+    -- UI in VisualsTab
+    VisualsTab:Divider()
+    VisualsTab:Paragraph({ Title = 'Bullet Tracer' })
+
+    VisualsTab:Toggle({
+        Title       = 'Enable Bullet Tracer',
+        Description = 'Shows a beam line on every shot (via MainEvent hook)',
+        Default     = false,
+        Callback    = function(val)
+            _btEnabled = val
+            v18:Notify({ Title = 'CrystalHub', Content = 'Bullet Tracer ' .. (val and 'ON' or 'OFF'), Duration = 3, Icon = 'bell' })
+        end,
+    })
+
+    VisualsTab:ColorPicker({
+        Title    = 'Tracer Color',
+        Default  = Color3.fromRGB(255, 80, 0),
+        Callback = function(col) _btColor = col end,
+    })
+
+    VisualsTab:Slider({
+        Title     = 'Tracer Width',
+        IsTooltip = true,
+        IsTextbox = true,
+        Value     = { Min = 0.1, Max = 3.0, Default = 0.4 },
+        Callback  = function(val) _btSize = tonumber(val) or 0.4 end,
+    })
+
+    VisualsTab:Slider({
+        Title     = 'Tracer Duration (s)',
+        IsTooltip = true,
+        IsTextbox = true,
+        Value     = { Min = 0.5, Max = 10, Default = 3 },
+        Callback  = function(val) _btTimeAlive = tonumber(val) or 3 end,
     })
 end
 -- ═══════════════════════════════════════════════════════════════
