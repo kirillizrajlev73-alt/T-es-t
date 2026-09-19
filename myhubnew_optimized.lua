@@ -1,4 +1,3 @@
---2772727
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -60,16 +59,24 @@ function v18:Notify(cfg)
     end
 end
 
--- ── CrystalHub: keybind settings per feature ──────────────────
-local CrystalFeatCfg = {}  -- [title] = { keybind=KeyCode|nil, _conn=RBXSignalConnection|nil }
+-- ── CrystalHub: настройки внешнего вида кнопок ──────────────────
+-- [title] = { bgColor=Color3, textColor=Color3, textSize=number }
+local CrystalBtnStyle = {}
 
-local function CrystalOpenKeybindPopup(title, toggleLib)
-    local guiName = "CrystalKB_" .. title:gsub("[^%w]","_"):sub(1,36)
+local function CrystalOpenStylePopup(title, btnRef)
+    local guiName = "CrystalStyle_" .. title:gsub("[^%w]","_"):sub(1,36)
     local existing = game.CoreGui:FindFirstChild(guiName)
     if existing then existing:Destroy() return end
 
-    local cfg = CrystalFeatCfg[title]
-    if not cfg then cfg = {} CrystalFeatCfg[title] = cfg end
+    local style = CrystalBtnStyle[title]
+    if not style then
+        style = {
+            bgColor   = Color3.fromRGB(30, 30, 40),
+            textColor = Color3.fromRGB(220, 220, 230),
+            textSize  = 14,
+        }
+        CrystalBtnStyle[title] = style
+    end
 
     local SGui = Instance.new("ScreenGui", game.CoreGui)
     SGui.Name = guiName
@@ -77,7 +84,7 @@ local function CrystalOpenKeybindPopup(title, toggleLib)
     SGui.DisplayOrder = 120
     SGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    local W, H = 230, 110
+    local W, H = 260, 210
     local Panel = Instance.new("Frame", SGui)
     Panel.Size = UDim2.new(0, W, 0, H)
     Panel.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
@@ -106,12 +113,12 @@ local function CrystalOpenKeybindPopup(title, toggleLib)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then _dr=false end
     end)
 
-    -- title
+    -- заголовок
     local TL = Instance.new("TextLabel", Panel)
     TL.Size = UDim2.new(1, -30, 0, 26)
     TL.Position = UDim2.new(0, 10, 0, 0)
     TL.BackgroundTransparency = 1
-    TL.Text = "⚙  " .. title
+    TL.Text = "🎨  " .. title
     TL.TextColor3 = Color3.fromRGB(200, 200, 210)
     TL.Font = Enum.Font.GothamBold
     TL.TextSize = 12
@@ -134,92 +141,170 @@ local function CrystalOpenKeybindPopup(title, toggleLib)
     Sep.BackgroundColor3 = Color3.fromRGB(42, 42, 52)
     Sep.BorderSizePixel = 0
 
-    local KL = Instance.new("TextLabel", Panel)
-    KL.Size = UDim2.new(1, -16, 0, 16)
-    KL.Position = UDim2.new(0, 10, 0, 33)
-    KL.BackgroundTransparency = 1
-    KL.Text = "КЛАВИША (ПК)"
-    KL.TextColor3 = Color3.fromRGB(110, 110, 130)
-    KL.Font = Enum.Font.Gotham KL.TextSize = 10
-    KL.TextXAlignment = Enum.TextXAlignment.Left
+    -- вспомогательная функция: метка секции
+    local function makeLabel(text, yPos)
+        local L = Instance.new("TextLabel", Panel)
+        L.Size = UDim2.new(1, -16, 0, 14)
+        L.Position = UDim2.new(0, 10, 0, yPos)
+        L.BackgroundTransparency = 1
+        L.Text = text
+        L.TextColor3 = Color3.fromRGB(110, 110, 130)
+        L.Font = Enum.Font.Gotham
+        L.TextSize = 10
+        L.TextXAlignment = Enum.TextXAlignment.Left
+        return L
+    end
 
-    local isBinding = false
-    local BindBtn = Instance.new("TextButton", Panel)
-    BindBtn.Size = UDim2.new(1, -48, 0, 28)
-    BindBtn.Position = UDim2.new(0, 10, 0, 50)
-    BindBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-    BindBtn.BorderSizePixel = 0
-    BindBtn.Font = Enum.Font.GothamBold BindBtn.TextSize = 12
-    Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 6)
-    local BS = Instance.new("UIStroke", BindBtn)
-    BS.Color = Color3.fromRGB(55,55,70) BS.Thickness = 1
+    -- превью кнопки
+    local Preview = Instance.new("TextButton", Panel)
+    Preview.Size = UDim2.new(1, -20, 0, 26)
+    Preview.Position = UDim2.new(0, 10, 0, 32)
+    Preview.BackgroundColor3 = style.bgColor
+    Preview.Text = title
+    Preview.TextColor3 = style.textColor
+    Preview.Font = Enum.Font.GothamBold
+    Preview.TextSize = style.textSize
+    Preview.BorderSizePixel = 0
+    Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 6)
 
-    local function refreshBind()
-        if cfg.keybind then
-            BindBtn.Text = tostring(cfg.keybind):gsub("Enum%.KeyCode%.","")
-            BindBtn.TextColor3 = Color3.fromRGB(80,230,80)
-        else
-            BindBtn.Text = "Нажми для привязки..."
-            BindBtn.TextColor3 = Color3.fromRGB(140,140,160)
+    local function applyStyle()
+        Preview.BackgroundColor3 = style.bgColor
+        Preview.TextColor3       = style.textColor
+        Preview.TextSize         = style.textSize
+        if btnRef then
+            pcall(function()
+                btnRef.BackgroundColor3 = style.bgColor
+                btnRef.TextColor3       = style.textColor
+                btnRef.TextSize         = style.textSize
+            end)
         end
     end
-    refreshBind()
 
-    local ClearBtn = Instance.new("TextButton", Panel)
-    ClearBtn.Size = UDim2.new(0, 28, 0, 28)
-    ClearBtn.Position = UDim2.new(1, -36, 0, 50)
-    ClearBtn.BackgroundColor3 = Color3.fromRGB(80, 16, 16)
-    ClearBtn.Text = "✕" ClearBtn.TextColor3 = Color3.new(1,1,1)
-    ClearBtn.Font = Enum.Font.GothamBold ClearBtn.TextSize = 11
-    ClearBtn.BorderSizePixel = 0
-    Instance.new("UICorner", ClearBtn).CornerRadius = UDim.new(0, 6)
+    -- ── ЦВЕТ ФОНА ──────────────────────────────────────────────────
+    makeLabel("ЦВЕТ ФОНА", 62)
 
-    BindBtn.MouseButton1Click:Connect(function()
-        if isBinding then return end
-        isBinding = true
-        BindBtn.Text = "[ Жди клавишу... ]"
-        BindBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
-        BS.Color = Color3.fromRGB(255, 200, 0)
-        local conn
-        conn = UserInputService.InputBegan:Connect(function(inp, gp)
-            if gp then return end
-            if inp.UserInputType == Enum.UserInputType.Keyboard then
-                cfg.keybind = inp.KeyCode
-                BS.Color = Color3.fromRGB(55,55,70)
-                isBinding = false
-                conn:Disconnect()
-                refreshBind()
-                if cfg._conn then cfg._conn:Disconnect() cfg._conn = nil end
-                cfg._conn = UserInputService.InputBegan:Connect(function(ki, gp2)
-                    if not gp2 and ki.KeyCode == cfg.keybind then
-                        if toggleLib and toggleLib.SetValue then
-                            toggleLib:SetValue(not toggleLib:GetValue())
-                        end
-                    end
-                end)
-            end
+    local bgColors = {
+        { name="Тёмный",    rgb=Color3.fromRGB(22,  22,  32)  },
+        { name="Синий",     rgb=Color3.fromRGB(20,  50,  100) },
+        { name="Зелёный",   rgb=Color3.fromRGB(15,  60,  30)  },
+        { name="Красный",   rgb=Color3.fromRGB(80,  15,  15)  },
+        { name="Фиолетовый",rgb=Color3.fromRGB(50,  15,  80)  },
+        { name="Серый",     rgb=Color3.fromRGB(50,  50,  60)  },
+    }
+
+    local BgRow = Instance.new("Frame", Panel)
+    BgRow.Size = UDim2.new(1, -16, 0, 22)
+    BgRow.Position = UDim2.new(0, 8, 0, 76)
+    BgRow.BackgroundTransparency = 1
+    local BgLayout = Instance.new("UIListLayout", BgRow)
+    BgLayout.FillDirection = Enum.FillDirection.Horizontal
+    BgLayout.Padding = UDim.new(0, 4)
+
+    for _, c in ipairs(bgColors) do
+        local Swatch = Instance.new("TextButton", BgRow)
+        Swatch.Size = UDim2.new(0, 30, 1, 0)
+        Swatch.BackgroundColor3 = c.rgb
+        Swatch.Text = ""
+        Swatch.BorderSizePixel = 0
+        Instance.new("UICorner", Swatch).CornerRadius = UDim.new(0, 5)
+        local SwStroke = Instance.new("UIStroke", Swatch)
+        SwStroke.Color = Color3.fromRGB(80,80,100) SwStroke.Thickness = 1
+        Swatch.MouseButton1Click:Connect(function()
+            style.bgColor = c.rgb
+            applyStyle()
+            SwStroke.Color = Color3.fromRGB(200,200,220) SwStroke.Thickness = 1.5
         end)
-    end)
+    end
 
-    ClearBtn.MouseButton1Click:Connect(function()
-        if cfg._conn then cfg._conn:Disconnect() cfg._conn = nil end
-        cfg.keybind = nil
-        refreshBind()
-    end)
+    -- ── ЦВЕТ ТЕКСТА ────────────────────────────────────────────────
+    makeLabel("ЦВЕТ ТЕКСТА", 104)
 
-    local Hint = Instance.new("TextLabel", Panel)
-    Hint.Size = UDim2.new(1, -16, 0, 14)
-    Hint.Position = UDim2.new(0, 10, 0, 88)
-    Hint.BackgroundTransparency = 1
-    Hint.Text = "Клавиша переключает функцию"
-    Hint.TextColor3 = Color3.fromRGB(65,65,80)
-    Hint.Font = Enum.Font.Gotham Hint.TextSize = 9
-    Hint.TextXAlignment = Enum.TextXAlignment.Left
+    local txtColors = {
+        { name="Белый",    rgb=Color3.fromRGB(230, 230, 240) },
+        { name="Жёлтый",   rgb=Color3.fromRGB(255, 215, 0)  },
+        { name="Голубой",  rgb=Color3.fromRGB(80,  200, 255) },
+        { name="Зелёный",  rgb=Color3.fromRGB(80,  230, 80)  },
+        { name="Розовый",  rgb=Color3.fromRGB(255, 130, 180) },
+        { name="Серый",    rgb=Color3.fromRGB(150, 150, 160) },
+    }
+
+    local TxtRow = Instance.new("Frame", Panel)
+    TxtRow.Size = UDim2.new(1, -16, 0, 22)
+    TxtRow.Position = UDim2.new(0, 8, 0, 118)
+    TxtRow.BackgroundTransparency = 1
+    local TxtLayout = Instance.new("UIListLayout", TxtRow)
+    TxtLayout.FillDirection = Enum.FillDirection.Horizontal
+    TxtLayout.Padding = UDim.new(0, 4)
+
+    for _, c in ipairs(txtColors) do
+        local Swatch = Instance.new("TextButton", TxtRow)
+        Swatch.Size = UDim2.new(0, 30, 1, 0)
+        Swatch.BackgroundColor3 = c.rgb
+        Swatch.Text = ""
+        Swatch.BorderSizePixel = 0
+        Instance.new("UICorner", Swatch).CornerRadius = UDim.new(0, 5)
+        local SwStroke = Instance.new("UIStroke", Swatch)
+        SwStroke.Color = Color3.fromRGB(80,80,100) SwStroke.Thickness = 1
+        Swatch.MouseButton1Click:Connect(function()
+            style.textColor = c.rgb
+            applyStyle()
+            SwStroke.Color = Color3.fromRGB(200,200,220) SwStroke.Thickness = 1.5
+        end)
+    end
+
+    -- ── РАЗМЕР ТЕКСТА ──────────────────────────────────────────────
+    makeLabel("РАЗМЕР ТЕКСТА", 146)
+
+    local SizeRow = Instance.new("Frame", Panel)
+    SizeRow.Size = UDim2.new(1, -16, 0, 24)
+    SizeRow.Position = UDim2.new(0, 8, 0, 160)
+    SizeRow.BackgroundTransparency = 1
+    local SizeLayout = Instance.new("UIListLayout", SizeRow)
+    SizeLayout.FillDirection = Enum.FillDirection.Horizontal
+    SizeLayout.Padding = UDim.new(0, 6)
+
+    local sizes = {10, 12, 14, 16, 18}
+    for _, sz in ipairs(sizes) do
+        local SBtn = Instance.new("TextButton", SizeRow)
+        SBtn.Size = UDim2.new(0, 34, 1, 0)
+        SBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+        SBtn.Text = tostring(sz)
+        SBtn.TextColor3 = Color3.fromRGB(180, 180, 200)
+        SBtn.Font = Enum.Font.GothamBold
+        SBtn.TextSize = 11
+        SBtn.BorderSizePixel = 0
+        Instance.new("UICorner", SBtn).CornerRadius = UDim.new(0, 5)
+        local SStroke = Instance.new("UIStroke", SBtn)
+        SStroke.Color = Color3.fromRGB(60,60,80) SStroke.Thickness = 1
+        SBtn.MouseButton1Click:Connect(function()
+            style.textSize = sz
+            applyStyle()
+            SStroke.Color = Color3.fromRGB(200,200,220) SStroke.Thickness = 1.5
+        end)
+    end
+
+    -- кнопка сброса
+    local ResetBtn = Instance.new("TextButton", Panel)
+    ResetBtn.Size = UDim2.new(1, -16, 0, 20)
+    ResetBtn.Position = UDim2.new(0, 8, 0, 186)
+    ResetBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+    ResetBtn.Text = "Сбросить"
+    ResetBtn.TextColor3 = Color3.fromRGB(160, 100, 100)
+    ResetBtn.Font = Enum.Font.Gotham
+    ResetBtn.TextSize = 10
+    ResetBtn.BorderSizePixel = 0
+    Instance.new("UICorner", ResetBtn).CornerRadius = UDim.new(0, 5)
+    ResetBtn.MouseButton1Click:Connect(function()
+        style.bgColor   = Color3.fromRGB(30, 30, 40)
+        style.textColor = Color3.fromRGB(220, 220, 230)
+        style.textSize  = 14
+        applyStyle()
+    end)
 end
 
 -- Adds "···" button into BasedHandler (the right-side container of the row)
 -- BasedHandler uses UIListLayout Horizontal/Right, so ··· sits left of toggle
-local function CrystalAddDot(labelHandle, title, toggleLib)
+local function CrystalAddDot(labelHandle, title, btnRef)
     -- labelHandle.Root = BasedFrame
     -- BasedHandler is a child Frame with UIListLayout inside BasedFrame
     local BasedFrame = labelHandle and labelHandle.Root
@@ -255,7 +340,7 @@ local function CrystalAddDot(labelHandle, title, toggleLib)
         Dot.TextColor3 = Color3.fromRGB(120, 120, 140)
     end)
     Dot.MouseButton1Click:Connect(function()
-        CrystalOpenKeybindPopup(title, toggleLib)
+        CrystalOpenStylePopup(title, btnRef)
     end)
 end
 
@@ -280,7 +365,9 @@ local function makeControlAdapter(section)
             Flag = cfg.Flag,
             Callback = cfg.Callback,
         })
-        CrystalAddDot(labelHandle, title, toggleCtrl)
+        -- передаём Root-фрейм как btnRef для настройки внешнего вида
+        local btnRef = labelHandle and labelHandle.Root
+        CrystalAddDot(labelHandle, title, btnRef)
         return toggleCtrl
     end
 
@@ -290,7 +377,8 @@ local function makeControlAdapter(section)
         -- AddButton doesn't go through AddLabel, so we make a label row manually
         -- and put a clickable button element + dot inside it
         local labelHandle = section:AddLabel(title)
-        CrystalAddDot(labelHandle, title, nil)
+        local btnRef = labelHandle and labelHandle.Root
+        CrystalAddDot(labelHandle, title, btnRef)
         -- wire the label row click to the callback
         if labelHandle.Root then
             labelHandle.Root.InputBegan:Connect(function(inp)
