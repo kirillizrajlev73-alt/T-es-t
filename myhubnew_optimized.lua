@@ -1,3 +1,4 @@
+--8181
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -5502,63 +5503,70 @@ do
     end
 
     local function applySound()
-        local function patchTool(tool)
-            if not tool:IsA("Tool") then return end
+        local function patchGun(tool)
+            if not tool:IsA("Tool") or tool.Name ~= "Gun" then return end
+            -- ShootSound может быть как прямым потомком, так и вложенным
+            for _, obj in ipairs(tool:GetDescendants()) do
+                if obj:IsA("Sound") and obj.Name == "ShootSound" then
+                    obj.SoundId = "rbxassetid://" .. SS.SoundId
+                end
+            end
+            -- Также проверяем прямого потомка
             local snd = tool:FindFirstChild("ShootSound")
-            if snd then
+            if snd and snd:IsA("Sound") then
                 snd.SoundId = "rbxassetid://" .. SS.SoundId
             end
         end
         pcall(function()
-            for _, v in next, LocalPlayer.Backpack:GetDescendants() do patchTool(v) end
+            for _, v in ipairs(LocalPlayer.Backpack:GetChildren()) do patchGun(v) end
         end)
         pcall(function()
             if LocalPlayer.Character then
-                for _, v in next, LocalPlayer.Character:GetDescendants() do patchTool(v) end
+                for _, v in ipairs(LocalPlayer.Character:GetChildren()) do patchGun(v) end
             end
         end)
     end
 
     local function resetSound()
-        -- При выключении возвращаем стандартный звук MM2 (оригинальный SoundId)
-        local function unpatchTool(tool)
-            if not tool:IsA("Tool") then return end
-            local snd = tool:FindFirstChild("ShootSound")
-            if snd then
-                snd.SoundId = ""
+        local function unpatchGun(tool)
+            if not tool:IsA("Tool") or tool.Name ~= "Gun" then return end
+            for _, obj in ipairs(tool:GetDescendants()) do
+                if obj:IsA("Sound") and obj.Name == "ShootSound" then
+                    obj.SoundId = ""
+                end
             end
+            local snd = tool:FindFirstChild("ShootSound")
+            if snd and snd:IsA("Sound") then snd.SoundId = "" end
         end
         pcall(function()
-            for _, v in next, LocalPlayer.Backpack:GetDescendants() do unpatchTool(v) end
+            for _, v in ipairs(LocalPlayer.Backpack:GetChildren()) do unpatchGun(v) end
         end)
         pcall(function()
             if LocalPlayer.Character then
-                for _, v in next, LocalPlayer.Character:GetDescendants() do unpatchTool(v) end
+                for _, v in ipairs(LocalPlayer.Character:GetChildren()) do unpatchGun(v) end
             end
         end)
     end
 
     -- Патчим при подборе оружия
-    LocalPlayer.CharacterAdded:Connect(function(char)
+    local function patchOnEquip(char)
+        if not char then return end
         char.ChildAdded:Connect(function(obj)
-            if SS.Enabled then
-                task.wait(0.1)
-                if obj:IsA("Tool") then
-                    local snd = obj:FindFirstChild("ShootSound")
-                    if snd then snd.SoundId = "rbxassetid://" .. SS.SoundId end
+            if not SS.Enabled or not obj:IsA("Tool") or obj.Name ~= "Gun" then return end
+            task.wait(0.15)
+            for _, desc in ipairs(obj:GetDescendants()) do
+                if desc:IsA("Sound") and desc.Name == "ShootSound" then
+                    desc.SoundId = "rbxassetid://" .. SS.SoundId
                 end
             end
         end)
-    end)
-    if LocalPlayer.Character then
-        LocalPlayer.Character.ChildAdded:Connect(function(obj)
-            if SS.Enabled and obj:IsA("Tool") then
-                task.wait(0.1)
-                local snd = obj:FindFirstChild("ShootSound")
-                if snd then snd.SoundId = "rbxassetid://" .. SS.SoundId end
-            end
-        end)
     end
+
+    patchOnEquip(LocalPlayer.Character)
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        task.wait(1)
+        patchOnEquip(char)
+    end)
 
     -- ── UI ──────────────────────────────────────────────────────────────
     VisualsTab:Divider()
