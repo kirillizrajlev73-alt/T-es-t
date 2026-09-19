@@ -167,35 +167,24 @@ local function CrystalOpenStylePopup(title, rowRef, toggleRef)
     Preview.BorderSizePixel = 0
     Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 6)
 
-    -- Находим кружок внутри тоггла (единственный прямой Frame-child)
-    local circleRef = nil
-    if toggleRef then
-        for _, ch in ipairs(toggleRef:GetChildren()) do
-            if ch:IsA("Frame") then circleRef = ch break end
-        end
-    end
-
     local function applyStyle()
         Preview.BackgroundColor3 = style.bgColor
         Preview.TextColor3       = style.textColor
         Preview.TextSize         = style.textSize
 
-        -- 1. Текст строки (BasedLabel) — первый прямой TextLabel в rowRef
-        if rowRef then
-            for _, ch in ipairs(rowRef:GetChildren()) do
-                if ch:IsA("TextLabel") then
-                    ch.TextColor3 = style.textColor
-                    ch.TextSize   = style.textSize
-                    break
-                end
-            end
-        end
+        if not rowRef then return end
 
-        -- 2. Тоггл-пилюля: меняем фон пилюли и кружок
-        if toggleRef then
-            toggleRef.BackgroundColor3 = style.bgColor
-            if circleRef then
-                circleRef.BackgroundColor3 = style.textColor
+        -- Фон кнопки (BasedFrame): делаем видимым и красим
+        rowRef.BackgroundColor3 = style.bgColor
+        rowRef.BackgroundTransparency = 0.1
+
+        -- Текст кнопки (BasedLabel) — первый прямой TextLabel в BasedFrame
+        for _, ch in ipairs(rowRef:GetChildren()) do
+            if ch:IsA("TextLabel") then
+                ch.TextColor3        = style.textColor
+                ch.TextSize          = style.textSize
+                ch.TextTransparency  = 0
+                break
             end
         end
     end
@@ -322,43 +311,29 @@ local function CrystalOpenStylePopup(title, rowRef, toggleRef)
     end)
 end
 
--- Adds "···" button into BasedHandler (the right-side container of the row)
--- BasedHandler uses UIListLayout Horizontal/Right, so ··· sits left of toggle
-local function CrystalAddDot(labelHandle, title, toggleRef)
-    -- labelHandle.Root = BasedFrame (строка целиком)
-    local BasedFrame = labelHandle and labelHandle.Root
-    if not BasedFrame then return end
-
-    local BasedHandler = nil
-    for _, ch in ipairs(BasedFrame:GetChildren()) do
-        if ch:IsA("Frame") and ch:FindFirstChildOfClass("UIListLayout") then
-            BasedHandler = ch
-            break
+-- Вешает долгое нажатие на тоггл-пилюлю: 0.4с удержания → открыть попап стиля
+-- Короткий клик обрабатывается NeverLose как обычно
+local function CrystalAttachHold(toggleFrame, title, rowRef, circleRef)
+    if not toggleFrame then return end
+    local holdConn, holdTimer = nil, nil
+    toggleFrame.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.Touch
+        or inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            holdTimer = tick()
+            holdConn = game:GetService("RunService").Heartbeat:Connect(function()
+                if holdTimer and (tick() - holdTimer) >= 0.4 then
+                    holdConn:Disconnect(); holdConn = nil; holdTimer = nil
+                    CrystalOpenStylePopup(title, rowRef, toggleFrame)
+                end
+            end)
         end
-    end
-    if not BasedHandler then return end
-
-    local Dot = Instance.new("TextButton", BasedHandler)
-    Dot.Name = "CrystalDot"
-    Dot.Size = UDim2.new(0, 26, 0, 18)
-    Dot.BackgroundTransparency = 1
-    Dot.Text = "···"
-    Dot.TextColor3 = Color3.fromRGB(120, 120, 140)
-    Dot.Font = Enum.Font.GothamBold
-    Dot.TextSize = 13
-    Dot.BorderSizePixel = 0
-    Dot.ZIndex = BasedHandler.ZIndex + 2
-    Dot.LayoutOrder = 0
-
-    Dot.MouseEnter:Connect(function()
-        Dot.TextColor3 = Color3.fromRGB(210, 210, 220)
     end)
-    Dot.MouseLeave:Connect(function()
-        Dot.TextColor3 = Color3.fromRGB(120, 120, 140)
-    end)
-    Dot.MouseButton1Click:Connect(function()
-        -- rowRef = BasedFrame, toggleRef = Toggle Frame (или nil для кнопок)
-        CrystalOpenStylePopup(title, BasedFrame, toggleRef)
+    toggleFrame.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.Touch
+        or inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            if holdConn then holdConn:Disconnect(); holdConn = nil end
+            holdTimer = nil
+        end
     end)
 end
 
@@ -383,8 +358,10 @@ local function makeControlAdapter(section)
             Flag = cfg.Flag,
             Callback = cfg.Callback,
         })
-        -- передаём Toggle.Root (пилюля) как toggleRef
-        CrystalAddDot(labelHandle, title, toggleCtrl and toggleCtrl.Root)
+        -- Удержание тоггла 0.4с → попап настройки цвета/размера
+        local rowRef = labelHandle and labelHandle.Root
+        local toggleFrame = toggleCtrl and toggleCtrl.Root
+        CrystalAttachHold(toggleFrame, title, rowRef, nil)
         return toggleCtrl
     end
 
@@ -394,7 +371,7 @@ local function makeControlAdapter(section)
         -- AddButton doesn't go through AddLabel, so we make a label row manually
         -- and put a clickable button element + dot inside it
         local labelHandle = section:AddLabel(title)
-        CrystalAddDot(labelHandle, title, nil)
+        CrystalAddDot(labelHandle, title, labelHandle.Root)
         -- wire the label row click to the callback
         if labelHandle.Root then
             labelHandle.Root.InputBegan:Connect(function(inp)
@@ -6250,6 +6227,228 @@ function t50.Callback(p88)
 end
 
 v302:ColorPicker(t50)
+-- ── Цвет мобильных кнопок (TouchGui) ─────────────────────────────
+v302:Divider()
+v302:Paragraph({ Title = 'Мобильные кнопки' })
+
+local CrystalTouchStyle = {
+    bg      = Color3.fromRGB(30, 30, 40),
+    text    = Color3.fromRGB(220, 220, 230),
+    stroke  = Color3.fromRGB(80, 80, 100),
+    alpha   = 0.3,
+}
+
+local function CrystalApplyTouchStyle()
+    local pg = game:GetService('Players').LocalPlayer:FindFirstChildOfClass('PlayerGui')
+    if not pg then return end
+    local tg = pg:FindFirstChild('TouchGui')
+    if not tg then return end
+    for _, desc in ipairs(tg:GetDescendants()) do
+        if desc:IsA('TextButton') or desc:IsA('ImageButton') then
+            pcall(function()
+                desc.BackgroundColor3   = CrystalTouchStyle.bg
+                desc.BackgroundTransparency = CrystalTouchStyle.alpha
+                if desc:IsA('TextButton') then
+                    desc.TextColor3 = CrystalTouchStyle.text
+                end
+                local stroke = desc:FindFirstChildOfClass('UIStroke')
+                if not stroke then
+                    stroke = Instance.new('UIStroke', desc)
+                end
+                stroke.Color     = CrystalTouchStyle.stroke
+                stroke.Thickness = 1.5
+            end)
+        elseif desc:IsA('Frame') then
+            pcall(function()
+                desc.BackgroundColor3   = CrystalTouchStyle.bg
+                desc.BackgroundTransparency = math.max(CrystalTouchStyle.alpha, desc.BackgroundTransparency)
+            end)
+        end
+    end
+end
+
+-- Открыть попап настройки TouchGui
+local function CrystalOpenTouchPopup()
+    local guiName = 'CrystalTouchStyle'
+    local existing = game.CoreGui:FindFirstChild(guiName)
+    if existing then existing:Destroy() return end
+
+    local SGui = Instance.new('ScreenGui', game.CoreGui)
+    SGui.Name = guiName
+    SGui.ResetOnSpawn = false
+    SGui.DisplayOrder = 130
+    SGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local W, H = 270, 230
+    local Panel = Instance.new('Frame', SGui)
+    Panel.Size = UDim2.new(0, W, 0, H)
+    Panel.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+    Panel.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+    Panel.BackgroundTransparency = 0
+    Panel.BorderSizePixel = 0
+    Instance.new('UICorner', Panel).CornerRadius = UDim.new(0, 10)
+    local PStroke = Instance.new('UIStroke', Panel)
+    PStroke.Color = Color3.fromRGB(50, 50, 60) PStroke.Thickness = 1.2
+
+    -- drag
+    local _dr, _ds, _dp = false, nil, nil
+    Panel.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            _dr=true _ds=i.Position _dp=Panel.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if _dr and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - _ds
+            Panel.Position = UDim2.new(_dp.X.Scale, _dp.X.Offset+d.X, _dp.Y.Scale, _dp.Y.Offset+d.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then _dr=false end
+    end)
+
+    local TL = Instance.new('TextLabel', Panel)
+    TL.Size = UDim2.new(1, -30, 0, 26) TL.Position = UDim2.new(0, 10, 0, 0)
+    TL.BackgroundTransparency = 1 TL.Text = '📱  Мобильные кнопки'
+    TL.TextColor3 = Color3.fromRGB(200,200,210) TL.Font = Enum.Font.GothamBold
+    TL.TextSize = 12 TL.TextXAlignment = Enum.TextXAlignment.Left
+
+    local XB = Instance.new('TextButton', Panel)
+    XB.Size = UDim2.new(0,20,0,20) XB.Position = UDim2.new(1,-26,0,3)
+    XB.BackgroundColor3 = Color3.fromRGB(140,22,22) XB.Text = '✕'
+    XB.TextColor3 = Color3.new(1,1,1) XB.Font = Enum.Font.GothamBold XB.TextSize = 11
+    XB.BorderSizePixel = 0
+    Instance.new('UICorner', XB).CornerRadius = UDim.new(0,4)
+    XB.MouseButton1Click:Connect(function() SGui:Destroy() end)
+
+    local Sep = Instance.new('Frame', Panel)
+    Sep.Size = UDim2.new(1,-16,0,1) Sep.Position = UDim2.new(0,8,0,27)
+    Sep.BackgroundColor3 = Color3.fromRGB(42,42,52) Sep.BorderSizePixel = 0
+
+    local function mkLbl(text, y)
+        local L = Instance.new('TextLabel', Panel)
+        L.Size = UDim2.new(1,-16,0,14) L.Position = UDim2.new(0,10,0,y)
+        L.BackgroundTransparency = 1 L.Text = text
+        L.TextColor3 = Color3.fromRGB(110,110,130) L.Font = Enum.Font.Gotham
+        L.TextSize = 10 L.TextXAlignment = Enum.TextXAlignment.Left
+    end
+
+    -- превью кнопки
+    local Prev = Instance.new('TextButton', Panel)
+    Prev.Size = UDim2.new(1,-20,0,28) Prev.Position = UDim2.new(0,10,0,32)
+    Prev.BackgroundColor3 = CrystalTouchStyle.bg
+    Prev.BackgroundTransparency = CrystalTouchStyle.alpha
+    Prev.Text = 'SHOOT' Prev.TextColor3 = CrystalTouchStyle.text
+    Prev.Font = Enum.Font.GothamBold Prev.TextSize = 14 Prev.BorderSizePixel = 0
+    Instance.new('UICorner', Prev).CornerRadius = UDim.new(1, 0)
+    local PrevStroke = Instance.new('UIStroke', Prev)
+    PrevStroke.Color = CrystalTouchStyle.stroke PrevStroke.Thickness = 1.5
+
+    local function refreshPreview()
+        Prev.BackgroundColor3 = CrystalTouchStyle.bg
+        Prev.BackgroundTransparency = CrystalTouchStyle.alpha
+        Prev.TextColor3 = CrystalTouchStyle.text
+        PrevStroke.Color = CrystalTouchStyle.stroke
+        CrystalApplyTouchStyle()
+    end
+
+    -- ── ЦВЕТ ФОНА ──────────────────────────────────────────────
+    mkLbl('ЦВЕТ ФОНА КНОПКИ', 66)
+    local bgList = {
+        Color3.fromRGB(20, 20, 30),   Color3.fromRGB(20, 50, 100),
+        Color3.fromRGB(15, 60, 30),   Color3.fromRGB(80, 15, 15),
+        Color3.fromRGB(50, 15, 80),   Color3.fromRGB(50, 50, 60),
+    }
+    local BgRow = Instance.new('Frame', Panel)
+    BgRow.Size = UDim2.new(1,-16,0,22) BgRow.Position = UDim2.new(0,8,0,80)
+    BgRow.BackgroundTransparency = 1
+    local BgL = Instance.new('UIListLayout', BgRow)
+    BgL.FillDirection = Enum.FillDirection.Horizontal BgL.Padding = UDim.new(0,5)
+    for _, c in ipairs(bgList) do
+        local S = Instance.new('TextButton', BgRow)
+        S.Size = UDim2.new(0,30,1,0) S.BackgroundColor3 = c
+        S.Text = '' S.BorderSizePixel = 0
+        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
+        S.MouseButton1Click:Connect(function()
+            CrystalTouchStyle.bg = c refreshPreview()
+        end)
+    end
+
+    -- ── ЦВЕТ ТЕКСТА ────────────────────────────────────────────
+    mkLbl('ЦВЕТ ТЕКСТА КНОПКИ', 108)
+    local txtList = {
+        Color3.fromRGB(230,230,240), Color3.fromRGB(255,215,0),
+        Color3.fromRGB(80,200,255),  Color3.fromRGB(80,230,80),
+        Color3.fromRGB(255,130,180), Color3.fromRGB(150,150,160),
+    }
+    local TxtRow = Instance.new('Frame', Panel)
+    TxtRow.Size = UDim2.new(1,-16,0,22) TxtRow.Position = UDim2.new(0,8,0,122)
+    TxtRow.BackgroundTransparency = 1
+    local TxtL = Instance.new('UIListLayout', TxtRow)
+    TxtL.FillDirection = Enum.FillDirection.Horizontal TxtL.Padding = UDim.new(0,5)
+    for _, c in ipairs(txtList) do
+        local S = Instance.new('TextButton', TxtRow)
+        S.Size = UDim2.new(0,30,1,0) S.BackgroundColor3 = c
+        S.Text = '' S.BorderSizePixel = 0
+        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
+        S.MouseButton1Click:Connect(function()
+            CrystalTouchStyle.text = c refreshPreview()
+        end)
+    end
+
+    -- ── ЦВЕТ ОБВОДКИ ───────────────────────────────────────────
+    mkLbl('ЦВЕТ ОБВОДКИ', 150)
+    local strkList = {
+        Color3.fromRGB(80,80,100),   Color3.fromRGB(0,150,255),
+        Color3.fromRGB(0,200,80),    Color3.fromRGB(200,50,50),
+        Color3.fromRGB(180,100,255), Color3.fromRGB(200,200,200),
+    }
+    local StrkRow = Instance.new('Frame', Panel)
+    StrkRow.Size = UDim2.new(1,-16,0,22) StrkRow.Position = UDim2.new(0,8,0,164)
+    StrkRow.BackgroundTransparency = 1
+    local StrkL = Instance.new('UIListLayout', StrkRow)
+    StrkL.FillDirection = Enum.FillDirection.Horizontal StrkL.Padding = UDim.new(0,5)
+    for _, c in ipairs(strkList) do
+        local S = Instance.new('TextButton', StrkRow)
+        S.Size = UDim2.new(0,30,1,0) S.BackgroundColor3 = c
+        S.Text = '' S.BorderSizePixel = 0
+        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
+        S.MouseButton1Click:Connect(function()
+            CrystalTouchStyle.stroke = c refreshPreview()
+        end)
+    end
+
+    -- ── ПРОЗРАЧНОСТЬ ───────────────────────────────────────────
+    mkLbl('ПРОЗРАЧНОСТЬ', 192)
+    local alphaList = { {lbl='0%', v=0}, {lbl='20%', v=0.2}, {lbl='40%', v=0.4}, {lbl='60%', v=0.6}, {lbl='0 сброс', v=0} }
+    local AlpRow = Instance.new('Frame', Panel)
+    AlpRow.Size = UDim2.new(1,-16,0,22) AlpRow.Position = UDim2.new(0,8,0,206)
+    AlpRow.BackgroundTransparency = 1
+    local AlpL = Instance.new('UIListLayout', AlpRow)
+    AlpL.FillDirection = Enum.FillDirection.Horizontal AlpL.Padding = UDim.new(0,5)
+    local alphaSteps = {0, 0.2, 0.4, 0.6, 0.8}
+    local alphaLabels = {'0', '20', '40', '60', '80'}
+    for i, v in ipairs(alphaSteps) do
+        local S = Instance.new('TextButton', AlpRow)
+        S.Size = UDim2.new(0,36,1,0)
+        S.BackgroundColor3 = Color3.fromRGB(28,28,38)
+        S.BackgroundTransparency = v
+        S.Text = alphaLabels[i]..'%'
+        S.TextColor3 = Color3.fromRGB(200,200,210)
+        S.Font = Enum.Font.GothamBold S.TextSize = 10 S.BorderSizePixel = 0
+        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
+        S.MouseButton1Click:Connect(function()
+            CrystalTouchStyle.alpha = v refreshPreview()
+        end)
+    end
+end
+
+v302:Button({
+    Title = '📱 Настройка кнопок управления',
+    Description = 'Цвет, текст и обводка мобильных кнопок (SHOOT, JUMP и т.д.)',
+    Callback = CrystalOpenTouchPopup,
+})
+
 task.wait(0.4)
 v232(false)
 v239(false)
