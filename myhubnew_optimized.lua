@@ -1,4 +1,3 @@
---178181
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -1289,104 +1288,66 @@ end
                                 return
                             end
                         end
-                        -- ═══════════════════════════════════════════
-                        -- HEADSHOT AIM (style from headshots.cc)
-                        -- Teleports near the target and fires MainEvent
-                        -- ShootGun aimed directly at the head.
-                        -- ═══════════════════════════════════════════
                         local function u97()
                             local Character = u89.Character
-                            if not Character then return end
 
-                            local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
-                            if not HumanoidRootPart then return end
+                            if Character then
+                                local HumanoidRootPart = Character:FindFirstChild('HumanoidRootPart')
 
-                            local Tool = Character:FindFirstChildOfClass('Tool')
-                            if not Tool or not Tool:FindFirstChild('Handle') then
-                                Tool = u89.Backpack:FindFirstChild('[Rifle]')
-                                    or u89.Backpack:FindFirstChildOfClass('Tool')
-                                if not Tool or not Tool:FindFirstChild('Handle') then
-                                    u90:Notify({ Title = 'CrystalHub', Content = 'No gun equipped!', Duration = 3, Icon = 'bell' })
+                                if HumanoidRootPart then
+                                    local v499 = u89.Backpack:FindFirstChild('Gun') or Character:FindFirstChild('Gun')
+
+                                    if v499 then
+                                        if u82 then
+                                            if Character ~= v499.Parent then
+                                                Character.Humanoid:EquipTool(v499)
+                                                task.wait(0)
+                                            end
+
+                                            local CFramePosition = u91.CFrame.Position
+                                            local v501 = HumanoidRootPart.Position + Vector3.new(0, 1, 0)
+                                            local cFrame = CFrame.new(v501, CFramePosition)
+                                            local _pcall = pcall
+                                            local u504 = v499
+
+                                            pcall(function()
+                                                local Shoot = u504:WaitForChild('Shoot')
+                                                local v876 = (function(...)
+                                                    local t6 = {...}
+
+                                                    t6.n = select('#', ...)
+
+                                                    return t6
+                                                end)(CFrame.new(CFramePosition))
+
+                                                Shoot:FireServer(cFrame, unpack(v876, 1, v876.n))
+                                            end)
+
+                                            return
+                                        end
+
+                                        u90:Notify({
+                                            Title = 'CrystalHub',
+                                            Content = tostring('No target found.'),
+                                            Duration = 3,
+                                            Icon = 'bell',
+                                        })
+
+                                        return
+                                    end
+
+                                    u90:Notify({
+                                        Title = 'CrystalHub',
+                                        Content = tostring('No gun in inventory!'),
+                                        Duration = 3,
+                                        Icon = 'bell',
+                                    })
+
                                     return
                                 end
-                                Character.Humanoid:EquipTool(Tool)
-                                task.wait(0)
-                            end
 
-                            -- Find target: prefer auto-aim target (u82), else nearest
-                            local targetChar = u82
-                            if not targetChar then
-                                local n6 = math.huge
-                                for _, player in ipairs(Players:GetPlayers()) do
-                                    if player ~= u89 and player.Character then
-                                        local hrp2 = player.Character:FindFirstChild('HumanoidRootPart')
-                                        local hum2 = player.Character:FindFirstChildOfClass('Humanoid')
-                                        if hrp2 and hum2 and hum2.Health > 0 then
-                                            local mag = (hrp2.Position - HumanoidRootPart.Position).Magnitude
-                                            if mag < n6 then n6 = mag; targetChar = player.Character end
-                                        end
-                                    end
-                                end
-                            end
-
-                            if not targetChar then
-                                u90:Notify({ Title = 'CrystalHub', Content = 'No target found.', Duration = 3, Icon = 'bell' })
                                 return
                             end
-
-                            local targetHRP  = targetChar:FindFirstChild('HumanoidRootPart')
-                            local targetHead = targetChar:FindFirstChild('Head')
-
-                            if not targetHRP or not targetHead then
-                                u90:Notify({ Title = 'CrystalHub', Content = 'Target has no head/HRP.', Duration = 3, Icon = 'bell' })
-                                return
-                            end
-
-                            if targetChar:FindFirstChild('ForceField') and Tool.Name ~= '[Rifle]' then
-                                u90:Notify({ Title = 'CrystalHub', Content = 'Target has ForceField!', Duration = 3, Icon = 'bell' })
-                                return
-                            end
-
-                            -- Headshots.cc style: teleport close, fire at head
-                            local savedCFrame = HumanoidRootPart.CFrame
-                            local offset = Vector3.new(math.random(-25, 25), math.random(-10, 10), math.random(-25, 25))
-                            HumanoidRootPart.CFrame = CFrame.new(targetHRP.Position + offset)
-                            task.wait(0)
-
-                            local MainEvent = game:GetService('ReplicatedStorage'):FindFirstChild('MainEvent')
-                            if MainEvent then
-                                -- Apply velocity prediction (headshots.cc style)
-                                local _predictedPos = targetHead.Position
-                                pcall(function()
-                                    local _vel = _CrystalCustomVelocities and _CrystalCustomVelocities[targetChar]
-                                    local _pred = _CrystalPredictionValue and _CrystalPredictionValue() or 0.229
-                                    if _vel then
-                                        _predictedPos = targetHead.Position + _vel * _pred
-                                    end
-                                end)
-                                MainEvent:FireServer(
-                                    'ShootGun',
-                                    Tool.Handle,
-                                    Tool.Handle.Position,
-                                    _predictedPos,
-                                    targetHead,
-                                    Vector3.new(0, 0, 0)
-                                )
-                            else
-                                pcall(function()
-                                    local Shoot = Tool:WaitForChild('Shoot', 1)
-                                    if Shoot then
-                                        local cFrame = CFrame.new(HumanoidRootPart.Position + Vector3.new(0,1,0), targetHead.Position)
-                                        Shoot:FireServer(cFrame, CFrame.new(targetHead.Position))
-                                    end
-                                end)
-                            end
-
-                            task.delay(0.08, function()
-                                if HumanoidRootPart and HumanoidRootPart.Parent then
-                                    HumanoidRootPart.CFrame = savedCFrame
-                                end
-                            end)
                         end
 
                         function u98()
@@ -5325,6 +5286,180 @@ VisualsTab:Button({
     end,
 })
 
+-- ═══════════════════════════════════════════
+-- BULLET TRACERS (VisualsTab)
+-- ═══════════════════════════════════════════
+do
+    local TweenService = game:GetService("TweenService")
+
+    -- Настройки трейсера
+    local BT = {
+        Enabled      = false,
+        Color        = Color3.fromRGB(255, 50, 50),
+        Size         = 0.12,
+        Transparency = 0,
+        TimeAlive    = 0.6,
+        TextureID    = "rbxassetid://6880875456",
+    }
+
+    -- Функция рисования трейсера
+    local function bullettracerlol(startPos, endPos)
+        local startPart = Instance.new("Part")
+        startPart.Name         = "BulletStart"
+        startPart.Anchored     = true
+        startPart.CanCollide   = false
+        startPart.CanTouch     = false
+        startPart.CanQuery     = false
+        startPart.Massless     = true
+        startPart.Transparency = 1
+        startPart.Size         = Vector3.new(0.2, 0.2, 0.2)
+        startPart.Position     = startPos
+        startPart.Parent       = Workspace
+
+        local endPart = Instance.new("Part")
+        endPart.Name         = "BulletEnd"
+        endPart.Anchored     = true
+        endPart.CanCollide   = false
+        endPart.CanTouch     = false
+        endPart.CanQuery     = false
+        endPart.Massless     = true
+        endPart.Transparency = 1
+        endPart.Size         = Vector3.new(0.2, 0.2, 0.2)
+        endPart.Position     = endPos
+        endPart.Parent       = Workspace
+
+        local beam = Instance.new("Beam")
+        beam.Attachment0   = Instance.new("Attachment", startPart)
+        beam.Attachment1   = Instance.new("Attachment", endPart)
+        beam.FaceCamera    = true
+        beam.LightEmission = 1
+        beam.Color         = ColorSequence.new(BT.Color)
+        beam.Texture       = BT.TextureID
+        beam.Transparency  = NumberSequence.new(BT.Transparency)
+        beam.Width0        = BT.Size
+        beam.Width1        = BT.Size
+        beam.Parent        = startPart
+
+        task.delay(BT.TimeAlive, function()
+            if beam and beam.Parent then
+                local tw = TweenService:Create(
+                    beam,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    { Width0 = 0, Width1 = 0 }
+                )
+                tw:Play()
+                tw.Completed:Wait()
+            end
+            if startPart and startPart.Parent then startPart:Destroy() end
+            if endPart   and endPart.Parent   then endPart:Destroy()   end
+            if beam      and beam.Parent       then beam:Destroy()      end
+        end)
+    end
+
+    -- Хук на выстрелы / броски ножа
+    local btConn = nil
+
+    local function btConnect()
+        if btConn then return end
+        btConn = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+
+            -- Проверяем gun (выстрел) и knife (бросок)
+            for _, tool in ipairs({ char:FindFirstChild("Gun"), char:FindFirstChild("Knife") }) do
+                if not tool then continue end
+                local handle = tool:FindFirstChild("Handle")
+                if not handle then continue end
+
+                -- Слушаем RemoteEvent выстрела/броска
+                for _, v in ipairs(tool:GetDescendants()) do
+                    if v:IsA("RemoteEvent") and not v:GetAttribute("_btHooked") then
+                        v:SetAttribute("_btHooked", true)
+                        v.OnClientEvent:Connect(function(...)
+                            if not BT.Enabled then return end
+                            local args = { ... }
+                            -- startPos = позиция ствола / рукояти
+                            local startPos = handle.Position
+                            -- endPos: ищем Vector3 в аргументах
+                            local endPos
+                            for _, a in ipairs(args) do
+                                if typeof(a) == "Vector3" then
+                                    endPos = a
+                                    break
+                                end
+                            end
+                            if endPos then
+                                bullettracerlol(startPos, endPos)
+                            end
+                        end)
+                    end
+                end
+            end
+        end)
+    end
+
+    local function btDisconnect()
+        if btConn then
+            btConn:Disconnect()
+            btConn = nil
+        end
+    end
+
+    -- ── UI ──────────────────────────────────────────────────────────────
+    VisualsTab:Divider()
+    VisualsTab:Paragraph({ Title = "Bullet Tracers" })
+
+    VisualsTab:Toggle({
+        Title    = "Enable Bullet Tracers",
+        Default  = false,
+        Callback = function(val)
+            BT.Enabled = val
+            if val then btConnect() else btDisconnect() end
+            v18:Notify({
+                Title   = "CrystalHub",
+                Content = "Bullet Tracers " .. (val and "ON" or "OFF"),
+                Duration = 3,
+                Icon    = "bell",
+            })
+        end,
+    })
+
+    VisualsTab:ColorPicker({
+        Title    = "Tracer Color",
+        Default  = BT.Color,
+        Callback = function(col)
+            BT.Color = col
+        end,
+    })
+
+    VisualsTab:Slider({
+        Title    = "Tracer Width",
+        Value    = { Min = 1, Max = 20, Default = 12 },
+        Rounding = 0,
+        Callback = function(val)
+            BT.Size = val * 0.01  -- 1..20 → 0.01..0.20
+        end,
+    })
+
+    VisualsTab:Slider({
+        Title    = "Tracer Duration (×0.1s)",
+        Value    = { Min = 1, Max = 30, Default = 6 },
+        Rounding = 0,
+        Callback = function(val)
+            BT.TimeAlive = val * 0.1  -- 0.1 .. 3.0 сек
+        end,
+    })
+
+    VisualsTab:Slider({
+        Title    = "Tracer Transparency",
+        Value    = { Min = 0, Max = 9, Default = 0 },
+        Rounding = 0,
+        Callback = function(val)
+            BT.Transparency = val * 0.1  -- 0.0 .. 0.9
+        end,
+    })
+end
+-- ═══════════════════════════════════════════
 
     v301:Paragraph({
         Title = 'Auto-Loaded Buttons',
@@ -5975,345 +6110,6 @@ function t50.Callback(p88)
 end
 
 v302:ColorPicker(t50)
-
--- ═══════════════════════════════════════════════════════════════
--- BULLET TRACKER — highlights bullets (parts) in workspace
--- Tracks any Part named "Bullet"/"bullet"/"BulletPart" etc.
--- and applies a glowing Highlight + Neon material to them.
--- ═══════════════════════════════════════════════════════════════
-do
-    local _btEnabled = false
-    local _btColor   = Color3.fromRGB(255, 80, 0)   -- default orange glow
-    local _btTracked = {}   -- [part] = highlight instance
-
-    local function _applyBulletHighlight(part)
-        if _btTracked[part] then return end
-        pcall(function()
-            local hl = Instance.new('Highlight')
-            hl.FillColor = _btColor
-            hl.OutlineColor = _btColor
-            hl.FillTransparency = 0.2
-            hl.OutlineTransparency = 0
-            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            hl.Parent = part
-            _btTracked[part] = hl
-            -- auto-remove when bullet is destroyed
-            part.AncestryChanged:Connect(function()
-                if not part.Parent then
-                    pcall(function() hl:Destroy() end)
-                    _btTracked[part] = nil
-                end
-            end)
-        end)
-    end
-
-    local function _removeBulletHighlight(part)
-        if _btTracked[part] then
-            pcall(function() _btTracked[part]:Destroy() end)
-            _btTracked[part] = nil
-        end
-    end
-
-    local _btNames = {
-        bullet = true, Bullet = true, BulletPart = true, bulletPart = true,
-        Pellet = true, pellet = true, Projectile = true, projectile = true,
-        GunBullet = true, gunbullet = true,
-    }
-
-    local _btConn = nil
-
-    local function _enableBT()
-        if _btConn then return end
-        -- scan existing bullets
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA('BasePart') and _btNames[obj.Name] then
-                _applyBulletHighlight(obj)
-            end
-        end
-        _btConn = workspace.DescendantAdded:Connect(function(obj)
-            if _btEnabled and obj:IsA('BasePart') and _btNames[obj.Name] then
-                _applyBulletHighlight(obj)
-            end
-        end)
-    end
-
-    local function _disableBT()
-        if _btConn then _btConn:Disconnect(); _btConn = nil end
-        for part, hl in pairs(_btTracked) do
-            pcall(function() hl:Destroy() end)
-        end
-        _btTracked = {}
-    end
-
-    -- UI Controls in Visuals tab
-    VisualsTab:Divider()
-    VisualsTab:Paragraph({ Title = 'Bullet Tracker' })
-
-    VisualsTab:Toggle({
-        Title    = 'Enable Bullet Tracker',
-        Description = 'Highlights bullets/projectiles with a glow',
-        Default  = false,
-        Callback = function(val)
-            _btEnabled = val
-            if val then
-                _enableBT()
-                v18:Notify({ Title = 'CrystalHub', Content = 'Bullet Tracker ON', Duration = 3, Icon = 'bell' })
-            else
-                _disableBT()
-                v18:Notify({ Title = 'CrystalHub', Content = 'Bullet Tracker OFF', Duration = 3, Icon = 'bell' })
-            end
-        end,
-    })
-
-    VisualsTab:ColorPicker({
-        Title    = 'Bullet Glow Color',
-        Default  = Color3.fromRGB(255, 80, 0),
-        Callback = function(col)
-            _btColor = col
-            -- update already-tracked bullets
-            for _, hl in pairs(_btTracked) do
-                pcall(function()
-                    hl.FillColor    = col
-                    hl.OutlineColor = col
-                end)
-            end
-        end,
-    })
-end
--- ═══════════════════════════════════════════════════════════════
-
-
--- ═══════════════════════════════════════════════════════════════
--- PREDICTION SYSTEM (ported from headshots.cc)
--- ═══════════════════════════════════════════════════════════════
-do
-    local _pingvalue = nil
-    local _ping      = nil
-    local _PredictionValue = 0.229
-
-    local _GlobalPredictionMultiplier = 0.80
-    local _customVelocities   = {}
-    local _previousPositions  = {}
-
-    -- Ping → base prediction lookup (from headshots.cc)
-    local _basePredictionTable = {
-        {ping = 130, value = 0.51},
-        {ping = 125, value = 0.49},
-        {ping = 110, value = 0.46},
-        {ping = 105, value = 0.38},
-        {ping = 90,  value = 0.36},
-        {ping = 80,  value = 0.34},
-        {ping = 70,  value = 0.31},
-        {ping = 60,  value = 0.229},
-        {ping = 50,  value = 0.225},
-        {ping = 40,  value = 0.256},
-    }
-
-    -- Update ping + PredictionValue every Stepped
-    RunService.Stepped:Connect(function()
-        pcall(function()
-            local stats = game:GetService('Stats')
-            local raw = stats.Network.ServerStatsItem['Data Ping']:GetValueString()
-            local split = string.split(raw, '(')
-            _ping = tonumber(split[1]) or 0
-            for _, data in ipairs(_basePredictionTable) do
-                if _ping < data.ping then
-                    _PredictionValue = data.value * _GlobalPredictionMultiplier
-                    break
-                end
-            end
-        end)
-    end)
-
-    -- Expose for use in headshot aim (u97 will read these globals)
-    getgenv()._CrystalPredictionValue    = function() return _PredictionValue end
-    getgenv()._CrystalCustomVelocities   = _customVelocities
-    getgenv()._CrystalPreviousPositions  = _previousPositions
-
-    -- Velocity smoother (called from Heartbeat in aim)
-    getgenv()._CrystalUpdateVelocity = function(target, dt)
-        local char = target and (target.Character or target)
-        local head = char and char:FindFirstChild('Head')
-        if not head then return Vector3.zero end
-        local cur  = head.Position
-        local last = _previousPositions[target] or cur
-        local est  = (cur - last) / math.max(dt, 0.001)
-        local alpha = 0.5
-        _customVelocities[target] = (_customVelocities[target] or Vector3.zero) * alpha + est * (1 - alpha)
-        _previousPositions[target] = cur
-        return _customVelocities[target]
-    end
-
-    -- UI settings in Rage tab (v304)
-    v304:Divider()
-    v304:Paragraph({ Title = 'Prediction Settings' })
-
-    v304:Slider({
-        Title       = 'Prediction Multiplier',
-        Description = 'Scales the velocity offset (0.1 = min, 3.0 = max)',
-        IsTooltip   = true,
-        IsTextbox   = true,
-        Value       = { Min = 0.1, Max = 3.0, Default = 0.80 },
-        Callback    = function(val)
-            _GlobalPredictionMultiplier = tonumber(val) or 0.80
-            v18:Notify({ Title = 'CrystalHub', Content = 'Prediction Multiplier: ' .. tostring(_GlobalPredictionMultiplier), Duration = 2, Icon = 'bell' })
-        end,
-    })
-
-    v304:Toggle({
-        Title       = 'Auto Prediction',
-        Description = 'Auto-adjusts prediction from ping table',
-        Default     = true,
-        Callback    = function(val)
-            -- when off, lock to a fixed value
-            if not val then
-                _PredictionValue = 0.229
-            end
-        end,
-    })
-end
--- ═══════════════════════════════════════════════════════════════
-
--- ═══════════════════════════════════════════════════════════════
--- BULLET TRACKER (ported from headshots.cc bullettracerlol)
--- Creates Beam between start and end of each shot via MainEvent hook
--- ═══════════════════════════════════════════════════════════════
-do
-    local _btEnabled     = false
-    local _btColor       = Color3.fromRGB(255, 80, 0)
-    local _btSize        = 0.4
-    local _btTimeAlive   = 3
-    local _btTexture     = 'rbxassetid://12781852245'
-    local TweenService   = game:GetService('TweenService')
-
-    local function _bulletTracerDraw(startPos, endPos)
-        local startPart = Instance.new('Part')
-        startPart.Name        = 'CrystalBulletStart'
-        startPart.Anchored    = true
-        startPart.CanCollide  = false
-        startPart.CanTouch    = false
-        startPart.Massless    = true
-        startPart.Size        = Vector3.new(0.2, 0.2, 0.2)
-        startPart.Transparency = 1
-        startPart.Position    = startPos
-        startPart.Parent      = workspace
-
-        local endPart = Instance.new('Part')
-        endPart.Name        = 'CrystalBulletEnd'
-        endPart.Anchored    = true
-        endPart.CanCollide  = false
-        endPart.CanTouch    = false
-        endPart.Massless    = true
-        endPart.Size        = Vector3.new(0.2, 0.2, 0.2)
-        endPart.Transparency = 1
-        endPart.Position    = endPos
-        endPart.Parent      = workspace
-
-        local beam = Instance.new('Beam')
-        beam.Attachment0   = Instance.new('Attachment', startPart)
-        beam.Attachment1   = Instance.new('Attachment', endPart)
-        beam.FaceCamera    = true
-        beam.LightEmission = 1
-        beam.Color         = ColorSequence.new(_btColor)
-        beam.Texture       = _btTexture
-        beam.Transparency  = NumberSequence.new(0)
-        beam.Width0        = _btSize
-        beam.Width1        = _btSize
-        beam.Parent        = startPart
-
-        task.delay(_btTimeAlive, function()
-            pcall(function()
-                if beam and beam.Parent then
-                    local tw = TweenService:Create(
-                        beam,
-                        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                        { Width0 = 0, Width1 = 0 }
-                    )
-                    tw:Play()
-                    tw.Completed:Wait()
-                end
-            end)
-            pcall(function() if startPart and startPart.Parent then startPart:Destroy() end end)
-            pcall(function() if endPart   and endPart.Parent   then endPart:Destroy()   end end)
-        end)
-    end
-
-    -- Hook MainEvent:FireServer to intercept ShootGun calls
-    local function _hookBulletTracer()
-        pcall(function()
-            local MainEvent = game:GetService('ReplicatedStorage'):FindFirstChild('MainEvent')
-            if not MainEvent then return end
-            if not getrawmetatable then return end
-
-            local mt = getrawmetatable(MainEvent)
-            setreadonly(mt, false)
-            local cloned_mt = table.clone(mt)
-            local oldnamecall = cloned_mt.__namecall
-
-            setrawmetatable(MainEvent, {
-                __namecall = function(self, ...)
-                    local args = { ... }
-                    if getnamecallmethod and getnamecallmethod() == 'FireServer' then
-                        if args[1] == 'ShootGun' and _btEnabled then
-                            -- args[3] = startPos (Handle.Position), args[4] = endPos (target head)
-                            local sPos = args[3]
-                            local ePos = args[4]
-                            if typeof(sPos) == 'Vector3' and typeof(ePos) == 'Vector3' then
-                                task.spawn(_bulletTracerDraw, sPos, ePos)
-                            end
-                        end
-                    end
-                    return oldnamecall(self, unpack(args))
-                end,
-                __index    = cloned_mt.__index,
-                __newindex = cloned_mt.__newindex,
-                __call     = cloned_mt.__call,
-                __tostring = cloned_mt.__tostring,
-            })
-        end)
-    end
-
-    -- Hook on load
-    task.spawn(_hookBulletTracer)
-
-    -- UI in VisualsTab
-    VisualsTab:Divider()
-    VisualsTab:Paragraph({ Title = 'Bullet Tracer' })
-
-    VisualsTab:Toggle({
-        Title       = 'Enable Bullet Tracer',
-        Description = 'Shows a beam line on every shot (via MainEvent hook)',
-        Default     = false,
-        Callback    = function(val)
-            _btEnabled = val
-            v18:Notify({ Title = 'CrystalHub', Content = 'Bullet Tracer ' .. (val and 'ON' or 'OFF'), Duration = 3, Icon = 'bell' })
-        end,
-    })
-
-    VisualsTab:ColorPicker({
-        Title    = 'Tracer Color',
-        Default  = Color3.fromRGB(255, 80, 0),
-        Callback = function(col) _btColor = col end,
-    })
-
-    VisualsTab:Slider({
-        Title     = 'Tracer Width',
-        IsTooltip = true,
-        IsTextbox = true,
-        Value     = { Min = 0.1, Max = 3.0, Default = 0.4 },
-        Callback  = function(val) _btSize = tonumber(val) or 0.4 end,
-    })
-
-    VisualsTab:Slider({
-        Title     = 'Tracer Duration (s)',
-        IsTooltip = true,
-        IsTextbox = true,
-        Value     = { Min = 0.5, Max = 10, Default = 3 },
-        Callback  = function(val) _btTimeAlive = tonumber(val) or 3 end,
-    })
-end
--- ═══════════════════════════════════════════════════════════════
-
 task.wait(0.4)
 v232(false)
 v239(false)
