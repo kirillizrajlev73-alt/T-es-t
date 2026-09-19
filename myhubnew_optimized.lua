@@ -1,4 +1,3 @@
---дыдв
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -2422,6 +2421,34 @@ end
 
             t25 = {}
 
+            -- Button position persistence
+            local _BTN_POS_FILE = "CrystalHub_btnpos.json"
+
+            local function _saveBtnPositions()
+                local tbl = {}
+                for name, entry in pairs(t25) do
+                    if entry and entry.btn and entry.btn.Parent then
+                        local pos = entry.btn.Position
+                        tbl[name] = {xs=pos.X.Scale,xo=pos.X.Offset,ys=pos.Y.Scale,yo=pos.Y.Offset}
+                    end
+                end
+                pcall(writefile, _BTN_POS_FILE, game:GetService("HttpService"):JSONEncode(tbl))
+            end
+
+            local _btnSavedPos = {}
+            pcall(function()
+                if isfile(_BTN_POS_FILE) then
+                    local decoded = game:GetService("HttpService"):JSONDecode(readfile(_BTN_POS_FILE))
+                    if type(decoded) == "table" then _btnSavedPos = decoded end
+                end
+            end)
+
+            local function _loadBtnPos(name, default)
+                local s = _btnSavedPos[name]
+                if s then return UDim2.new(s.xs or 0, s.xo or 0, s.ys or 0, s.yo or 0) end
+                return default
+            end
+
             local u217 = UserInputService
 
             function u218(p35)
@@ -2455,7 +2482,10 @@ end
                 end)
                 u217.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        u740 = false
+                        if u740 then
+                            u740 = false
+                            _saveBtnPositions()
+                        end
                     end
                 end)
             end
@@ -2473,7 +2503,7 @@ end
 
                 TextButton.Name = 'RuzBtn_' .. p38
                 TextButton.Size = p40
-                TextButton.Position = p39
+                TextButton.Position = _loadBtnPos(p38, p39)
                 TextButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                 TextButton.BackgroundTransparency = 0.08
                 TextButton.Text = ''
