@@ -1,4 +1,3 @@
---owiwi
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -64,7 +63,7 @@ end
 -- [title] = { bgColor=Color3, textColor=Color3, textSize=number }
 local CrystalBtnStyle = {}
 
-local function CrystalOpenStylePopup(title, btnRef)
+local function CrystalOpenStylePopup(title, rowRef, toggleRef)
     local guiName = "CrystalStyle_" .. title:gsub("[^%w]","_"):sub(1,36)
     local existing = game.CoreGui:FindFirstChild(guiName)
     if existing then existing:Destroy() return end
@@ -168,23 +167,37 @@ local function CrystalOpenStylePopup(title, btnRef)
     Preview.BorderSizePixel = 0
     Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 6)
 
+    -- Находим кружок внутри тоггла (единственный прямой Frame-child)
+    local circleRef = nil
+    if toggleRef then
+        for _, ch in ipairs(toggleRef:GetChildren()) do
+            if ch:IsA("Frame") then circleRef = ch break end
+        end
+    end
+
     local function applyStyle()
         Preview.BackgroundColor3 = style.bgColor
         Preview.TextColor3       = style.textColor
         Preview.TextSize         = style.textSize
-        if not btnRef then return end
-        -- btnRef = BasedFrame (Root)
-        -- BasedLabel — первый прямой TextLabel в BasedFrame (имя рандомное)
-        for _, ch in ipairs(btnRef:GetChildren()) do
-            if ch:IsA("TextLabel") then
-                -- это BasedLabel с названием фичи
-                ch.TextColor3 = style.textColor
-                ch.TextSize   = style.textSize
-                break
+
+        -- 1. Текст строки (BasedLabel) — первый прямой TextLabel в rowRef
+        if rowRef then
+            for _, ch in ipairs(rowRef:GetChildren()) do
+                if ch:IsA("TextLabel") then
+                    ch.TextColor3 = style.textColor
+                    ch.TextSize   = style.textSize
+                    break
+                end
             end
         end
-        -- фон самого ряда (по умолчанию прозрачный, но при hover он проявляется)
-        btnRef.BackgroundColor3 = style.bgColor
+
+        -- 2. Тоггл-пилюля: меняем фон пилюли и кружок
+        if toggleRef then
+            toggleRef.BackgroundColor3 = style.bgColor
+            if circleRef then
+                circleRef.BackgroundColor3 = style.textColor
+            end
+        end
     end
 
     -- ── ЦВЕТ ФОНА ──────────────────────────────────────────────────
@@ -311,9 +324,8 @@ end
 
 -- Adds "···" button into BasedHandler (the right-side container of the row)
 -- BasedHandler uses UIListLayout Horizontal/Right, so ··· sits left of toggle
-local function CrystalAddDot(labelHandle, title, btnRef)
-    -- labelHandle.Root = BasedFrame
-    -- BasedHandler is a child Frame with UIListLayout inside BasedFrame
+local function CrystalAddDot(labelHandle, title, toggleRef)
+    -- labelHandle.Root = BasedFrame (строка целиком)
     local BasedFrame = labelHandle and labelHandle.Root
     if not BasedFrame then return end
 
@@ -336,8 +348,6 @@ local function CrystalAddDot(labelHandle, title, btnRef)
     Dot.TextSize = 13
     Dot.BorderSizePixel = 0
     Dot.ZIndex = BasedHandler.ZIndex + 2
-    -- LayoutOrder: toggle uses negative order (more negative = more right)
-    -- give dot a less negative order so it sits left of toggle
     Dot.LayoutOrder = 0
 
     Dot.MouseEnter:Connect(function()
@@ -347,7 +357,8 @@ local function CrystalAddDot(labelHandle, title, btnRef)
         Dot.TextColor3 = Color3.fromRGB(120, 120, 140)
     end)
     Dot.MouseButton1Click:Connect(function()
-        CrystalOpenStylePopup(title, btnRef)
+        -- rowRef = BasedFrame, toggleRef = Toggle Frame (или nil для кнопок)
+        CrystalOpenStylePopup(title, BasedFrame, toggleRef)
     end)
 end
 
@@ -372,9 +383,8 @@ local function makeControlAdapter(section)
             Flag = cfg.Flag,
             Callback = cfg.Callback,
         })
-        -- передаём Root-фрейм как btnRef для настройки внешнего вида
-        local btnRef = labelHandle and labelHandle.Root
-        CrystalAddDot(labelHandle, title, btnRef)
+        -- передаём Toggle.Root (пилюля) как toggleRef
+        CrystalAddDot(labelHandle, title, toggleCtrl and toggleCtrl.Root)
         return toggleCtrl
     end
 
@@ -384,8 +394,7 @@ local function makeControlAdapter(section)
         -- AddButton doesn't go through AddLabel, so we make a label row manually
         -- and put a clickable button element + dot inside it
         local labelHandle = section:AddLabel(title)
-        local btnRef = labelHandle and labelHandle.Root
-        CrystalAddDot(labelHandle, title, btnRef)
+        CrystalAddDot(labelHandle, title, nil)
         -- wire the label row click to the callback
         if labelHandle.Root then
             labelHandle.Root.InputBegan:Connect(function(inp)
