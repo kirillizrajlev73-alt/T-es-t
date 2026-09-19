@@ -1,4 +1,3 @@
---28288
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -5471,6 +5470,129 @@ do
         Value    = { Min = 0, Max = 9, Default = 0 },
         Rounding = 0,
         Callback = function(val) BT.Transparency = val * 0.1 end,
+    })
+end
+-- ═══════════════════════════════════════════
+
+-- ═══════════════════════════════════════════
+-- SHOOT SOUND (VisualsTab)
+-- ═══════════════════════════════════════════
+do
+    local SS = {
+        Enabled = false,
+        SoundId = "3124331820",
+    }
+
+    local soundList = {
+        { name = "Bameware",  id = "3124331820" },
+        { name = "Bell",      id = "6534947240" },
+        { name = "Bubble",    id = "6534947588" },
+        { name = "Pick",      id = "1347140027" },
+        { name = "Pop",       id = "198598793"  },
+        { name = "Rust",      id = "1255040462" },
+        { name = "Skeet",     id = "5633695679" },
+        { name = "Neverlose", id = "6534948092" },
+        { name = "Minecraft", id = "4018616850" },
+    }
+    local soundNames = {}
+    local soundMap   = {}
+    for _, s in ipairs(soundList) do
+        table.insert(soundNames, s.name)
+        soundMap[s.name] = s.id
+    end
+
+    local function applySound()
+        local function patchTool(tool)
+            if not tool:IsA("Tool") then return end
+            local snd = tool:FindFirstChild("ShootSound")
+            if snd then
+                snd.SoundId = "rbxassetid://" .. SS.SoundId
+            end
+        end
+        pcall(function()
+            for _, v in next, LocalPlayer.Backpack:GetDescendants() do patchTool(v) end
+        end)
+        pcall(function()
+            if LocalPlayer.Character then
+                for _, v in next, LocalPlayer.Character:GetDescendants() do patchTool(v) end
+            end
+        end)
+    end
+
+    local function resetSound()
+        -- При выключении возвращаем стандартный звук MM2 (оригинальный SoundId)
+        local function unpatchTool(tool)
+            if not tool:IsA("Tool") then return end
+            local snd = tool:FindFirstChild("ShootSound")
+            if snd then
+                snd.SoundId = ""
+            end
+        end
+        pcall(function()
+            for _, v in next, LocalPlayer.Backpack:GetDescendants() do unpatchTool(v) end
+        end)
+        pcall(function()
+            if LocalPlayer.Character then
+                for _, v in next, LocalPlayer.Character:GetDescendants() do unpatchTool(v) end
+            end
+        end)
+    end
+
+    -- Патчим при подборе оружия
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        char.ChildAdded:Connect(function(obj)
+            if SS.Enabled then
+                task.wait(0.1)
+                if obj:IsA("Tool") then
+                    local snd = obj:FindFirstChild("ShootSound")
+                    if snd then snd.SoundId = "rbxassetid://" .. SS.SoundId end
+                end
+            end
+        end)
+    end)
+    if LocalPlayer.Character then
+        LocalPlayer.Character.ChildAdded:Connect(function(obj)
+            if SS.Enabled and obj:IsA("Tool") then
+                task.wait(0.1)
+                local snd = obj:FindFirstChild("ShootSound")
+                if snd then snd.SoundId = "rbxassetid://" .. SS.SoundId end
+            end
+        end)
+    end
+
+    -- ── UI ──────────────────────────────────────────────────────────────
+    VisualsTab:Divider()
+    VisualsTab:Paragraph({ Title = "Shoot Sound" })
+
+    VisualsTab:Toggle({
+        Title    = "Custom Shoot Sound",
+        Default  = false,
+        Callback = function(val)
+            SS.Enabled = val
+            if val then applySound() else resetSound() end
+            v18:Notify({
+                Title    = "CrystalHub",
+                Content  = "Shoot Sound " .. (val and "ON" or "OFF"),
+                Duration = 3,
+                Icon     = "bell",
+            })
+        end,
+    })
+
+    VisualsTab:Dropdown({
+        Title    = "Sound Preset",
+        Values   = soundNames,
+        Value    = "Bameware",
+        Callback = function(val)
+            SS.SoundId = soundMap[val] or "3124331820"
+            if SS.Enabled then applySound() end
+            v18:Notify({
+                Title    = "CrystalHub",
+                Content  = "Sound: " .. val,
+                Duration = 3,
+                Icon     = "bell",
+            })
+        end,
     })
 end
 -- ═══════════════════════════════════════════
