@@ -1,4 +1,3 @@
---iwiwis
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -5586,6 +5585,152 @@ do
 end
 -- ═══════════════════════════════════════════
 
+-- ══════════════ CHINA HAT (VisualsTab) ══════════════
+do
+    local _ChinaHat = {
+        enabled      = false,
+        hatColor     = Color3.fromRGB(255, 105, 180),
+        lightColor   = Color3.fromRGB(255, 105, 180),
+        lightBrightness = 0,
+        lightRange   = 12,
+        scale        = Vector3.new(1.7, 1.1, 1.7),
+    }
+
+    local _hatCone = nil
+
+    local function _RemoveHat()
+        if _hatCone and _hatCone.Parent then
+            _hatCone:Destroy()
+        end
+        _hatCone = nil
+    end
+
+    local function _CreateHat(Character)
+        _RemoveHat()
+        local Head = Character:FindFirstChild("Head")
+        if not Head then return end
+
+        local Cone = Instance.new("Part")
+        Cone.Size       = Vector3.new(1, 1, 1)
+        Cone.Material   = Enum.Material.Neon
+        Cone.Transparency = 0.2
+        Cone.Anchored   = false
+        Cone.CanCollide = false
+        Cone.Color      = _ChinaHat.hatColor
+        Cone.Name       = "CrystalHub_ChinaHat"
+
+        local Mesh = Instance.new("SpecialMesh")
+        Mesh.MeshType = Enum.MeshType.FileMesh
+        Mesh.MeshId   = "rbxassetid://1033714"
+        Mesh.Scale    = _ChinaHat.scale
+        Mesh.Parent   = Cone
+
+        local Weld = Instance.new("Weld")
+        Weld.Part0  = Head
+        Weld.Part1  = Cone
+        Weld.C0     = CFrame.new(0, 0.9, 0)
+        Weld.Parent = Cone
+
+        local Light = Instance.new("PointLight")
+        Light.Color      = _ChinaHat.lightColor
+        Light.Brightness = _ChinaHat.lightBrightness
+        Light.Range      = _ChinaHat.lightRange
+        Light.Shadows    = true
+        Light.Parent     = Cone
+
+        Cone.Parent = Character
+        _hatCone    = Cone
+    end
+
+    local _charConn = nil
+
+    local function _ApplyHat()
+        local lp  = Players.LocalPlayer
+        local chr = lp and lp.Character
+        if chr then _CreateHat(chr) end
+        if _charConn then _charConn:Disconnect() end
+        _charConn = lp.CharacterAdded:Connect(function(character)
+            if _ChinaHat.enabled then
+                character:WaitForChild("Head", 10)
+                _CreateHat(character)
+            end
+        end)
+    end
+
+    VisualsTab:Divider()
+    VisualsTab:Paragraph({ Title = "China Hat", Content = "Decorative hat on your character" })
+
+    VisualsTab:Toggle({
+        Title   = "Enable China Hat",
+        Default = false,
+        Callback = function(val)
+            _ChinaHat.enabled = val
+            if val then
+                _ApplyHat()
+            else
+                _RemoveHat()
+                if _charConn then _charConn:Disconnect() _charConn = nil end
+            end
+            v18:Notify({
+                Title   = "CrystalHub",
+                Content = val and "China Hat ON" or "China Hat OFF",
+                Duration = 3,
+                Icon    = "bell",
+            })
+        end,
+    })
+
+    VisualsTab:ColorPicker({
+        Title   = "Hat Color",
+        Default = Color3.fromRGB(255, 105, 180),
+        Callback = function(col)
+            _ChinaHat.hatColor = col
+            if _hatCone and _hatCone.Parent then
+                _hatCone.Color = col
+            end
+        end,
+    })
+
+    VisualsTab:ColorPicker({
+        Title   = "Light Color",
+        Default = Color3.fromRGB(255, 105, 180),
+        Callback = function(col)
+            _ChinaHat.lightColor = col
+            if _hatCone and _hatCone.Parent then
+                local light = _hatCone:FindFirstChildOfClass("PointLight")
+                if light then light.Color = col end
+            end
+        end,
+    })
+
+    VisualsTab:Slider({
+        Title    = "Light Brightness",
+        Value    = { Min = 0, Max = 10, Default = 0 },
+        Rounding = 0,
+        Callback = function(val)
+            _ChinaHat.lightBrightness = val
+            if _hatCone and _hatCone.Parent then
+                local light = _hatCone:FindFirstChildOfClass("PointLight")
+                if light then light.Brightness = val end
+            end
+        end,
+    })
+
+    VisualsTab:Slider({
+        Title    = "Light Range",
+        Value    = { Min = 0, Max = 60, Default = 12 },
+        Rounding = 0,
+        Callback = function(val)
+            _ChinaHat.lightRange = val
+            if _hatCone and _hatCone.Parent then
+                local light = _hatCone:FindFirstChildOfClass("PointLight")
+                if light then light.Range = val end
+            end
+        end,
+    })
+end
+-- ═══════════════════════════════════════════════════════
+
     v301:Paragraph({
         Title = 'Auto-Loaded Buttons',
     })
@@ -6083,165 +6228,6 @@ function t40.Callback(p78)
         Icon = 'bell',
     })
 end
-
--- ══════════════════════════════════════
--- China Hat (Visuals)
--- ══════════════════════════════════════
-do
-    local _chinaHatPart = nil
-
-    local _chinaCfg = {
-        enabled     = false,
-        hatColor    = Color3.fromRGB(255, 105, 180),
-        lightColor  = Color3.fromRGB(255, 105, 180),
-        lightBrightness = 0,
-        lightRange  = 12,
-        scale       = Vector3.new(1.7, 1.1, 1.7),
-    }
-
-    local function _chinaRemove()
-        if _chinaHatPart then
-            pcall(function() _chinaHatPart:Destroy() end)
-            _chinaHatPart = nil
-        end
-        -- also clear any leftover parts on the character
-        local char = LocalPlayer.Character
-        if char then
-            for _, v in ipairs(char:GetChildren()) do
-                if v.Name == "CrystalChinaHat" then
-                    v:Destroy()
-                end
-            end
-        end
-    end
-
-    local function _chinaCreate(character)
-        _chinaRemove()
-        if not _chinaCfg.enabled then return end
-        character = character or LocalPlayer.Character
-        if not character then return end
-        local Head = character:FindFirstChild("Head")
-        if not Head then return end
-
-        local Cone = Instance.new("Part")
-        Cone.Name        = "CrystalChinaHat"
-        Cone.Size        = Vector3.new(1, 1, 1)
-        Cone.Color       = _chinaCfg.hatColor
-        Cone.Material    = Enum.Material.Neon
-        Cone.Transparency = 0.2
-        Cone.Anchored    = false
-        Cone.CanCollide  = false
-
-        local Mesh = Instance.new("SpecialMesh")
-        Mesh.MeshType = Enum.MeshType.FileMesh
-        Mesh.MeshId   = "rbxassetid://1033714"
-        Mesh.Scale    = _chinaCfg.scale
-        Mesh.Parent   = Cone
-
-        local Weld = Instance.new("Weld")
-        Weld.Part0  = Head
-        Weld.Part1  = Cone
-        Weld.C0     = CFrame.new(0, 0.9, 0)
-        Weld.Parent = Cone
-
-        local Light = Instance.new("PointLight")
-        Light.Color      = _chinaCfg.lightColor
-        Light.Brightness = _chinaCfg.lightBrightness
-        Light.Range      = _chinaCfg.lightRange
-        Light.Shadows    = true
-        Light.Parent     = Cone
-
-        Cone.Parent   = character
-        _chinaHatPart = Cone
-    end
-
-    -- respawn support
-    LocalPlayer.CharacterAdded:Connect(function(character)
-        if _chinaCfg.enabled then
-            character:WaitForChild("Head", 5)
-            _chinaCreate(character)
-        end
-    end)
-
-    v302:Divider()
-    v302:Paragraph({ Title = 'China Hat' })
-
-    -- Enable toggle
-    v302:Toggle({
-        Title   = 'China Hat',
-        Description = 'Надеть китайскую шляпу на своего персонажа',
-        Default = false,
-        Callback = function(p)
-            _chinaCfg.enabled = p
-            if p then
-                _chinaCreate()
-            else
-                _chinaRemove()
-            end
-            v18:Notify({
-                Title   = 'CrystalHub',
-                Content = p and 'China Hat ON' or 'China Hat OFF',
-                Duration = 3,
-                Icon    = 'bell',
-            })
-        end,
-    })
-
-    -- Hat color picker
-    v302:ColorPicker({
-        Title   = 'Hat Color',
-        Default = _chinaCfg.hatColor,
-        Callback = function(c)
-            _chinaCfg.hatColor = c
-            if _chinaHatPart then
-                _chinaHatPart.Color = c
-            end
-        end,
-    })
-
-    -- Light color picker
-    v302:ColorPicker({
-        Title   = 'Hat Light Color',
-        Default = _chinaCfg.lightColor,
-        Callback = function(c)
-            _chinaCfg.lightColor = c
-            if _chinaHatPart then
-                local L = _chinaHatPart:FindFirstChildOfClass('PointLight')
-                if L then L.Color = c end
-            end
-        end,
-    })
-
-    -- Light brightness slider
-    v302:Slider({
-        Title   = 'Hat Light Brightness',
-        Value   = { Min = 0, Max = 10, Default = 0 },
-        Rounding = 1,
-        Callback = function(val)
-            _chinaCfg.lightBrightness = val
-            if _chinaHatPart then
-                local L = _chinaHatPart:FindFirstChildOfClass('PointLight')
-                if L then L.Brightness = val end
-            end
-        end,
-    })
-
-    -- Hat scale slider (uniform X/Z)
-    v302:Slider({
-        Title   = 'Hat Scale',
-        Value   = { Min = 5, Max = 40, Default = 17 },
-        Rounding = 0,
-        Callback = function(val)
-            local s = val / 10
-            _chinaCfg.scale = Vector3.new(s, _chinaCfg.scale.Y, s)
-            if _chinaHatPart then
-                local M = _chinaHatPart:FindFirstChildOfClass('SpecialMesh')
-                if M then M.Scale = _chinaCfg.scale end
-            end
-        end,
-    })
-end
--- ══════════════════════════════════════
 
 v302:Toggle(t40)
 v302:Divider()
