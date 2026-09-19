@@ -1,3 +1,4 @@
+--81818
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -3120,8 +3121,8 @@ end
         Opened = true,
     })
 
-    -- Floating button to open/toggle the CrystalHub GUI.
-    -- Uses gethui when available so it also works in common executors.
+    -- Top overlay to open/toggle the CrystalHub GUI.
+    -- Replaces the old OPEN GUI button.
     do
         local guiParent
         pcall(function()
@@ -3133,81 +3134,120 @@ end
             guiParent = game:GetService("CoreGui")
         end
 
-        local oldButtonGui = guiParent:FindFirstChild("CrystalHubOpenButton")
-        if oldButtonGui then
-            oldButtonGui:Destroy()
+        local oldOverlay = guiParent:FindFirstChild("CrystalHubOpenButton")
+        if oldOverlay then
+            oldOverlay:Destroy()
         end
 
-        local openGui = Instance.new("ScreenGui")
-        openGui.Name = "CrystalHubOpenButton"
-        openGui.ResetOnSpawn = false
-        openGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        openGui.Parent = guiParent
+        local overlayGui = Instance.new("ScreenGui")
+        overlayGui.Name = "CrystalHubOpenButton"
+        overlayGui.ResetOnSpawn = false
+        overlayGui.IgnoreGuiInset = false
+        overlayGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        overlayGui.Parent = guiParent
 
-        local openButton = Instance.new("TextButton")
-        openButton.Name = "OpenButton"
-        openButton.Size = UDim2.fromOffset(120, 42)
-        openButton.Position = UDim2.new(0, 18, 0.5, -21)
-        openButton.BackgroundTransparency = 0.08
-        openButton.Text = "OPEN GUI"
-        openButton.TextSize = 15
-        openButton.Font = Enum.Font.GothamBold
-        openButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        openButton.BackgroundColor3 = Color3.fromRGB(35, 38, 48)
-        openButton.BorderSizePixel = 0
-        openButton.AutoButtonColor = true
-        openButton.Parent = openGui
+        local overlay = Instance.new("TextButton")
+        overlay.Name = "CrystalHubOverlay"
+        overlay.Size = UDim2.new(0.72, 0, 0, 58)
+        overlay.Position = UDim2.new(0.5, 0, 0, 8)
+        overlay.AnchorPoint = Vector2.new(0.5, 0)
+        overlay.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+        overlay.BackgroundTransparency = 0.18
+        overlay.BorderSizePixel = 0
+        overlay.AutoButtonColor = false
+        overlay.Text = ""
+        overlay.Parent = overlayGui
 
         local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 10)
-        corner.Parent = openButton
+        corner.CornerRadius = UDim.new(0, 14)
+        corner.Parent = overlay
 
         local stroke = Instance.new("UIStroke")
-        stroke.Thickness = 1.5
-        stroke.Color = Color3.fromRGB(80, 160, 255)
-        stroke.Transparency = 0.15
-        stroke.Parent = openButton
+        stroke.Thickness = 1
+        stroke.Color = Color3.fromRGB(80, 80, 90)
+        stroke.Transparency = 0.35
+        stroke.Parent = overlay
 
-        openButton.Activated:Connect(function()
+        local title = Instance.new("TextLabel")
+        title.Name = "Title"
+        title.BackgroundTransparency = 1
+        title.Position = UDim2.new(0, 18, 0, 0)
+        title.Size = UDim2.new(0.24, 0, 1, 0)
+        title.Font = Enum.Font.GothamBold
+        title.Text = "CrystalHub"
+        title.TextSize = 17
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = overlay
+
+        local line = Instance.new("Frame")
+        line.Name = "Line"
+        line.BorderSizePixel = 0
+        line.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+        line.BackgroundTransparency = 0.45
+        line.Position = UDim2.new(0.255, 0, 0.2, 0)
+        line.Size = UDim2.new(0, 1, 0.6, 0)
+        line.Parent = overlay
+
+        local status = Instance.new("TextLabel")
+        status.Name = "Status"
+        status.BackgroundTransparency = 1
+        status.Position = UDim2.new(0.29, 0, 0, 0)
+        status.Size = UDim2.new(0.24, 0, 1, 0)
+        status.Font = Enum.Font.Gotham
+        status.Text = "●  ONLINE"
+        status.TextSize = 14
+        status.TextColor3 = Color3.fromRGB(170, 170, 180)
+        status.TextXAlignment = Enum.TextXAlignment.Left
+        status.Parent = overlay
+
+        local info = Instance.new("TextLabel")
+        info.Name = "Info"
+        info.BackgroundTransparency = 1
+        info.Position = UDim2.new(0.54, 0, 0, 0)
+        info.Size = UDim2.new(0.27, 0, 1, 0)
+        info.Font = Enum.Font.Gotham
+        info.Text = "CrystalHub  •  TAP TO OPEN"
+        info.TextSize = 13
+        info.TextColor3 = Color3.fromRGB(185, 185, 195)
+        info.TextXAlignment = Enum.TextXAlignment.Center
+        info.Parent = overlay
+
+        local toggleIcon = Instance.new("TextLabel")
+        toggleIcon.Name = "ToggleIcon"
+        toggleIcon.BackgroundTransparency = 1
+        toggleIcon.Position = UDim2.new(0.91, 0, 0, 0)
+        toggleIcon.Size = UDim2.new(0.07, 0, 1, 0)
+        toggleIcon.Font = Enum.Font.GothamBold
+        toggleIcon.Text = "≡"
+        toggleIcon.TextSize = 24
+        toggleIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+        toggleIcon.TextXAlignment = Enum.TextXAlignment.Center
+        toggleIcon.Parent = overlay
+
+        overlay.Activated:Connect(function()
             pcall(function()
                 v300:ToggleInterface()
             end)
         end)
 
-        -- Make the button draggable on mouse/touch.
-        local dragging = false
-        local dragStart
-        local startPos
+        overlay.MouseButton1Down:Connect(function()
+            overlay.BackgroundTransparency = 0.05
+        end)
 
-        openButton.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1
-                or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = openButton.Position
+        overlay.MouseButton1Up:Connect(function()
+            overlay.BackgroundTransparency = 0.18
+        end)
+
+        overlay.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                overlay.BackgroundTransparency = 0.05
             end
         end)
 
-        UserInputService.InputChanged:Connect(function(input)
-            if not dragging then return end
-            if input.UserInputType ~= Enum.UserInputType.MouseMovement
-                and input.UserInputType ~= Enum.UserInputType.Touch then
-                return
-            end
-
-            local delta = input.Position - dragStart
-            openButton.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
-        end)
-
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1
-                or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
+        overlay.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                overlay.BackgroundTransparency = 0.18
             end
         end)
     end
