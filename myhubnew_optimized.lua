@@ -1,4 +1,3 @@
---tesy
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -60,284 +59,6 @@ function v18:Notify(cfg)
     end
 end
 
--- ── CrystalHub: настройки внешнего вида кнопок ──────────────────
--- [title] = { bgColor=Color3, textColor=Color3, textSize=number }
-local CrystalBtnStyle = {}
-
-local function CrystalOpenStylePopup(title, rowRef, toggleRef)
-    local guiName = "CrystalStyle_" .. title:gsub("[^%w]","_"):sub(1,36)
-    local existing = game.CoreGui:FindFirstChild(guiName)
-    if existing then existing:Destroy() return end
-
-    local style = CrystalBtnStyle[title]
-    if not style then
-        style = {
-            bgColor   = Color3.fromRGB(30, 30, 40),
-            textColor = Color3.fromRGB(220, 220, 230),
-            textSize  = 14,
-        }
-        CrystalBtnStyle[title] = style
-    end
-
-    local SGui = Instance.new("ScreenGui", game.CoreGui)
-    SGui.Name = guiName
-    SGui.ResetOnSpawn = false
-    SGui.DisplayOrder = 120
-    SGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    local W, H = 260, 210
-    local Panel = Instance.new("Frame", SGui)
-    Panel.Size = UDim2.new(0, W, 0, H)
-    Panel.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
-    Panel.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
-    Panel.BackgroundTransparency = 0
-    Panel.BorderSizePixel = 0
-    Instance.new("UICorner", Panel).CornerRadius = UDim.new(0, 10)
-    local PStroke = Instance.new("UIStroke", Panel)
-    PStroke.Color = Color3.fromRGB(50, 50, 60)
-    PStroke.Thickness = 1.2
-
-    -- drag
-    local _dr, _ds, _dp = false, nil, nil
-    Panel.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            _dr=true _ds=i.Position _dp=Panel.Position
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(i)
-        if _dr and i.UserInputType == Enum.UserInputType.MouseMovement then
-            local d = i.Position - _ds
-            Panel.Position = UDim2.new(_dp.X.Scale, _dp.X.Offset+d.X, _dp.Y.Scale, _dp.Y.Offset+d.Y)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then _dr=false end
-    end)
-
-    -- заголовок
-    local TL = Instance.new("TextLabel", Panel)
-    TL.Size = UDim2.new(1, -30, 0, 26)
-    TL.Position = UDim2.new(0, 10, 0, 0)
-    TL.BackgroundTransparency = 1
-    TL.Text = "🎨  " .. title
-    TL.TextColor3 = Color3.fromRGB(200, 200, 210)
-    TL.Font = Enum.Font.GothamBold
-    TL.TextSize = 12
-    TL.TextXAlignment = Enum.TextXAlignment.Left
-    TL.TextTruncate = Enum.TextTruncate.AtEnd
-
-    local XB = Instance.new("TextButton", Panel)
-    XB.Size = UDim2.new(0, 20, 0, 20)
-    XB.Position = UDim2.new(1, -26, 0, 3)
-    XB.BackgroundColor3 = Color3.fromRGB(140, 22, 22)
-    XB.Text = "✕" XB.TextColor3 = Color3.new(1,1,1)
-    XB.Font = Enum.Font.GothamBold XB.TextSize = 11
-    XB.BorderSizePixel = 0
-    Instance.new("UICorner", XB).CornerRadius = UDim.new(0, 4)
-    XB.MouseButton1Click:Connect(function() SGui:Destroy() end)
-
-    local Sep = Instance.new("Frame", Panel)
-    Sep.Size = UDim2.new(1, -16, 0, 1)
-    Sep.Position = UDim2.new(0, 8, 0, 27)
-    Sep.BackgroundColor3 = Color3.fromRGB(42, 42, 52)
-    Sep.BorderSizePixel = 0
-
-    -- вспомогательная функция: метка секции
-    local function makeLabel(text, yPos)
-        local L = Instance.new("TextLabel", Panel)
-        L.Size = UDim2.new(1, -16, 0, 14)
-        L.Position = UDim2.new(0, 10, 0, yPos)
-        L.BackgroundTransparency = 1
-        L.Text = text
-        L.TextColor3 = Color3.fromRGB(110, 110, 130)
-        L.Font = Enum.Font.Gotham
-        L.TextSize = 10
-        L.TextXAlignment = Enum.TextXAlignment.Left
-        return L
-    end
-
-    -- превью кнопки
-    local Preview = Instance.new("TextButton", Panel)
-    Preview.Size = UDim2.new(1, -20, 0, 26)
-    Preview.Position = UDim2.new(0, 10, 0, 32)
-    Preview.BackgroundColor3 = style.bgColor
-    Preview.Text = title
-    Preview.TextColor3 = style.textColor
-    Preview.Font = Enum.Font.GothamBold
-    Preview.TextSize = style.textSize
-    Preview.BorderSizePixel = 0
-    Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 6)
-
-    local function applyStyle()
-        Preview.BackgroundColor3 = style.bgColor
-        Preview.TextColor3       = style.textColor
-        Preview.TextSize         = style.textSize
-
-        if not rowRef then return end
-
-        -- Фон кнопки (BasedFrame): делаем видимым и красим
-        rowRef.BackgroundColor3 = style.bgColor
-        rowRef.BackgroundTransparency = 0.1
-
-        -- Текст кнопки (BasedLabel) — первый прямой TextLabel в BasedFrame
-        for _, ch in ipairs(rowRef:GetChildren()) do
-            if ch:IsA("TextLabel") then
-                ch.TextColor3        = style.textColor
-                ch.TextSize          = style.textSize
-                ch.TextTransparency  = 0
-                break
-            end
-        end
-    end
-
-    -- ── ЦВЕТ ФОНА ──────────────────────────────────────────────────
-    makeLabel("ЦВЕТ ФОНА", 62)
-
-    local bgColors = {
-        { name="Тёмный",    rgb=Color3.fromRGB(22,  22,  32)  },
-        { name="Синий",     rgb=Color3.fromRGB(20,  50,  100) },
-        { name="Зелёный",   rgb=Color3.fromRGB(15,  60,  30)  },
-        { name="Красный",   rgb=Color3.fromRGB(80,  15,  15)  },
-        { name="Фиолетовый",rgb=Color3.fromRGB(50,  15,  80)  },
-        { name="Серый",     rgb=Color3.fromRGB(50,  50,  60)  },
-    }
-
-    local BgRow = Instance.new("Frame", Panel)
-    BgRow.Size = UDim2.new(1, -16, 0, 22)
-    BgRow.Position = UDim2.new(0, 8, 0, 76)
-    BgRow.BackgroundTransparency = 1
-    local BgLayout = Instance.new("UIListLayout", BgRow)
-    BgLayout.FillDirection = Enum.FillDirection.Horizontal
-    BgLayout.Padding = UDim.new(0, 4)
-
-    for _, c in ipairs(bgColors) do
-        local Swatch = Instance.new("TextButton", BgRow)
-        Swatch.Size = UDim2.new(0, 30, 1, 0)
-        Swatch.BackgroundColor3 = c.rgb
-        Swatch.Text = ""
-        Swatch.BorderSizePixel = 0
-        Instance.new("UICorner", Swatch).CornerRadius = UDim.new(0, 5)
-        local SwStroke = Instance.new("UIStroke", Swatch)
-        SwStroke.Color = Color3.fromRGB(80,80,100) SwStroke.Thickness = 1
-        Swatch.MouseButton1Click:Connect(function()
-            style.bgColor = c.rgb
-            applyStyle()
-            SwStroke.Color = Color3.fromRGB(200,200,220) SwStroke.Thickness = 1.5
-        end)
-    end
-
-    -- ── ЦВЕТ ТЕКСТА ────────────────────────────────────────────────
-    makeLabel("ЦВЕТ ТЕКСТА", 104)
-
-    local txtColors = {
-        { name="Белый",    rgb=Color3.fromRGB(230, 230, 240) },
-        { name="Жёлтый",   rgb=Color3.fromRGB(255, 215, 0)  },
-        { name="Голубой",  rgb=Color3.fromRGB(80,  200, 255) },
-        { name="Зелёный",  rgb=Color3.fromRGB(80,  230, 80)  },
-        { name="Розовый",  rgb=Color3.fromRGB(255, 130, 180) },
-        { name="Серый",    rgb=Color3.fromRGB(150, 150, 160) },
-    }
-
-    local TxtRow = Instance.new("Frame", Panel)
-    TxtRow.Size = UDim2.new(1, -16, 0, 22)
-    TxtRow.Position = UDim2.new(0, 8, 0, 118)
-    TxtRow.BackgroundTransparency = 1
-    local TxtLayout = Instance.new("UIListLayout", TxtRow)
-    TxtLayout.FillDirection = Enum.FillDirection.Horizontal
-    TxtLayout.Padding = UDim.new(0, 4)
-
-    for _, c in ipairs(txtColors) do
-        local Swatch = Instance.new("TextButton", TxtRow)
-        Swatch.Size = UDim2.new(0, 30, 1, 0)
-        Swatch.BackgroundColor3 = c.rgb
-        Swatch.Text = ""
-        Swatch.BorderSizePixel = 0
-        Instance.new("UICorner", Swatch).CornerRadius = UDim.new(0, 5)
-        local SwStroke = Instance.new("UIStroke", Swatch)
-        SwStroke.Color = Color3.fromRGB(80,80,100) SwStroke.Thickness = 1
-        Swatch.MouseButton1Click:Connect(function()
-            style.textColor = c.rgb
-            applyStyle()
-            SwStroke.Color = Color3.fromRGB(200,200,220) SwStroke.Thickness = 1.5
-        end)
-    end
-
-    -- ── РАЗМЕР ТЕКСТА ──────────────────────────────────────────────
-    makeLabel("РАЗМЕР ТЕКСТА", 146)
-
-    local SizeRow = Instance.new("Frame", Panel)
-    SizeRow.Size = UDim2.new(1, -16, 0, 24)
-    SizeRow.Position = UDim2.new(0, 8, 0, 160)
-    SizeRow.BackgroundTransparency = 1
-    local SizeLayout = Instance.new("UIListLayout", SizeRow)
-    SizeLayout.FillDirection = Enum.FillDirection.Horizontal
-    SizeLayout.Padding = UDim.new(0, 6)
-
-    local sizes = {10, 12, 14, 16, 18}
-    for _, sz in ipairs(sizes) do
-        local SBtn = Instance.new("TextButton", SizeRow)
-        SBtn.Size = UDim2.new(0, 34, 1, 0)
-        SBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-        SBtn.Text = tostring(sz)
-        SBtn.TextColor3 = Color3.fromRGB(180, 180, 200)
-        SBtn.Font = Enum.Font.GothamBold
-        SBtn.TextSize = 11
-        SBtn.BorderSizePixel = 0
-        Instance.new("UICorner", SBtn).CornerRadius = UDim.new(0, 5)
-        local SStroke = Instance.new("UIStroke", SBtn)
-        SStroke.Color = Color3.fromRGB(60,60,80) SStroke.Thickness = 1
-        SBtn.MouseButton1Click:Connect(function()
-            style.textSize = sz
-            applyStyle()
-            SStroke.Color = Color3.fromRGB(200,200,220) SStroke.Thickness = 1.5
-        end)
-    end
-
-    -- кнопка сброса
-    local ResetBtn = Instance.new("TextButton", Panel)
-    ResetBtn.Size = UDim2.new(1, -16, 0, 20)
-    ResetBtn.Position = UDim2.new(0, 8, 0, 186)
-    ResetBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-    ResetBtn.Text = "Сбросить"
-    ResetBtn.TextColor3 = Color3.fromRGB(160, 100, 100)
-    ResetBtn.Font = Enum.Font.Gotham
-    ResetBtn.TextSize = 10
-    ResetBtn.BorderSizePixel = 0
-    Instance.new("UICorner", ResetBtn).CornerRadius = UDim.new(0, 5)
-    ResetBtn.MouseButton1Click:Connect(function()
-        style.bgColor   = Color3.fromRGB(30, 30, 40)
-        style.textColor = Color3.fromRGB(220, 220, 230)
-        style.textSize  = 14
-        applyStyle()
-    end)
-end
-
--- Вешает долгое нажатие на тоггл-пилюлю: 0.4с удержания → открыть попап стиля
--- Короткий клик обрабатывается NeverLose как обычно
-local function CrystalAttachHold(toggleFrame, title, rowRef, circleRef)
-    if not toggleFrame then return end
-    local holdConn, holdTimer = nil, nil
-    toggleFrame.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.Touch
-        or inp.UserInputType == Enum.UserInputType.MouseButton1 then
-            holdTimer = tick()
-            holdConn = game:GetService("RunService").Heartbeat:Connect(function()
-                if holdTimer and (tick() - holdTimer) >= 0.4 then
-                    holdConn:Disconnect(); holdConn = nil; holdTimer = nil
-                    CrystalOpenStylePopup(title, rowRef, toggleFrame)
-                end
-            end)
-        end
-    end)
-    toggleFrame.InputEnded:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.Touch
-        or inp.UserInputType == Enum.UserInputType.MouseButton1 then
-            if holdConn then holdConn:Disconnect(); holdConn = nil end
-            holdTimer = nil
-        end
-    end)
-end
-
 local function makeControlAdapter(section)
     local api = {}
 
@@ -352,36 +73,23 @@ local function makeControlAdapter(section)
 
     function api:Toggle(cfg)
         cfg = cfg or {}
-        local title = tostring(cfg.Title or "Toggle")
-        local labelHandle = section:AddLabel(title)
-        local toggleCtrl = labelHandle:AddToggle({
+        return section:AddLabel(tostring(cfg.Title or "Toggle")):AddToggle({
             Default = cfg.Default == true,
             Flag = cfg.Flag,
             Callback = cfg.Callback,
         })
-        -- Удержание тоггла 0.4с → попап настройки цвета/размера
-        local rowRef = labelHandle and labelHandle.Root
-        local toggleFrame = toggleCtrl and toggleCtrl.Root
-        CrystalAttachHold(toggleFrame, title, rowRef, nil)
-        return toggleCtrl
     end
 
     function api:Button(cfg)
         cfg = cfg or {}
-        local title = tostring(cfg.Title or "Button")
-        -- AddButton doesn't go through AddLabel, so we make a label row manually
-        -- and put a clickable button element + dot inside it
-        local labelHandle = section:AddLabel(title)
-        CrystalAddDot(labelHandle, title, labelHandle.Root)
-        -- wire the label row click to the callback
-        if labelHandle.Root then
-            labelHandle.Root.InputBegan:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseButton1 then
-                    if cfg.Callback then cfg.Callback() end
-                end
-            end)
-        end
-        return labelHandle
+        -- NeverLose exposes AddButton directly on the section item,
+        -- while AddLabel returns a handler (which has toggles/sliders/dropdowns).
+        return section:AddButton({
+            Name = tostring(cfg.Title or "Button"),
+            Icon = cfg.Icon or "chevron-large-right",
+            Callback = cfg.Callback,
+            ToolTip = cfg.Description,
+        })
     end
 
     function api:Dropdown(cfg)
@@ -2753,18 +2461,18 @@ end
                 TextButton.Name = 'RuzBtn_' .. p38
                 TextButton.Size = p40
                 TextButton.Position = p39
-                TextButton.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-                TextButton.BackgroundTransparency = 0.05
+                TextButton.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                TextButton.BackgroundTransparency = 0.08
                 TextButton.Text = ''
                 TextButton.AutoButtonColor = false
                 TextButton.BorderSizePixel = 0
-                Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, math.floor(p40.Y.Offset * 0.22))
+                Instance.new('UICorner', TextButton).CornerRadius = UDim.new(0, p40.Y.Offset * 0.32)
 
                 local UIStroke = Instance.new('UIStroke', TextButton)
 
-                UIStroke.Color = Color3.fromRGB(255, 255, 255)
-                UIStroke.Thickness = 0
-                UIStroke.Transparency = 1
+                UIStroke.Color = Color3.fromRGB(50, 50, 50)
+                UIStroke.Thickness = 1.0
+                UIStroke.Transparency = 0.6
                 UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
                 local TextLabel = Instance.new('TextLabel', TextButton)
@@ -2776,7 +2484,7 @@ end
                 TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
                 TextLabel.Font = Enum.Font.GothamBlack
 
-                local v755 = p40.Y.Offset * 0.19
+                local v755 = p40.Y.Offset * 0.18
 
                 TextLabel.TextSize = math.max(12, v755)
                 TextLabel.TextYAlignment = Enum.TextYAlignment.Center
@@ -2828,8 +2536,8 @@ end
                 return ImageLabel
             end
 
-            uDim2_2 = UDim2.new(0, 88, 0, 88)
-            uDim2 = UDim2.new(0, 56, 0, 56)
+            uDim2_2 = UDim2.new(0, 110, 0, 110)
+            uDim2 = UDim2.new(0, 72, 0, 72)
             t26 = {
                 GoldBomb = UDim2.new(0.5, -210, 0.78, 0),
                 NormalBomb = UDim2.new(0.5, -110, 0.78, 0),
@@ -6228,228 +5936,6 @@ function t50.Callback(p88)
 end
 
 v302:ColorPicker(t50)
--- ── Цвет мобильных кнопок (TouchGui) ─────────────────────────────
-v302:Divider()
-v302:Paragraph({ Title = 'Мобильные кнопки' })
-
-local CrystalTouchStyle = {
-    bg      = Color3.fromRGB(30, 30, 40),
-    text    = Color3.fromRGB(220, 220, 230),
-    stroke  = Color3.fromRGB(80, 80, 100),
-    alpha   = 0.3,
-}
-
-local function CrystalApplyTouchStyle()
-    local pg = game:GetService('Players').LocalPlayer:FindFirstChildOfClass('PlayerGui')
-    if not pg then return end
-    local tg = pg:FindFirstChild('TouchGui')
-    if not tg then return end
-    for _, desc in ipairs(tg:GetDescendants()) do
-        if desc:IsA('TextButton') or desc:IsA('ImageButton') then
-            pcall(function()
-                desc.BackgroundColor3   = CrystalTouchStyle.bg
-                desc.BackgroundTransparency = CrystalTouchStyle.alpha
-                if desc:IsA('TextButton') then
-                    desc.TextColor3 = CrystalTouchStyle.text
-                end
-                local stroke = desc:FindFirstChildOfClass('UIStroke')
-                if not stroke then
-                    stroke = Instance.new('UIStroke', desc)
-                end
-                stroke.Color     = CrystalTouchStyle.stroke
-                stroke.Thickness = 1.5
-            end)
-        elseif desc:IsA('Frame') then
-            pcall(function()
-                desc.BackgroundColor3   = CrystalTouchStyle.bg
-                desc.BackgroundTransparency = math.max(CrystalTouchStyle.alpha, desc.BackgroundTransparency)
-            end)
-        end
-    end
-end
-
--- Открыть попап настройки TouchGui
-local function CrystalOpenTouchPopup()
-    local guiName = 'CrystalTouchStyle'
-    local existing = game.CoreGui:FindFirstChild(guiName)
-    if existing then existing:Destroy() return end
-
-    local SGui = Instance.new('ScreenGui', game.CoreGui)
-    SGui.Name = guiName
-    SGui.ResetOnSpawn = false
-    SGui.DisplayOrder = 130
-    SGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    local W, H = 270, 230
-    local Panel = Instance.new('Frame', SGui)
-    Panel.Size = UDim2.new(0, W, 0, H)
-    Panel.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
-    Panel.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
-    Panel.BackgroundTransparency = 0
-    Panel.BorderSizePixel = 0
-    Instance.new('UICorner', Panel).CornerRadius = UDim.new(0, 10)
-    local PStroke = Instance.new('UIStroke', Panel)
-    PStroke.Color = Color3.fromRGB(50, 50, 60) PStroke.Thickness = 1.2
-
-    -- drag
-    local _dr, _ds, _dp = false, nil, nil
-    Panel.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-            _dr=true _ds=i.Position _dp=Panel.Position
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(i)
-        if _dr and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-            local d = i.Position - _ds
-            Panel.Position = UDim2.new(_dp.X.Scale, _dp.X.Offset+d.X, _dp.Y.Scale, _dp.Y.Offset+d.Y)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then _dr=false end
-    end)
-
-    local TL = Instance.new('TextLabel', Panel)
-    TL.Size = UDim2.new(1, -30, 0, 26) TL.Position = UDim2.new(0, 10, 0, 0)
-    TL.BackgroundTransparency = 1 TL.Text = '📱  Мобильные кнопки'
-    TL.TextColor3 = Color3.fromRGB(200,200,210) TL.Font = Enum.Font.GothamBold
-    TL.TextSize = 12 TL.TextXAlignment = Enum.TextXAlignment.Left
-
-    local XB = Instance.new('TextButton', Panel)
-    XB.Size = UDim2.new(0,20,0,20) XB.Position = UDim2.new(1,-26,0,3)
-    XB.BackgroundColor3 = Color3.fromRGB(140,22,22) XB.Text = '✕'
-    XB.TextColor3 = Color3.new(1,1,1) XB.Font = Enum.Font.GothamBold XB.TextSize = 11
-    XB.BorderSizePixel = 0
-    Instance.new('UICorner', XB).CornerRadius = UDim.new(0,4)
-    XB.MouseButton1Click:Connect(function() SGui:Destroy() end)
-
-    local Sep = Instance.new('Frame', Panel)
-    Sep.Size = UDim2.new(1,-16,0,1) Sep.Position = UDim2.new(0,8,0,27)
-    Sep.BackgroundColor3 = Color3.fromRGB(42,42,52) Sep.BorderSizePixel = 0
-
-    local function mkLbl(text, y)
-        local L = Instance.new('TextLabel', Panel)
-        L.Size = UDim2.new(1,-16,0,14) L.Position = UDim2.new(0,10,0,y)
-        L.BackgroundTransparency = 1 L.Text = text
-        L.TextColor3 = Color3.fromRGB(110,110,130) L.Font = Enum.Font.Gotham
-        L.TextSize = 10 L.TextXAlignment = Enum.TextXAlignment.Left
-    end
-
-    -- превью кнопки
-    local Prev = Instance.new('TextButton', Panel)
-    Prev.Size = UDim2.new(1,-20,0,28) Prev.Position = UDim2.new(0,10,0,32)
-    Prev.BackgroundColor3 = CrystalTouchStyle.bg
-    Prev.BackgroundTransparency = CrystalTouchStyle.alpha
-    Prev.Text = 'SHOOT' Prev.TextColor3 = CrystalTouchStyle.text
-    Prev.Font = Enum.Font.GothamBold Prev.TextSize = 14 Prev.BorderSizePixel = 0
-    Instance.new('UICorner', Prev).CornerRadius = UDim.new(1, 0)
-    local PrevStroke = Instance.new('UIStroke', Prev)
-    PrevStroke.Color = CrystalTouchStyle.stroke PrevStroke.Thickness = 1.5
-
-    local function refreshPreview()
-        Prev.BackgroundColor3 = CrystalTouchStyle.bg
-        Prev.BackgroundTransparency = CrystalTouchStyle.alpha
-        Prev.TextColor3 = CrystalTouchStyle.text
-        PrevStroke.Color = CrystalTouchStyle.stroke
-        CrystalApplyTouchStyle()
-    end
-
-    -- ── ЦВЕТ ФОНА ──────────────────────────────────────────────
-    mkLbl('ЦВЕТ ФОНА КНОПКИ', 66)
-    local bgList = {
-        Color3.fromRGB(20, 20, 30),   Color3.fromRGB(20, 50, 100),
-        Color3.fromRGB(15, 60, 30),   Color3.fromRGB(80, 15, 15),
-        Color3.fromRGB(50, 15, 80),   Color3.fromRGB(50, 50, 60),
-    }
-    local BgRow = Instance.new('Frame', Panel)
-    BgRow.Size = UDim2.new(1,-16,0,22) BgRow.Position = UDim2.new(0,8,0,80)
-    BgRow.BackgroundTransparency = 1
-    local BgL = Instance.new('UIListLayout', BgRow)
-    BgL.FillDirection = Enum.FillDirection.Horizontal BgL.Padding = UDim.new(0,5)
-    for _, c in ipairs(bgList) do
-        local S = Instance.new('TextButton', BgRow)
-        S.Size = UDim2.new(0,30,1,0) S.BackgroundColor3 = c
-        S.Text = '' S.BorderSizePixel = 0
-        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
-        S.MouseButton1Click:Connect(function()
-            CrystalTouchStyle.bg = c refreshPreview()
-        end)
-    end
-
-    -- ── ЦВЕТ ТЕКСТА ────────────────────────────────────────────
-    mkLbl('ЦВЕТ ТЕКСТА КНОПКИ', 108)
-    local txtList = {
-        Color3.fromRGB(230,230,240), Color3.fromRGB(255,215,0),
-        Color3.fromRGB(80,200,255),  Color3.fromRGB(80,230,80),
-        Color3.fromRGB(255,130,180), Color3.fromRGB(150,150,160),
-    }
-    local TxtRow = Instance.new('Frame', Panel)
-    TxtRow.Size = UDim2.new(1,-16,0,22) TxtRow.Position = UDim2.new(0,8,0,122)
-    TxtRow.BackgroundTransparency = 1
-    local TxtL = Instance.new('UIListLayout', TxtRow)
-    TxtL.FillDirection = Enum.FillDirection.Horizontal TxtL.Padding = UDim.new(0,5)
-    for _, c in ipairs(txtList) do
-        local S = Instance.new('TextButton', TxtRow)
-        S.Size = UDim2.new(0,30,1,0) S.BackgroundColor3 = c
-        S.Text = '' S.BorderSizePixel = 0
-        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
-        S.MouseButton1Click:Connect(function()
-            CrystalTouchStyle.text = c refreshPreview()
-        end)
-    end
-
-    -- ── ЦВЕТ ОБВОДКИ ───────────────────────────────────────────
-    mkLbl('ЦВЕТ ОБВОДКИ', 150)
-    local strkList = {
-        Color3.fromRGB(80,80,100),   Color3.fromRGB(0,150,255),
-        Color3.fromRGB(0,200,80),    Color3.fromRGB(200,50,50),
-        Color3.fromRGB(180,100,255), Color3.fromRGB(200,200,200),
-    }
-    local StrkRow = Instance.new('Frame', Panel)
-    StrkRow.Size = UDim2.new(1,-16,0,22) StrkRow.Position = UDim2.new(0,8,0,164)
-    StrkRow.BackgroundTransparency = 1
-    local StrkL = Instance.new('UIListLayout', StrkRow)
-    StrkL.FillDirection = Enum.FillDirection.Horizontal StrkL.Padding = UDim.new(0,5)
-    for _, c in ipairs(strkList) do
-        local S = Instance.new('TextButton', StrkRow)
-        S.Size = UDim2.new(0,30,1,0) S.BackgroundColor3 = c
-        S.Text = '' S.BorderSizePixel = 0
-        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
-        S.MouseButton1Click:Connect(function()
-            CrystalTouchStyle.stroke = c refreshPreview()
-        end)
-    end
-
-    -- ── ПРОЗРАЧНОСТЬ ───────────────────────────────────────────
-    mkLbl('ПРОЗРАЧНОСТЬ', 192)
-    local alphaList = { {lbl='0%', v=0}, {lbl='20%', v=0.2}, {lbl='40%', v=0.4}, {lbl='60%', v=0.6}, {lbl='0 сброс', v=0} }
-    local AlpRow = Instance.new('Frame', Panel)
-    AlpRow.Size = UDim2.new(1,-16,0,22) AlpRow.Position = UDim2.new(0,8,0,206)
-    AlpRow.BackgroundTransparency = 1
-    local AlpL = Instance.new('UIListLayout', AlpRow)
-    AlpL.FillDirection = Enum.FillDirection.Horizontal AlpL.Padding = UDim.new(0,5)
-    local alphaSteps = {0, 0.2, 0.4, 0.6, 0.8}
-    local alphaLabels = {'0', '20', '40', '60', '80'}
-    for i, v in ipairs(alphaSteps) do
-        local S = Instance.new('TextButton', AlpRow)
-        S.Size = UDim2.new(0,36,1,0)
-        S.BackgroundColor3 = Color3.fromRGB(28,28,38)
-        S.BackgroundTransparency = v
-        S.Text = alphaLabels[i]..'%'
-        S.TextColor3 = Color3.fromRGB(200,200,210)
-        S.Font = Enum.Font.GothamBold S.TextSize = 10 S.BorderSizePixel = 0
-        Instance.new('UICorner', S).CornerRadius = UDim.new(0,5)
-        S.MouseButton1Click:Connect(function()
-            CrystalTouchStyle.alpha = v refreshPreview()
-        end)
-    end
-end
-
-v302:Button({
-    Title = '📱 Настройка кнопок управления',
-    Description = 'Цвет, текст и обводка мобильных кнопок (SHOOT, JUMP и т.д.)',
-    Callback = CrystalOpenTouchPopup,
-})
-
 task.wait(0.4)
 v232(false)
 v239(false)
