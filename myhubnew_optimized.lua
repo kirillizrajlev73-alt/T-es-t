@@ -1,4 +1,3 @@
---818181
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -5346,112 +5345,84 @@ do
         end)
     end
 
-    -- ── hookfunction-хук на FireServer ───────────────────────────────────
-    -- Работает на большинстве эксплойтов (Synapse X, KRNL, Fluxus, Delta …)
-    local hookedRemotes = {}   -- уже захукали — не дублируем
-    local originalFS    = nil  -- оригинальный FireServer (один для всех)
+    -- ── Хук через __namecall метатаблицы ────────────────────────────────
+    -- Самый надёжный способ: перехватываем ВСЕ :FireServer() вызовы,
+    -- фильтруем только Gun.Shoot
+    local shootRemoteRef = nil  -- ссылка на найденный Gun.Shoot ремот
 
-    local function hookRemote(remote, isKnife)
-        if hookedRemotes[remote] then return end
-        hookedRemotes[remote] = true
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
 
-        -- Получаем оригинал только один раз
-        if not originalFS then
-            originalFS = hookfunction(remote.FireServer, function(self, ...)
-                -- Этот колбек вызывается для ЛЮБОГО захукованного ремота.
-                -- Логика трейсера внутри каждого отдельного хука ниже.
-                return originalFS(self, ...)
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+
+        if method == "FireServer" and BT.Enabled and self == shootRemoteRef then
+            local args = { ... }
+            -- args[1] = shootCF (направление), args[2] = targetCF (цель)
+            local dirCF    = args[1]
+            local targetCF = args[2]
+
+            local startPos, endPos
+
+            pcall(function()
+                local char = LocalPlayer.Character
+                local gun  = char and char:FindFirstChild("Gun")
+                local h    = gun and gun:FindFirstChild("Handle")
+                startPos   = h and h.Position
             end)
-            -- Откатываем этот «пустой» глобальный хук — нам он не нужен,
-            -- нужны только хуки на конкретные ремоты.
-            hookfunction(remote.FireServer, originalFS)
-            hookedRemotes[remote] = false
-            originalFS = nil
-        end
 
-        -- Хукаем конкретный ремот напрямую через newcclosure / hookfunction
-        local origFire = hookfunction(remote.FireServer, newcclosure(function(self, ...)
-            -- Всегда вызываем оригинал первым (выстрел не пропадёт)
-            local ret = { pcall(origFire, self, ...) }
-
-            if BT.Enabled then
-                local args = { ... }
-                -- args[1] = CFrame направления (shootCF / throwCF)
-                -- args[2] = CFrame цели (targetCF)
-                local dirCF    = args[1]
-                local targetCF = args[2]
-
-                local startPos
-                pcall(function()
-                    local char = LocalPlayer.Character
-                    if isKnife then
-                        local knife = char and (char:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife"))
-                        local h = knife and knife:FindFirstChild("Handle")
-                        startPos = h and h.Position
-                    else
-                        local gun = char and (char:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun"))
-                        local h = gun and gun:FindFirstChild("Handle")
-                        startPos = h and h.Position
-                    end
-                end)
-
-                local endPos
-                if typeof(targetCF) == "CFrame" then
-                    endPos = targetCF.Position
-                elseif typeof(dirCF) == "CFrame" then
-                    -- fallback: луч из startPos в направлении dirCF
-                    endPos = dirCF.Position + dirCF.LookVector * 200
-                end
-
-                if startPos and endPos then
-                    task.spawn(bullettracerlol, startPos, endPos)
-                end
+            if typeof(targetCF) == "CFrame" then
+                endPos = targetCF.Position
+            elseif typeof(dirCF) == "CFrame" then
+                endPos = dirCF.Position + dirCF.LookVector * 200
             end
 
-            return table.unpack(ret, 2)
-        end))
-    end
+            if startPos and endPos then
+                task.spawn(bullettracerlol, startPos, endPos)
+            end
+        end
 
-    -- Слушаем появление инструментов в персонаже/рюкзаке
+        return oldNamecall(self, ...)
+    end)
+    setreadonly(mt, true)
+
+    -- Находим Gun.Shoot при подборе оружия
     local function watchChar(char)
         if not char then return end
+        shootRemoteRef = nil
 
-        local function tryHookTool(tool)
-            if not tool then return end
-            -- Только Gun → tool.Shoot (нож не трекаем)
-            if tool.Name ~= "Gun" then return end
+        local function tryFindShoot(tool)
+            if not tool or tool.Name ~= "Gun" then return end
             pcall(function()
-                local shootRemote = tool:WaitForChild("Shoot", 3)
-                if shootRemote and shootRemote:IsA("RemoteEvent") then
-                    hookRemote(shootRemote, false)
+                local remote = tool:WaitForChild("Shoot", 5)
+                if remote and remote:IsA("RemoteEvent") then
+                    shootRemoteRef = remote
                 end
             end)
         end
 
-        -- Уже в персонаже
-        for _, tool in ipairs(char:GetChildren()) do
-            if tool:IsA("Tool") then task.spawn(tryHookTool, tool) end
+        for _, obj in ipairs(char:GetChildren()) do
+            task.spawn(tryFindShoot, obj)
         end
         char.ChildAdded:Connect(function(obj)
-            if obj:IsA("Tool") then task.spawn(tryHookTool, obj) end
+            task.spawn(tryFindShoot, obj)
         end)
 
-        -- Рюкзак
         local bp = LocalPlayer:FindFirstChild("Backpack")
         if bp then
-            for _, tool in ipairs(bp:GetChildren()) do
-                if tool:IsA("Tool") then task.spawn(tryHookTool, tool) end
+            for _, obj in ipairs(bp:GetChildren()) do
+                task.spawn(tryFindShoot, obj)
             end
             bp.ChildAdded:Connect(function(obj)
-                if obj:IsA("Tool") then task.spawn(tryHookTool, obj) end
+                task.spawn(tryFindShoot, obj)
             end)
         end
     end
 
-    -- Запуск и переспаун
     watchChar(LocalPlayer.Character)
     LocalPlayer.CharacterAdded:Connect(function(char)
-        hookedRemotes = {}   -- сбрасываем при респауне
+        shootRemoteRef = nil
         task.wait(1)
         watchChar(char)
     end)
