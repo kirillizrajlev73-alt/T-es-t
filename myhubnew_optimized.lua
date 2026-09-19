@@ -1,3 +1,4 @@
+--818181
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -5288,11 +5289,14 @@ VisualsTab:Button({
 
 -- ═══════════════════════════════════════════
 -- BULLET TRACERS (VisualsTab)
+-- Хук через hookfunction на FireServer конкретных MM2 ремотов:
+--   Gun   → Gun.Shoot           FireServer(shootCF, targetCF)
+--   Knife → Knife.Events.KnifeThrown  FireServer(throwCF, targetCF)
+-- targetCF — второй аргумент, его .Position = точка попадания
 -- ═══════════════════════════════════════════
 do
     local TweenService = game:GetService("TweenService")
 
-    -- Настройки трейсера
     local BT = {
         Enabled      = false,
         Color        = Color3.fromRGB(255, 50, 50),
@@ -5302,35 +5306,23 @@ do
         TextureID    = "rbxassetid://6880875456",
     }
 
-    -- Функция рисования трейсера
+    -- ── Beam-рисовалка ──────────────────────────────────────────────────
     local function bullettracerlol(startPos, endPos)
-        local startPart = Instance.new("Part")
-        startPart.Name         = "BulletStart"
-        startPart.Anchored     = true
-        startPart.CanCollide   = false
-        startPart.CanTouch     = false
-        startPart.CanQuery     = false
-        startPart.Massless     = true
-        startPart.Transparency = 1
-        startPart.Size         = Vector3.new(0.2, 0.2, 0.2)
-        startPart.Position     = startPos
-        startPart.Parent       = Workspace
+        local sp = Instance.new("Part")
+        sp.Name = "BulletStart" sp.Anchored = true sp.CanCollide = false
+        sp.CanTouch = false sp.CanQuery = false sp.Massless = true
+        sp.Transparency = 1 sp.Size = Vector3.new(0.2,0.2,0.2)
+        sp.Position = startPos sp.Parent = Workspace
 
-        local endPart = Instance.new("Part")
-        endPart.Name         = "BulletEnd"
-        endPart.Anchored     = true
-        endPart.CanCollide   = false
-        endPart.CanTouch     = false
-        endPart.CanQuery     = false
-        endPart.Massless     = true
-        endPart.Transparency = 1
-        endPart.Size         = Vector3.new(0.2, 0.2, 0.2)
-        endPart.Position     = endPos
-        endPart.Parent       = Workspace
+        local ep = Instance.new("Part")
+        ep.Name = "BulletEnd" ep.Anchored = true ep.CanCollide = false
+        ep.CanTouch = false ep.CanQuery = false ep.Massless = true
+        ep.Transparency = 1 ep.Size = Vector3.new(0.2,0.2,0.2)
+        ep.Position = endPos ep.Parent = Workspace
 
         local beam = Instance.new("Beam")
-        beam.Attachment0   = Instance.new("Attachment", startPart)
-        beam.Attachment1   = Instance.new("Attachment", endPart)
+        beam.Attachment0   = Instance.new("Attachment", sp)
+        beam.Attachment1   = Instance.new("Attachment", ep)
         beam.FaceCamera    = true
         beam.LightEmission = 1
         beam.Color         = ColorSequence.new(BT.Color)
@@ -5338,72 +5330,131 @@ do
         beam.Transparency  = NumberSequence.new(BT.Transparency)
         beam.Width0        = BT.Size
         beam.Width1        = BT.Size
-        beam.Parent        = startPart
+        beam.Parent        = sp
 
         task.delay(BT.TimeAlive, function()
             if beam and beam.Parent then
-                local tw = TweenService:Create(
-                    beam,
+                local tw = TweenService:Create(beam,
                     TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    { Width0 = 0, Width1 = 0 }
-                )
+                    { Width0 = 0, Width1 = 0 })
                 tw:Play()
                 tw.Completed:Wait()
             end
-            if startPart and startPart.Parent then startPart:Destroy() end
-            if endPart   and endPart.Parent   then endPart:Destroy()   end
-            if beam      and beam.Parent       then beam:Destroy()      end
+            if sp   and sp.Parent   then sp:Destroy()   end
+            if ep   and ep.Parent   then ep:Destroy()   end
+            if beam and beam.Parent then beam:Destroy() end
         end)
     end
 
-    -- Хук на выстрелы / броски ножа
-    local btConn = nil
+    -- ── hookfunction-хук на FireServer ───────────────────────────────────
+    -- Работает на большинстве эксплойтов (Synapse X, KRNL, Fluxus, Delta …)
+    local hookedRemotes = {}   -- уже захукали — не дублируем
+    local originalFS    = nil  -- оригинальный FireServer (один для всех)
 
-    local function btConnect()
-        if btConn then return end
-        btConn = RunService.RenderStepped:Connect(function()
-            local char = LocalPlayer.Character
-            if not char then return end
+    local function hookRemote(remote, isKnife)
+        if hookedRemotes[remote] then return end
+        hookedRemotes[remote] = true
 
-            -- Проверяем gun (выстрел) и knife (бросок)
-            for _, tool in ipairs({ char:FindFirstChild("Gun"), char:FindFirstChild("Knife") }) do
-                if not tool then continue end
-                local handle = tool:FindFirstChild("Handle")
-                if not handle then continue end
+        -- Получаем оригинал только один раз
+        if not originalFS then
+            originalFS = hookfunction(remote.FireServer, function(self, ...)
+                -- Этот колбек вызывается для ЛЮБОГО захукованного ремота.
+                -- Логика трейсера внутри каждого отдельного хука ниже.
+                return originalFS(self, ...)
+            end)
+            -- Откатываем этот «пустой» глобальный хук — нам он не нужен,
+            -- нужны только хуки на конкретные ремоты.
+            hookfunction(remote.FireServer, originalFS)
+            hookedRemotes[remote] = false
+            originalFS = nil
+        end
 
-                -- Слушаем RemoteEvent выстрела/броска
-                for _, v in ipairs(tool:GetDescendants()) do
-                    if v:IsA("RemoteEvent") and not v:GetAttribute("_btHooked") then
-                        v:SetAttribute("_btHooked", true)
-                        v.OnClientEvent:Connect(function(...)
-                            if not BT.Enabled then return end
-                            local args = { ... }
-                            -- startPos = позиция ствола / рукояти
-                            local startPos = handle.Position
-                            -- endPos: ищем Vector3 в аргументах
-                            local endPos
-                            for _, a in ipairs(args) do
-                                if typeof(a) == "Vector3" then
-                                    endPos = a
-                                    break
-                                end
-                            end
-                            if endPos then
-                                bullettracerlol(startPos, endPos)
-                            end
-                        end)
+        -- Хукаем конкретный ремот напрямую через newcclosure / hookfunction
+        local origFire = hookfunction(remote.FireServer, newcclosure(function(self, ...)
+            -- Всегда вызываем оригинал первым (выстрел не пропадёт)
+            local ret = { pcall(origFire, self, ...) }
+
+            if BT.Enabled then
+                local args = { ... }
+                -- args[1] = CFrame направления (shootCF / throwCF)
+                -- args[2] = CFrame цели (targetCF)
+                local dirCF    = args[1]
+                local targetCF = args[2]
+
+                local startPos
+                pcall(function()
+                    local char = LocalPlayer.Character
+                    if isKnife then
+                        local knife = char and (char:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife"))
+                        local h = knife and knife:FindFirstChild("Handle")
+                        startPos = h and h.Position
+                    else
+                        local gun = char and (char:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun"))
+                        local h = gun and gun:FindFirstChild("Handle")
+                        startPos = h and h.Position
                     end
+                end)
+
+                local endPos
+                if typeof(targetCF) == "CFrame" then
+                    endPos = targetCF.Position
+                elseif typeof(dirCF) == "CFrame" then
+                    -- fallback: луч из startPos в направлении dirCF
+                    endPos = dirCF.Position + dirCF.LookVector * 200
+                end
+
+                if startPos and endPos then
+                    task.spawn(bullettracerlol, startPos, endPos)
                 end
             end
-        end)
+
+            return table.unpack(ret, 2)
+        end))
     end
 
-    local function btDisconnect()
-        if btConn then
-            btConn:Disconnect()
-            btConn = nil
+    -- Слушаем появление инструментов в персонаже/рюкзаке
+    local function watchChar(char)
+        if not char then return end
+
+        local function tryHookTool(tool)
+            if not tool then return end
+            -- Только Gun → tool.Shoot (нож не трекаем)
+            if tool.Name ~= "Gun" then return end
+            pcall(function()
+                local shootRemote = tool:WaitForChild("Shoot", 3)
+                if shootRemote and shootRemote:IsA("RemoteEvent") then
+                    hookRemote(shootRemote, false)
+                end
+            end)
+        end
+
+        -- Уже в персонаже
+        for _, tool in ipairs(char:GetChildren()) do
+            if tool:IsA("Tool") then task.spawn(tryHookTool, tool) end
+        end
+        char.ChildAdded:Connect(function(obj)
+            if obj:IsA("Tool") then task.spawn(tryHookTool, obj) end
+        end)
+
+        -- Рюкзак
+        local bp = LocalPlayer:FindFirstChild("Backpack")
+        if bp then
+            for _, tool in ipairs(bp:GetChildren()) do
+                if tool:IsA("Tool") then task.spawn(tryHookTool, tool) end
+            end
+            bp.ChildAdded:Connect(function(obj)
+                if obj:IsA("Tool") then task.spawn(tryHookTool, obj) end
+            end)
         end
     end
+
+    -- Запуск и переспаун
+    watchChar(LocalPlayer.Character)
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        hookedRemotes = {}   -- сбрасываем при респауне
+        task.wait(1)
+        watchChar(char)
+    end)
 
     -- ── UI ──────────────────────────────────────────────────────────────
     VisualsTab:Divider()
@@ -5414,12 +5465,11 @@ do
         Default  = false,
         Callback = function(val)
             BT.Enabled = val
-            if val then btConnect() else btDisconnect() end
             v18:Notify({
-                Title   = "CrystalHub",
-                Content = "Bullet Tracers " .. (val and "ON" or "OFF"),
+                Title    = "CrystalHub",
+                Content  = "Bullet Tracers " .. (val and "ON" or "OFF"),
                 Duration = 3,
-                Icon    = "bell",
+                Icon     = "bell",
             })
         end,
     })
@@ -5427,36 +5477,28 @@ do
     VisualsTab:ColorPicker({
         Title    = "Tracer Color",
         Default  = BT.Color,
-        Callback = function(col)
-            BT.Color = col
-        end,
+        Callback = function(col) BT.Color = col end,
     })
 
     VisualsTab:Slider({
         Title    = "Tracer Width",
         Value    = { Min = 1, Max = 20, Default = 12 },
         Rounding = 0,
-        Callback = function(val)
-            BT.Size = val * 0.01  -- 1..20 → 0.01..0.20
-        end,
+        Callback = function(val) BT.Size = val * 0.01 end,
     })
 
     VisualsTab:Slider({
         Title    = "Tracer Duration (×0.1s)",
         Value    = { Min = 1, Max = 30, Default = 6 },
         Rounding = 0,
-        Callback = function(val)
-            BT.TimeAlive = val * 0.1  -- 0.1 .. 3.0 сек
-        end,
+        Callback = function(val) BT.TimeAlive = val * 0.1 end,
     })
 
     VisualsTab:Slider({
         Title    = "Tracer Transparency",
         Value    = { Min = 0, Max = 9, Default = 0 },
         Rounding = 0,
-        Callback = function(val)
-            BT.Transparency = val * 0.1  -- 0.0 .. 0.9
-        end,
+        Callback = function(val) BT.Transparency = val * 0.1 end,
     })
 end
 -- ═══════════════════════════════════════════
