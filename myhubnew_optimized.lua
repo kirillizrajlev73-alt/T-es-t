@@ -1,4 +1,3 @@
---зудв
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -3154,9 +3153,9 @@ end
         -- The same style as the reference: one slim dark bar across the top.
         local overlay = Instance.new("TextButton")
         overlay.Name = "CrystalHubOverlay"
-        overlay.Size = UDim2.new(0.67, 0, 0, 48)
-        overlay.Position = UDim2.new(0.28, 0, 0, 6)
-        overlay.AnchorPoint = Vector2.new(0.5, 0)
+        overlay.Size = UDim2.new(0, 530, 0, 42)
+        overlay.Position = UDim2.new(1, -10, 0, 7)
+        overlay.AnchorPoint = Vector2.new(1, 0)
         overlay.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
         overlay.BackgroundTransparency = 0.16
         overlay.BorderSizePixel = 0
@@ -3175,15 +3174,15 @@ end
         stroke.Parent = overlay
 
         local padding = Instance.new("UIPadding")
-        padding.PaddingLeft = UDim.new(0, 10)
-        padding.PaddingRight = UDim.new(0, 10)
+        padding.PaddingLeft = UDim.new(0, 7)
+        padding.PaddingRight = UDim.new(0, 7)
         padding.Parent = overlay
 
         local list = Instance.new("UIListLayout")
         list.FillDirection = Enum.FillDirection.Horizontal
         list.VerticalAlignment = Enum.VerticalAlignment.Center
         list.HorizontalAlignment = Enum.HorizontalAlignment.Left
-        list.Padding = UDim.new(0, 6)
+        list.Padding = UDim.new(0, 3)
         list.SortOrder = Enum.SortOrder.LayoutOrder
         list.Parent = overlay
 
@@ -3195,7 +3194,7 @@ end
             label.BackgroundTransparency = 1
             label.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
             label.Text = text
-            label.TextSize = 13
+            label.TextSize = 11
             label.TextColor3 = Color3.fromRGB(215, 215, 225)
             label.TextXAlignment = Enum.TextXAlignment.Center
             label.TextYAlignment = Enum.TextYAlignment.Center
@@ -3203,25 +3202,25 @@ end
             return label
         end
 
-        local logo = makeLabel("Logo", "▣", 1, 22, true)
+        local logo = makeLabel("Logo", "▣", 1, 18, true)
         logo.TextColor3 = Color3.fromRGB(120, 140, 255)
 
-        local fpsLabel = makeLabel("FPS", "-- FPS", 2, 62, true)
-        local pingLabel = makeLabel("Ping", "-- MS", 3, 64, true)
-        local memoryLabel = makeLabel("Memory", "-- MB", 4, 70, false)
-        local playerLabel = makeLabel("Player", LocalPlayer and LocalPlayer.Name or "Player", 5, 120, true)
-        local profileLabel = makeLabel("Profile", "● Default", 6, 90, false)
-        local infoLabel = makeLabel("Info", "CrystalHub", 7, 90, true)
-        local timeLabel = makeLabel("Time", "--:--", 8, 55, false)
-        local menuLabel = makeLabel("Menu", "≡", 9, 30, true)
-        menuLabel.TextSize = 21
+        local fpsLabel = makeLabel("FPS", "-- FPS", 2, 50, true)
+        local pingLabel = makeLabel("Ping", "-- MS", 3, 52, true)
+        local memoryLabel = makeLabel("Memory", "-- MB", 4, 60, false)
+        local playerLabel = makeLabel("Player", LocalPlayer and LocalPlayer.Name or "Player", 5, 85, true)
+        local profileLabel = makeLabel("Profile", "● Default", 6, 70, false)
+        local infoLabel = makeLabel("Info", "CrystalHub", 7, 70, true)
+        local timeLabel = makeLabel("Time", "--:--", 8, 45, false)
+        local menuLabel = makeLabel("Menu", "≡", 9, 24, true)
+        menuLabel.TextSize = 17
 
         -- Keep the information compact on small/mobile screens.
         local function updateScale()
             local camera = workspace.CurrentCamera
             if not camera then return end
             local width = camera.ViewportSize.X
-            local size = width < 600 and 11 or 13
+            local size = width < 600 and 10 or 11
             for _, child in ipairs(overlay:GetChildren()) do
                 if child:IsA("TextLabel") then
                     child.TextSize = (child == menuLabel and size + 7 or size)
