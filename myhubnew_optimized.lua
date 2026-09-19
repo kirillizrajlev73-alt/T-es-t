@@ -1,4 +1,3 @@
---81818 аплаоуд сука обновитьы raw пт
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -3121,9 +3120,13 @@ end
         Opened = true,
     })
 
-    -- Top overlay to open/toggle the CrystalHub GUI.
-    -- Replaces the old OPEN GUI button.
+    -- Top watermark/overlay (tap it to open/close the GUI).
     do
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local Stats = game:GetService("Stats")
+        local LocalPlayer = Players.LocalPlayer
+
         local guiParent
         pcall(function()
             if typeof(gethui) == "function" then
@@ -3142,88 +3145,138 @@ end
         local overlayGui = Instance.new("ScreenGui")
         overlayGui.Name = "CrystalHubOpenButton"
         overlayGui.ResetOnSpawn = false
-        overlayGui.IgnoreGuiInset = false
+        overlayGui.IgnoreGuiInset = true
         overlayGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        overlayGui.DisplayOrder = 999999
         overlayGui.Parent = guiParent
 
+        -- The same style as the reference: one slim dark bar across the top.
         local overlay = Instance.new("TextButton")
         overlay.Name = "CrystalHubOverlay"
-        overlay.Size = UDim2.new(0.72, 0, 0, 58)
-        overlay.Position = UDim2.new(0.5, 0, 0, 8)
+        overlay.Size = UDim2.new(1, -18, 0, 42)
+        overlay.Position = UDim2.new(0.5, 0, 0, 6)
         overlay.AnchorPoint = Vector2.new(0.5, 0)
-        overlay.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
-        overlay.BackgroundTransparency = 0.18
+        overlay.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+        overlay.BackgroundTransparency = 0.16
         overlay.BorderSizePixel = 0
         overlay.AutoButtonColor = false
         overlay.Text = ""
         overlay.Parent = overlayGui
 
         local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 14)
+        corner.CornerRadius = UDim.new(0, 10)
         corner.Parent = overlay
 
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1
-        stroke.Color = Color3.fromRGB(80, 80, 90)
-        stroke.Transparency = 0.35
+        stroke.Color = Color3.fromRGB(70, 70, 80)
+        stroke.Transparency = 0.45
         stroke.Parent = overlay
 
-        local title = Instance.new("TextLabel")
-        title.Name = "Title"
-        title.BackgroundTransparency = 1
-        title.Position = UDim2.new(0, 18, 0, 0)
-        title.Size = UDim2.new(0.24, 0, 1, 0)
-        title.Font = Enum.Font.GothamBold
-        title.Text = "CrystalHub"
-        title.TextSize = 17
-        title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Parent = overlay
+        local padding = Instance.new("UIPadding")
+        padding.PaddingLeft = UDim.new(0, 12)
+        padding.PaddingRight = UDim.new(0, 12)
+        padding.Parent = overlay
 
-        local line = Instance.new("Frame")
-        line.Name = "Line"
-        line.BorderSizePixel = 0
-        line.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
-        line.BackgroundTransparency = 0.45
-        line.Position = UDim2.new(0.255, 0, 0.2, 0)
-        line.Size = UDim2.new(0, 1, 0.6, 0)
-        line.Parent = overlay
+        local list = Instance.new("UIListLayout")
+        list.FillDirection = Enum.FillDirection.Horizontal
+        list.VerticalAlignment = Enum.VerticalAlignment.Center
+        list.HorizontalAlignment = Enum.HorizontalAlignment.Left
+        list.Padding = UDim.new(0, 10)
+        list.SortOrder = Enum.SortOrder.LayoutOrder
+        list.Parent = overlay
 
-        local status = Instance.new("TextLabel")
-        status.Name = "Status"
-        status.BackgroundTransparency = 1
-        status.Position = UDim2.new(0.29, 0, 0, 0)
-        status.Size = UDim2.new(0.24, 0, 1, 0)
-        status.Font = Enum.Font.Gotham
-        status.Text = "●  ONLINE"
-        status.TextSize = 14
-        status.TextColor3 = Color3.fromRGB(170, 170, 180)
-        status.TextXAlignment = Enum.TextXAlignment.Left
-        status.Parent = overlay
+        local function makeLabel(name, text, order, width, bold)
+            local label = Instance.new("TextLabel")
+            label.Name = name
+            label.LayoutOrder = order
+            label.Size = UDim2.new(0, width, 1, 0)
+            label.BackgroundTransparency = 1
+            label.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+            label.Text = text
+            label.TextSize = 13
+            label.TextColor3 = Color3.fromRGB(215, 215, 225)
+            label.TextXAlignment = Enum.TextXAlignment.Center
+            label.TextYAlignment = Enum.TextYAlignment.Center
+            label.Parent = overlay
+            return label
+        end
 
-        local info = Instance.new("TextLabel")
-        info.Name = "Info"
-        info.BackgroundTransparency = 1
-        info.Position = UDim2.new(0.54, 0, 0, 0)
-        info.Size = UDim2.new(0.27, 0, 1, 0)
-        info.Font = Enum.Font.Gotham
-        info.Text = "CrystalHub  •  TAP TO OPEN"
-        info.TextSize = 13
-        info.TextColor3 = Color3.fromRGB(185, 185, 195)
-        info.TextXAlignment = Enum.TextXAlignment.Center
-        info.Parent = overlay
+        local logo = makeLabel("Logo", "▣", 1, 22, true)
+        logo.TextColor3 = Color3.fromRGB(120, 140, 255)
 
-        local toggleIcon = Instance.new("TextLabel")
-        toggleIcon.Name = "ToggleIcon"
-        toggleIcon.BackgroundTransparency = 1
-        toggleIcon.Position = UDim2.new(0.91, 0, 0, 0)
-        toggleIcon.Size = UDim2.new(0.07, 0, 1, 0)
-        toggleIcon.Font = Enum.Font.GothamBold
-        toggleIcon.Text = "≡"
-        toggleIcon.TextSize = 24
-        toggleIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-        toggleIcon.TextXAlignment = Enum.TextXAlignment.Center
-        toggleIcon.Parent = overlay
+        local fpsLabel = makeLabel("FPS", "-- FPS", 2, 62, true)
+        local pingLabel = makeLabel("Ping", "-- MS", 3, 64, true)
+        local memoryLabel = makeLabel("Memory", "-- MB", 4, 70, false)
+        local playerLabel = makeLabel("Player", LocalPlayer and LocalPlayer.Name or "Player", 5, 120, true)
+        local profileLabel = makeLabel("Profile", "● Default", 6, 90, false)
+        local infoLabel = makeLabel("Info", "CrystalHub", 7, 90, true)
+        local timeLabel = makeLabel("Time", "--:--", 8, 55, false)
+        local menuLabel = makeLabel("Menu", "≡", 9, 30, true)
+        menuLabel.TextSize = 21
+
+        -- Keep the information compact on small/mobile screens.
+        local function updateScale()
+            local camera = workspace.CurrentCamera
+            if not camera then return end
+            local width = camera.ViewportSize.X
+            local size = width < 600 and 11 or 13
+            for _, child in ipairs(overlay:GetChildren()) do
+                if child:IsA("TextLabel") then
+                    child.TextSize = (child == menuLabel and size + 7 or size)
+                end
+            end
+        end
+        updateScale()
+        pcall(function()
+            workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+        end)
+
+        local frames = 0
+        local lastFpsUpdate = os.clock()
+        local fps = 0
+
+        local function getPing()
+            local value = nil
+            pcall(function()
+                local network = Stats:FindFirstChild("Network")
+                local serverStats = network and network:FindFirstChild("ServerStatsItem")
+                local item = serverStats and serverStats:FindFirstChild("Data Ping")
+                if item then
+                    value = item:GetValue()
+                end
+            end)
+            return value
+        end
+
+        local updateConnection
+        updateConnection = RunService.RenderStepped:Connect(function()
+            frames += 1
+            local now = os.clock()
+            local elapsed = now - lastFpsUpdate
+            if elapsed >= 0.5 then
+                fps = math.floor(frames / elapsed + 0.5)
+                frames = 0
+                lastFpsUpdate = now
+
+                fpsLabel.Text = string.format("%d FPS", fps)
+
+                local ping = getPing()
+                if ping then
+                    pingLabel.Text = string.format("%d MS", math.floor(ping + 0.5))
+                else
+                    pingLabel.Text = "-- MS"
+                end
+
+                local memory = 0
+                pcall(function()
+                    memory = Stats:GetTotalMemoryUsageMb()
+                end)
+                memoryLabel.Text = string.format("%d MB", math.floor(memory + 0.5))
+
+                timeLabel.Text = os.date("%H:%M")
+            end
+        end)
 
         overlay.Activated:Connect(function()
             pcall(function()
@@ -3232,22 +3285,26 @@ end
         end)
 
         overlay.MouseButton1Down:Connect(function()
-            overlay.BackgroundTransparency = 0.05
+            overlay.BackgroundTransparency = 0.04
         end)
-
         overlay.MouseButton1Up:Connect(function()
-            overlay.BackgroundTransparency = 0.18
+            overlay.BackgroundTransparency = 0.16
         end)
 
         overlay.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch then
-                overlay.BackgroundTransparency = 0.05
+                overlay.BackgroundTransparency = 0.04
+            end
+        end)
+        overlay.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                overlay.BackgroundTransparency = 0.16
             end
         end)
 
-        overlay.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Touch then
-                overlay.BackgroundTransparency = 0.18
+        overlay.Destroying:Connect(function()
+            if updateConnection then
+                updateConnection:Disconnect()
             end
         end)
     end
