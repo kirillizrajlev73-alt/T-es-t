@@ -1,4 +1,3 @@
---71717 гит обнови плс или ты хуета
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 
 do
@@ -60,6 +59,202 @@ function v18:Notify(cfg)
     end
 end
 
+-- ────────────────────────────────────────────────────────────────
+-- CrystalHub: per-feature settings popup (keybind + quick-button)
+-- Opens when user clicks "···" on any Toggle or Button row
+-- ────────────────────────────────────────────────────────────────
+local CrystalFeatureSettings = {}   -- [featureTitle] = { keybind=KeyCode|nil, toggleRef=obj|nil }
+
+local function CrystalOpenFeatureSettings(title, toggleRef)
+    local guiName = "CrystalFeatSet_" .. title:gsub("%s+","_"):sub(1,40)
+    local existing = game.CoreGui:FindFirstChild(guiName)
+    if existing then existing:Destroy() return end
+
+    local cfg = CrystalFeatureSettings[title]
+    if not cfg then cfg = {} CrystalFeatureSettings[title] = cfg end
+
+    -- ── Popup ──────────────────────────────────────────────────
+    local SGui = Instance.new("ScreenGui", game.CoreGui)
+    SGui.Name = guiName
+    SGui.ResetOnSpawn = false
+    SGui.DisplayOrder = 120
+    SGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local W, H = 240, 128
+    local Panel = Instance.new("Frame", SGui)
+    Panel.Size = UDim2.new(0, W, 0, H)
+    Panel.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
+    Panel.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
+    Panel.BackgroundTransparency = 0.03
+    Panel.BorderSizePixel = 0
+    Instance.new("UICorner", Panel).CornerRadius = UDim.new(0, 10)
+    local PS = Instance.new("UIStroke", Panel)
+    PS.Color = Color3.fromRGB(55, 55, 55)
+    PS.Thickness = 1.2
+
+    -- drag
+    local _dr, _ds, _dp = false, nil, nil
+    Panel.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            _dr=true _ds=i.Position _dp=Panel.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if _dr and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local d = i.Position - _ds
+            Panel.Position = UDim2.new(_dp.X.Scale, _dp.X.Offset+d.X, _dp.Y.Scale, _dp.Y.Offset+d.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then _dr=false end
+    end)
+
+    -- title bar
+    local TL = Instance.new("TextLabel", Panel)
+    TL.Size = UDim2.new(1, -32, 0, 28)
+    TL.Position = UDim2.new(0, 10, 0, 0)
+    TL.BackgroundTransparency = 1
+    TL.Text = "⚙  " .. title
+    TL.TextColor3 = Color3.fromRGB(210, 210, 210)
+    TL.Font = Enum.Font.GothamBold
+    TL.TextSize = 12
+    TL.TextXAlignment = Enum.TextXAlignment.Left
+    TL.TextTruncate = Enum.TextTruncate.AtEnd
+
+    local XB = Instance.new("TextButton", Panel)
+    XB.Size = UDim2.new(0, 22, 0, 22)
+    XB.Position = UDim2.new(1, -28, 0, 3)
+    XB.BackgroundColor3 = Color3.fromRGB(150, 25, 25)
+    XB.Text = "✕"
+    XB.TextColor3 = Color3.new(1,1,1)
+    XB.Font = Enum.Font.GothamBold
+    XB.TextSize = 11
+    XB.BorderSizePixel = 0
+    Instance.new("UICorner", XB).CornerRadius = UDim.new(0, 5)
+    XB.MouseButton1Click:Connect(function() SGui:Destroy() end)
+
+    local Sep = Instance.new("Frame", Panel)
+    Sep.Size = UDim2.new(1, -16, 0, 1)
+    Sep.Position = UDim2.new(0, 8, 0, 29)
+    Sep.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Sep.BorderSizePixel = 0
+
+    -- ── KEYBIND ROW ───────────────────────────────────────────
+    local KL = Instance.new("TextLabel", Panel)
+    KL.Size = UDim2.new(0, 70, 0, 18)
+    KL.Position = UDim2.new(0, 10, 0, 36)
+    KL.BackgroundTransparency = 1
+    KL.Text = "КЛАВИША"
+    KL.TextColor3 = Color3.fromRGB(130, 130, 130)
+    KL.Font = Enum.Font.Gotham
+    KL.TextSize = 10
+    KL.TextXAlignment = Enum.TextXAlignment.Left
+
+    local isBinding = false
+    local BindBtn = Instance.new("TextButton", Panel)
+    BindBtn.Size = UDim2.new(1, -20, 0, 28)
+    BindBtn.Position = UDim2.new(0, 10, 0, 55)
+    BindBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+    BindBtn.Text = cfg.keybind and tostring(cfg.keybind):gsub("Enum%.KeyCode%.","") or "Нажми для привязки..."
+    BindBtn.TextColor3 = cfg.keybind and Color3.fromRGB(80,255,80) or Color3.fromRGB(160,160,160)
+    BindBtn.Font = Enum.Font.GothamBold
+    BindBtn.TextSize = 12
+    BindBtn.BorderSizePixel = 0
+    local BS = Instance.new("UIStroke", BindBtn)
+    BS.Color = Color3.fromRGB(60,60,60) BS.Thickness = 1
+    Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 6)
+
+    local ClearKB = Instance.new("TextButton", Panel)
+    ClearKB.Size = UDim2.new(0, 22, 0, 22)
+    ClearKB.Position = UDim2.new(1, -28, 0, 58)
+    ClearKB.BackgroundColor3 = Color3.fromRGB(90,18,18)
+    ClearKB.Text = "✕"
+    ClearKB.TextColor3 = Color3.new(1,1,1)
+    ClearKB.Font = Enum.Font.GothamBold
+    ClearKB.TextSize = 10
+    ClearKB.BorderSizePixel = 0
+    Instance.new("UICorner", ClearKB).CornerRadius = UDim.new(0, 4)
+
+    BindBtn.MouseButton1Click:Connect(function()
+        if isBinding then return end
+        isBinding = true
+        BindBtn.Text = "[ Жми клавишу... ]"
+        BindBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
+        BS.Color = Color3.fromRGB(255, 215, 0)
+        local conn
+        conn = UserInputService.InputBegan:Connect(function(inp, gp)
+            if gp then return end
+            if inp.UserInputType == Enum.UserInputType.Keyboard then
+                cfg.keybind = inp.KeyCode
+                local keyName = tostring(inp.KeyCode):gsub("Enum%.KeyCode%.","")
+                BindBtn.Text = keyName
+                BindBtn.TextColor3 = Color3.fromRGB(80,255,80)
+                BS.Color = Color3.fromRGB(60,60,60)
+                isBinding = false
+                conn:Disconnect()
+                -- wire keybind → toggle or fire
+                if cfg._keybindConn then cfg._keybindConn:Disconnect() end
+                cfg._keybindConn = UserInputService.InputBegan:Connect(function(ki, gp2)
+                    if not gp2 and ki.KeyCode == cfg.keybind then
+                        if toggleRef and toggleRef.SetValue then
+                            toggleRef:SetValue(not toggleRef.Value)
+                        end
+                    end
+                end)
+            end
+        end)
+    end)
+
+    ClearKB.MouseButton1Click:Connect(function()
+        if cfg._keybindConn then cfg._keybindConn:Disconnect() cfg._keybindConn = nil end
+        cfg.keybind = nil
+        BindBtn.Text = "Нажми для привязки..."
+        BindBtn.TextColor3 = Color3.fromRGB(160,160,160)
+    end)
+
+    -- ── HINT ─────────────────────────────────────────────────
+    local Hint = Instance.new("TextLabel", Panel)
+    Hint.Size = UDim2.new(1, -20, 0, 16)
+    Hint.Position = UDim2.new(0, 10, 0, 106)
+    Hint.BackgroundTransparency = 1
+    Hint.Text = "Клавиша включает/выключает фичу"
+    Hint.TextColor3 = Color3.fromRGB(80, 80, 80)
+    Hint.Font = Enum.Font.Gotham
+    Hint.TextSize = 9
+    Hint.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+-- Injects a "···" TextButton into a NeverLose UI row Frame
+-- Called right after AddLabel / AddToggle so the frame exists in CoreGui
+local function CrystalInjectDotBtn(rowFrame, title, toggleRef)
+    if not rowFrame then return end
+    -- find the actual Frame child that is the row (NeverLose wraps in Frame)
+    local target = rowFrame
+    if not target:IsA("Frame") then
+        target = rowFrame:FindFirstChildWhichIsA("Frame") or rowFrame
+    end
+
+    local Dot = Instance.new("TextButton", target)
+    Dot.Name = "CrystalDot_" .. title:sub(1,20)
+    Dot.Size = UDim2.new(0, 28, 0, 20)
+    -- position to the left of the toggle/right side, leaving gap for it
+    Dot.Position = UDim2.new(1, -70, 0.5, -10)
+    Dot.AnchorPoint = Vector2.new(0, 0)
+    Dot.BackgroundTransparency = 1
+    Dot.Text = "···"
+    Dot.TextColor3 = Color3.fromRGB(130, 130, 130)
+    Dot.Font = Enum.Font.GothamBold
+    Dot.TextSize = 14
+    Dot.ZIndex = 10
+    Dot.BorderSizePixel = 0
+    Dot.MouseButton1Click:Connect(function()
+        CrystalOpenFeatureSettings(title, toggleRef)
+    end)
+    -- hover highlight
+    Dot.MouseEnter:Connect(function() Dot.TextColor3 = Color3.fromRGB(210,210,210) end)
+    Dot.MouseLeave:Connect(function() Dot.TextColor3 = Color3.fromRGB(130,130,130) end)
+end
+
 local function makeControlAdapter(section)
     local api = {}
 
@@ -74,23 +269,62 @@ local function makeControlAdapter(section)
 
     function api:Toggle(cfg)
         cfg = cfg or {}
-        return section:AddLabel(tostring(cfg.Title or "Toggle")):AddToggle({
+        local title = tostring(cfg.Title or "Toggle")
+        local labelItem = section:AddLabel(title)
+        local toggleCtrl = labelItem:AddToggle({
             Default = cfg.Default == true,
             Flag = cfg.Flag,
             Callback = cfg.Callback,
         })
+        -- inject dot after a brief yield so NeverLose builds the Frame
+        task.defer(function()
+            -- labelItem may expose .Frame or be a Frame itself
+            local rowFrame = (type(labelItem)=="table" and (labelItem.Frame or labelItem.Instance)) or nil
+            if not rowFrame then
+                -- try to find by searching CoreGui for a Frame whose title label matches
+                for _, sg in ipairs(game.CoreGui:GetChildren()) do
+                    if sg:IsA("ScreenGui") then
+                        for _, f in ipairs(sg:GetDescendants()) do
+                            if f:IsA("TextLabel") and f.Text == title then
+                                rowFrame = f.Parent
+                                break
+                            end
+                        end
+                    end
+                    if rowFrame then break end
+                end
+            end
+            CrystalInjectDotBtn(rowFrame, title, toggleCtrl)
+        end)
+        return toggleCtrl
     end
 
     function api:Button(cfg)
         cfg = cfg or {}
-        -- NeverLose exposes AddButton directly on the section item,
-        -- while AddLabel returns a handler (which has toggles/sliders/dropdowns).
-        return section:AddButton({
-            Name = tostring(cfg.Title or "Button"),
+        local title = tostring(cfg.Title or "Button")
+        local btnCtrl = section:AddButton({
+            Name = title,
             Icon = cfg.Icon or "chevron-large-right",
             Callback = cfg.Callback,
             ToolTip = cfg.Description,
         })
+        task.defer(function()
+            local rowFrame = (type(btnCtrl)=="table" and (btnCtrl.Frame or btnCtrl.Instance)) or nil
+            if not rowFrame then
+                for _, sg in ipairs(game.CoreGui:GetChildren()) do
+                    if sg:IsA("ScreenGui") then
+                        for _, f in ipairs(sg:GetDescendants()) do
+                            if f:IsA("TextLabel") and f.Text == title then
+                                rowFrame = f.Parent break
+                            end
+                        end
+                    end
+                    if rowFrame then break end
+                end
+            end
+            CrystalInjectDotBtn(rowFrame, title, nil)
+        end)
+        return btnCtrl
     end
 
     function api:Dropdown(cfg)
