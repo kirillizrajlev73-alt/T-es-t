@@ -1,4 +1,3 @@
---дыды
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -46,6 +45,9 @@ do
 local NeverLose = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/kirillizrajlev73-alt/Ul_onlypastamyneverlose/refs/heads/main/Ui.lua"
 ))()
+
+-- Keep a shared reference available to the button/config section below.
+getgenv().CrystalHubNeverLose = NeverLose
 
 v18 = {}
 
@@ -2563,6 +2565,9 @@ end
 
             local u219 = t25
 
+            -- Shared button-position state for creation and NeverLose config load/save.
+            local _buttonConfigPositions = {}
+
             function v220(p38, p39, p40, p41, p42)
                 if u219[p38] then
                     u219[p38].btn:Destroy()
@@ -2678,9 +2683,9 @@ end
 
             -- Button positions are stored as ONE normal NeverLose config flag.
             -- This keeps the original button creation/click logic untouched.
-            local _buttonConfigPositions = {}
-
-            NeverLose.Flags["crystalhub_button_positions"] = {
+            local _NL = getgenv().CrystalHubNeverLose
+            if _NL and _NL.Flags then
+                _NL.Flags["crystalhub_button_positions"] = {
                 GetValue = function()
                     local result = {}
 
@@ -2730,6 +2735,7 @@ end
                     end
                 end,
             }
+            end
 
             local u226 = t25
             local u227 = v220
