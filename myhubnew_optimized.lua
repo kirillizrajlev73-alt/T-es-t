@@ -1,5 +1,4 @@
-
---// Hybrid Atmosphere GUI
+--// Hybrid Atmosphere GUI yesyeysyeyeys
 --// Standalone LocalScript
 
 local Players = game:GetService("Players")
