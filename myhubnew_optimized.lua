@@ -1,3 +1,4 @@
+--wijsjscc+@#@#
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4939,12 +4940,12 @@ end
         end)
 
         -- ── WindUI Controls ───────────────────────────────────
-        VisualsTab:Paragraph({
+        VisualsTab._left:Paragraph({
             Title = "Aura Selector",
         })
 
         -- Master ON/OFF
-        VisualsTab:Toggle({
+        VisualsTab._left:Toggle({
             Flag = "enable_auras",Title = "Enable Auras",
             Description = "Apply selected auras to your character",
             Default = false,
@@ -4955,13 +4956,13 @@ end
         })
 
         -- Individual aura toggles
-        VisualsTab:Paragraph({
+        VisualsTab._left:Paragraph({
             Title = "Aura List",
         })
 
         for _, name in ipairs(aura_order) do
             local auraName = name
-            VisualsTab:Toggle({
+            VisualsTab._left:Toggle({
                 Flag = "control_4735",Title = auraName:sub(1,1):upper()..auraName:sub(2),
                 Default = false,
                 Callback = function(state)
@@ -4972,13 +4973,13 @@ end
         end
 
         -- Quick presets
-        VisualsTab:Paragraph({
+        VisualsTab._left:Paragraph({
             Title = "Color Presets",
         })
 
         local colorPresets = {"Default (Blue)","Red","Green","Gold","Purple","White","Rainbow (cycle)"}
 
-        VisualsTab:Dropdown({
+        VisualsTab._left:Dropdown({
             Flag = "color_preset",Title = "Color Preset",
             Description = "Pick a preset color",
             Values = colorPresets,
@@ -5013,7 +5014,7 @@ end
         })
 
         -- Clear button
-        VisualsTab:Button({
+        VisualsTab._left:Button({
             Title = "Clear All Auras",
             Description = "Remove all aura effects from character",
             Callback = function()
@@ -5030,11 +5031,11 @@ end
     -- ============================================================
     --  END AURA SYSTEM
     -- ============================================================
-VisualsTab:Divider()
-VisualsTab:Paragraph({
+VisualsTab._left:Divider()
+VisualsTab._left:Paragraph({
     Title = 'Skybox',
 })
-VisualsTab:Button({
+VisualsTab._left:Button({
     Title = 'Open Skybox Picker',
     Description = 'Color preview list \u{2014} click to apply instantly',
     Callback = function()
@@ -5268,7 +5269,7 @@ function t30.Callback()
     u310()
 end
 
-VisualsTab:Button(t30)
+VisualsTab._left:Button(t30)
 VisualsTab._right:Paragraph({
     Title = 'Crosshair',
 })
@@ -5886,10 +5887,10 @@ do
         end)
     end
 
-    VisualsTab:Divider()
-    VisualsTab:Paragraph({ Title = "China Hat", Content = "Decorative hat on your character" })
+    VisualsTab._left:Divider()
+    VisualsTab._left:Paragraph({ Title = "China Hat", Content = "Decorative hat on your character" })
 
-    VisualsTab:Toggle({
+    VisualsTab._left:Toggle({
         Flag = "enable_china_hat",Title   = "Enable China Hat",
         Default = false,
         Callback = function(val)
@@ -5909,7 +5910,7 @@ do
         end,
     })
 
-    VisualsTab:ColorPicker({
+    VisualsTab._left:ColorPicker({
         Flag = "hat_color",Title   = "Hat Color",
         Default = Color3.fromRGB(255, 105, 180),
         Callback = function(col)
@@ -5920,7 +5921,7 @@ do
         end,
     })
 
-    VisualsTab:ColorPicker({
+    VisualsTab._left:ColorPicker({
         Flag = "light_color",Title   = "Light Color",
         Default = Color3.fromRGB(255, 105, 180),
         Callback = function(col)
@@ -5932,7 +5933,7 @@ do
         end,
     })
 
-    VisualsTab:Slider({
+    VisualsTab._left:Slider({
         Flag = "light_brightness",Title    = "Light Brightness",
         Value    = { Min = 0, Max = 10, Default = 0 },
         Rounding = 0,
@@ -5945,7 +5946,7 @@ do
         end,
     })
 
-    VisualsTab:Slider({
+    VisualsTab._left:Slider({
         Flag = "light_range",Title    = "Light Range",
         Value    = { Min = 0, Max = 60, Default = 12 },
         Rounding = 0,
