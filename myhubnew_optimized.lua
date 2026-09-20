@@ -1,489 +1,383 @@
---// Hybrid Atmosphere + GUI
---// Injectable (executor) / LocalScript compatible
 
---// Защита от повторного запуска
-if _G.HybridAtmosphereLoaded then
-    local old = _G.HybridAtmosphereGui
-    if old and old.Parent then old:Destroy() end
-end
-_G.HybridAtmosphereLoaded = true
+--// Hybrid Atmosphere GUI
+--// Standalone LocalScript
 
-local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
 
-local LocalPlayer = Players.LocalPlayer
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
---// ============ SETTINGS ============
+--// Remove old GUI
+local OldGui = PlayerGui:FindFirstChild("HybridAtmosphereGUI")
+if OldGui then
+    OldGui:Destroy()
+end
+
+--// Settings
 local Settings = {
     Enabled = true,
-
     Density = 0.25,
     Haze = 1.2,
     Glare = 0.15,
     Offset = 0.1,
-
-    Color = Color3.fromRGB(199, 210, 255),
-    Decay = Color3.fromRGB(120, 140, 180),
-
-    AmbientEnabled = true,
-    Ambient = Color3.fromRGB(120, 120, 140),
-    OutdoorAmbient = Color3.fromRGB(100, 110, 140),
-
-    BrightnessEnabled = true,
     Brightness = 2,
-
-    FogEnabled = false,
-    FogColor = Color3.fromRGB(180, 190, 220),
-    FogStart = 0,
-    FogEnd = 1000
+    Color = Color3.fromRGB(199, 210, 255),
+    Decay = Color3.fromRGB(120, 140, 180)
 }
 
-local AtmosphereName = "HybridAtmosphere"
+--// Atmosphere
+local Atmosphere = Lighting:FindFirstChild("HybridAtmosphere")
 
---// ============ CORE ============
-local function GetAtmosphere()
-    local atmosphere = Lighting:FindFirstChild(AtmosphereName)
-    if not atmosphere then
-        atmosphere = Instance.new("Atmosphere")
-        atmosphere.Name = AtmosphereName
-        atmosphere.Parent = Lighting
-    end
-    return atmosphere
+if not Atmosphere then
+    Atmosphere = Instance.new("Atmosphere")
+    Atmosphere.Name = "HybridAtmosphere"
+    Atmosphere.Parent = Lighting
 end
 
-local function ApplyAtmosphere()
-    local atmosphere = GetAtmosphere()
-
-    atmosphere.Enabled = Settings.Enabled
-    atmosphere.Density = Settings.Density
-    atmosphere.Haze = Settings.Haze
-    atmosphere.Glare = Settings.Glare
-    atmosphere.Offset = Settings.Offset
-    atmosphere.Color = Settings.Color
-    atmosphere.Decay = Settings.Decay
-
-    if Settings.AmbientEnabled then
-        Lighting.Ambient = Settings.Ambient
-        Lighting.OutdoorAmbient = Settings.OutdoorAmbient
-    end
-
-    if Settings.BrightnessEnabled then
-        Lighting.Brightness = Settings.Brightness
-    end
-
-    Lighting.FogColor = Settings.FogColor
-
-    if Settings.FogEnabled then
-        Lighting.FogStart = Settings.FogStart
-        Lighting.FogEnd = Settings.FogEnd
-    else
-        Lighting.FogStart = 0
-        Lighting.FogEnd = 100000
-    end
+local function Apply()
+    Atmosphere.Enabled = Settings.Enabled
+    Atmosphere.Density = Settings.Density
+    Atmosphere.Haze = Settings.Haze
+    Atmosphere.Glare = Settings.Glare
+    Atmosphere.Offset = Settings.Offset
+    Atmosphere.Color = Settings.Color
+    Atmosphere.Decay = Settings.Decay
+    Lighting.Brightness = Settings.Brightness
 end
 
-local function SetAtmosphereEnabled(state)
-    Settings.Enabled = state
-    GetAtmosphere().Enabled = state
-end
+Apply()
 
-local function UpdateAtmosphere(property, value)
-    if Settings[property] == nil then
-        warn("Unknown Atmosphere setting: " .. tostring(property))
-        return
-    end
-    Settings[property] = value
-    ApplyAtmosphere()
-end
+--// GUI
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "HybridAtmosphereGUI"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PlayerGui
 
-ApplyAtmosphere()
-
---// ============ GUI ============
---// Определяем родителя (executor или обычный LocalScript)
-local function GetGuiParent()
-    if gethui then
-        return gethui()
-    elseif LocalPlayer:FindFirstChild("PlayerGui") then
-        return LocalPlayer.PlayerGui
-    else
-        return game:GetService("CoreGui")
-    end
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HybridAtmosphereGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = GetGuiParent()
-
-_G.HybridAtmosphereGui = ScreenGui
-
---// ============ ПАЛИТРА ============
-local COLORS = {
-    Bg = Color3.fromRGB(20, 22, 30),
-    Bg2 = Color3.fromRGB(30, 33, 45),
-    Accent = Color3.fromRGB(120, 160, 255),
-    Text = Color3.fromRGB(230, 235, 245),
-    Sub = Color3.fromRGB(150, 160, 180),
-    Slider = Color3.fromRGB(60, 70, 100),
-}
-
---// ============ MAIN FRAME ============
 local Main = Instance.new("Frame")
-Main.Name = "Main"
-Main.Size = UDim2.new(0, 320, 0, 460)
-Main.Position = UDim2.new(0, 30, 0, 100)
-Main.BackgroundColor3 = COLORS.Bg
+Main.Size = UDim2.fromOffset(330, 410)
+Main.Position = UDim2.new(0.5, -165, 0.5, -205)
+Main.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Main.Parent = ScreenGui
+Main.Parent = Gui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = Main
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12)
+Corner.Parent = Main
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = COLORS.Accent
-UIStroke.Transparency = 0.6
-UIStroke.Thickness = 1
-UIStroke.Parent = Main
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(55, 55, 65)
+Stroke.Thickness = 1
+Stroke.Parent = Main
 
---// ============ TITLE BAR ============
-local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 40)
-TitleBar.BackgroundColor3 = COLORS.Bg2
-TitleBar.BorderSizePixel = 0
-TitleBar.Parent = Main
-
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 12)
-TitleCorner.Parent = TitleBar
-
---// Hide bottom corners of title bar
-local TitleFix = Instance.new("Frame")
-TitleFix.Size = UDim2.new(1, 0, 0, 12)
-TitleFix.Position = UDim2.new(0, 0, 1, -12)
-TitleFix.BackgroundColor3 = COLORS.Bg2
-TitleFix.BorderSizePixel = 0
-TitleFix.Parent = TitleBar
-
+--// Title
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -80, 1, 0)
-Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(1, -20, 0, 40)
+Title.Position = UDim2.fromOffset(15, 8)
 Title.BackgroundTransparency = 1
 Title.Text = "Hybrid Atmosphere"
-Title.TextColor3 = COLORS.Text
-Title.TextSize = 16
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TitleBar
+Title.Parent = Main
 
---// Toggle button (enable/disable atmosphere)
-local EnableBtn = Instance.new("TextButton")
-EnableBtn.Size = UDim2.new(0, 60, 0, 24)
-EnableBtn.Position = UDim2.new(1, -70, 0, 8)
-EnableBtn.BackgroundColor3 = COLORS.Accent
-EnableBtn.Text = "ON"
-EnableBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-EnableBtn.TextSize = 12
-EnableBtn.Font = Enum.Font.GothamBold
-EnableBtn.BorderSizePixel = 0
-EnableBtn.Parent = TitleBar
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(1, -20, 0, 20)
+Subtitle.Position = UDim2.fromOffset(15, 38)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "Lighting & Environment"
+Subtitle.TextColor3 = Color3.fromRGB(140, 140, 150)
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextSize = 11
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Main
 
-local EnableBtnCorner = Instance.new("UICorner")
-EnableBtnCorner.CornerRadius = UDim.new(0, 6)
-EnableBtnCorner.Parent = EnableBtn
-
-EnableBtn.MouseButton1Click:Connect(function()
-    Settings.Enabled = not Settings.Enabled
-    SetAtmosphereEnabled(Settings.Enabled)
-    EnableBtn.Text = Settings.Enabled and "ON" or "OFF"
-    EnableBtn.BackgroundColor3 = Settings.Enabled and COLORS.Accent or Color3.fromRGB(80, 80, 90)
-end)
-
---// Minimize button
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size = UDim2.new(0, 24, 0, 24)
-MinBtn.Position = UDim2.new(1, -100, 0, 8)
-MinBtn.BackgroundColor3 = COLORS.Slider
-MinBtn.Text = "—"
-MinBtn.TextColor3 = COLORS.Text
-MinBtn.TextSize = 16
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.BorderSizePixel = 0
-MinBtn.Parent = TitleBar
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 6)
-MinCorner.Parent = MinBtn
-
---// ============ SCROLL ============
+--// Scroll
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1, -20, 1, -55)
-Scroll.Position = UDim2.new(0, 10, 0, 48)
+Scroll.Size = UDim2.new(1, -20, 1, -115)
+Scroll.Position = UDim2.fromOffset(10, 65)
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
-Scroll.ScrollBarThickness = 4
-Scroll.ScrollBarImageColor3 = COLORS.Accent
-Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+Scroll.ScrollBarThickness = 3
+Scroll.CanvasSize = UDim2.new()
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Scroll.Parent = Main
 
 local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0, 8)
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
 local Padding = Instance.new("UIPadding")
-Padding.PaddingTop = UDim.new(0, 4)
-Padding.PaddingBottom = UDim.new(0, 8)
+Padding.PaddingLeft = UDim.new(0, 5)
+Padding.PaddingRight = UDim.new(0, 5)
+Padding.Bottom = UDim.new(0, 10)
 Padding.Parent = Scroll
 
---// ============ SECTION HELPER ============
-local function CreateSection(name)
-    local Section = Instance.new("Frame")
-    Section.Size = UDim2.new(1, -8, 0, 24)
-    Section.BackgroundTransparency = 1
-    Section.Parent = Scroll
-
+--// Helper
+local function CreateLabel(text)
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, 0, 1, 0)
+    Label.Size = UDim2.new(1, 0, 0, 22)
     Label.BackgroundTransparency = 1
-    Label.Text = name
-    Label.TextColor3 = COLORS.Accent
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(215, 215, 220)
+    Label.Font = Enum.Font.GothamMedium
     Label.TextSize = 12
-    Label.Font = Enum.Font.GothamBold
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Section
-
-    return Section
+    Label.Parent = Scroll
+    return Label
 end
 
---// ============ SLIDER ============
-local function CreateSlider(labelText, min, max, default, callback)
-    local Container = Instance.new("Frame")
-    Container.Size = UDim2.new(1, -8, 0, 40)
-    Container.BackgroundTransparency = 1
-    Container.Parent = Scroll
+local function CreateButton(text, callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, 0, 0, 32)
+    Button.BackgroundColor3 = Color3.fromRGB(35, 35, 43)
+    Button.Text = text
+    Button.TextColor3 = Color3.new(1, 1, 1)
+    Button.Font = Enum.Font.GothamMedium
+    Button.TextSize = 12
+    Button.AutoButtonColor = true
+    Button.Parent = Scroll
+
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 6)
+    C.Parent = Button
+
+    Button.MouseButton1Click:Connect(callback)
+    return Button
+end
+
+local function CreateSlider(name, minimum, maximum, default, callback)
+    local Holder = Instance.new("Frame")
+    Holder.Size = UDim2.new(1, 0, 0, 48)
+    Holder.BackgroundTransparency = 1
+    Holder.Parent = Scroll
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -60, 0, 16)
+    Label.Size = UDim2.new(1, -65, 0, 20)
     Label.BackgroundTransparency = 1
-    Label.Text = labelText
-    Label.TextColor3 = COLORS.Text
-    Label.TextSize = 13
+    Label.Text = name
+    Label.TextColor3 = Color3.fromRGB(220, 220, 225)
     Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
+    Label.Parent = Holder
 
     local ValueLabel = Instance.new("TextLabel")
-    ValueLabel.Size = UDim2.new(0, 55, 0, 16)
-    ValueLabel.Position = UDim2.new(1, -55, 0, 0)
+    ValueLabel.Size = UDim2.fromOffset(60, 20)
+    ValueLabel.Position = UDim2.new(1, -60, 0, 0)
     ValueLabel.BackgroundTransparency = 1
-    ValueLabel.Text = tostring(default)
-    ValueLabel.TextColor3 = COLORS.Sub
-    ValueLabel.TextSize = 13
+    ValueLabel.TextColor3 = Color3.fromRGB(160, 160, 170)
     ValueLabel.Font = Enum.Font.Gotham
+    ValueLabel.TextSize = 11
     ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
-    ValueLabel.Parent = Container
+    ValueLabel.Parent = Holder
 
-    local BarBg = Instance.new("Frame")
-    BarBg.Size = UDim2.new(1, 0, 0, 6)
-    BarBg.Position = UDim2.new(0, 0, 0, 26)
-    BarBg.BackgroundColor3 = COLORS.Slider
-    BarBg.BorderSizePixel = 0
-    BarBg.Parent = Container
+    local Bar = Instance.new("Frame")
+    Bar.Size = UDim2.new(1, 0, 0, 6)
+    Bar.Position = UDim2.fromOffset(0, 30)
+    Bar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    Bar.BorderSizePixel = 0
+    Bar.Parent = Holder
 
-    local BarBgCorner = Instance.new("UICorner")
-    BarBgCorner.CornerRadius = UDim.new(1, 0)
-    BarBgCorner.Parent = BarBg
+    local BarCorner = Instance.new("UICorner")
+    BarCorner.CornerRadius = UDim.new(1, 0)
+    BarCorner.Parent = Bar
 
     local Fill = Instance.new("Frame")
-    Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    Fill.BackgroundColor3 = COLORS.Accent
+    Fill.Size = UDim2.fromScale(
+        (default - minimum) / (maximum - minimum), 1
+    )
+    Fill.BackgroundColor3 = Color3.fromRGB(145, 110, 255)
     Fill.BorderSizePixel = 0
-    Fill.Parent = BarBg
+    Fill.Parent = Bar
 
     local FillCorner = Instance.new("UICorner")
     FillCorner.CornerRadius = UDim.new(1, 0)
     FillCorner.Parent = Fill
 
-    local Knob = Instance.new("Frame")
-    Knob.Size = UDim2.new(0, 14, 0, 14)
-    Knob.Position = UDim2.new((default - min) / (max - min), -7, 0.5, -7)
-    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Knob.BorderSizePixel = 0
-    Knob.ZIndex = 2
-    Knob.Parent = BarBg
+    local Knob = Instance.new("TextButton")
+    Knob.Size = UDim2.fromOffset(16, 16)
+    Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+    Knob.Position = UDim2.new(
+        (default - minimum) / (maximum - minimum), 0, 0.5, 0
+    )
+    Knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    Knob.Text = ""
+    Knob.AutoButtonColor = false
+    Knob.Parent = Bar
 
     local KnobCorner = Instance.new("UICorner")
     KnobCorner.CornerRadius = UDim.new(1, 0)
     KnobCorner.Parent = Knob
 
-    local dragging = false
+    local Value = default
+    local Dragging = false
 
-    local function UpdateFromX(x)
-        local rel = math.clamp((x - BarBg.AbsolutePosition.X) / BarBg.AbsoluteSize.X, 0, 1)
-        local value = min + (max - min) * rel
-        value = math.floor(value * 100 + 0.5) / 100
-        Fill.Size = UDim2.new(rel, 0, 1, 0)
-        Knob.Position = UDim2.new(rel, -7, 0.5, -7)
-        ValueLabel.Text = tostring(value)
-        callback(value)
+    local function SetValue(v)
+        Value = math.clamp(v, minimum, maximum)
+        Value = math.round(Value * 100) / 100
+
+        local Percent = (Value - minimum) / (maximum - minimum)
+
+        Fill.Size = UDim2.fromScale(Percent, 1)
+        Knob.Position = UDim2.new(Percent, 0, 0.5, 0)
+        ValueLabel.Text = string.format("%.2f", Value)
+
+        callback(Value)
     end
 
-    BarBg.InputBegan:Connect(function(input)
+    local function UpdateFromX(x)
+        local Percent = math.clamp(
+            (x - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X,
+            0, 1
+        )
+        SetValue(minimum + (maximum - minimum) * Percent)
+    end
+
+    Knob.MouseButton1Down:Connect(function()
+        Dragging = true
+    end)
+
+    Bar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
+        or input.UserInputType == Enum.UserInputType.Touch then
+            UpdateFromX(input.Position.X)
+            Dragging = true
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if Dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
             UpdateFromX(input.Position.X)
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch) then
-            UpdateFromX(input.Position.X)
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+        or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = false
         end
     end)
 
-    return Container
+    SetValue(default)
+    return Holder
 end
 
---// ============ TOGGLE ============
-local function CreateToggle(labelText, default, callback)
-    local Container = Instance.new("Frame")
-    Container.Size = UDim2.new(1, -8, 0, 28)
-    Container.BackgroundTransparency = 1
-    Container.Parent = Scroll
+--// Toggle
+local Toggle = CreateButton("Atmosphere: ON", function()
+    Settings.Enabled = not Settings.Enabled
+    Atmosphere.Enabled = Settings.Enabled
+    Toggle.Text = "Atmosphere: " .. (Settings.Enabled and "ON" or "OFF")
+end)
 
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -50, 1, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = labelText
-    Label.TextColor3 = COLORS.Text
-    Label.TextSize = 13
-    Label.Font = Enum.Font.Gotham
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Container
-
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(0, 44, 0, 22)
-    Btn.Position = UDim2.new(1, -44, 0.5, -11)
-    Btn.BackgroundColor3 = default and COLORS.Accent or Color3.fromRGB(60, 65, 80)
-    Btn.Text = default and "ON" or "OFF"
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.TextSize = 11
-    Btn.Font = Enum.Font.GothamBold
-    Btn.BorderSizePixel = 0
-    Btn.Parent = Container
-
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Btn
-
-    local state = default
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        Btn.Text = state and "ON" or "OFF"
-        Btn.BackgroundColor3 = state and COLORS.Accent or Color3.fromRGB(60, 65, 80)
-        callback(state)
-    end)
-
-    return Container
-end
-
---// ============ BUILD UI ============
-CreateSection("ATMOSPHERE")
-
+--// Sliders
 CreateSlider("Density", 0, 1, Settings.Density, function(v)
     Settings.Density = v
-    ApplyAtmosphere()
+    Atmosphere.Density = v
 end)
 
 CreateSlider("Haze", 0, 10, Settings.Haze, function(v)
     Settings.Haze = v
-    ApplyAtmosphere()
+    Atmosphere.Haze = v
 end)
 
-CreateSlider("Glare", 0, 1, Settings.Glare, function(v)
+CreateSlider("Glare", 0, 10, Settings.Glare, function(v)
     Settings.Glare = v
-    ApplyAtmosphere()
+    Atmosphere.Glare = v
 end)
 
 CreateSlider("Offset", -1, 1, Settings.Offset, function(v)
     Settings.Offset = v
-    ApplyAtmosphere()
-end)
-
-CreateSection("LIGHTING")
-
-CreateToggle("Ambient", Settings.AmbientEnabled, function(state)
-    Settings.AmbientEnabled = state
-    ApplyAtmosphere()
+    Atmosphere.Offset = v
 end)
 
 CreateSlider("Brightness", 0, 10, Settings.Brightness, function(v)
     Settings.Brightness = v
-    ApplyAtmosphere()
+    Lighting.Brightness = v
 end)
 
-CreateSection("FOG")
+CreateLabel("Presets")
 
-CreateToggle("Fog Enabled", Settings.FogEnabled, function(state)
-    Settings.FogEnabled = state
-    ApplyAtmosphere()
+CreateButton("Soft Atmosphere", function()
+    Settings.Density = 0.15
+    Settings.Haze = 0.8
+    Settings.Glare = 0.1
+    Settings.Offset = 0
+
+    Settings.Color = Color3.fromRGB(199, 210, 255)
+    Settings.Decay = Color3.fromRGB(120, 140, 180)
+
+    Apply()
 end)
 
-CreateSlider("Fog End", 0, 5000, Settings.FogEnd, function(v)
-    Settings.FogEnd = v
-    if Settings.FogEnabled then ApplyAtmosphere() end
+CreateButton("Dark Atmosphere", function()
+    Settings.Density = 0.4
+    Settings.Haze = 2
+    Settings.Glare = 0.05
+    Settings.Offset = 0
+
+    Settings.Color = Color3.fromRGB(100, 110, 150)
+    Settings.Decay = Color3.fromRGB(50, 60, 90)
+
+    Apply()
 end)
 
---// ============ MINIMIZE ============
-local minimized = false
-local originalSize = Main.Size
+CreateButton("Reset Atmosphere", function()
+    Settings.Enabled = true
+    Settings.Density = 0.25
+    Settings.Haze = 1.2
+    Settings.Glare = 0.15
+    Settings.Offset = 0.1
+    Settings.Brightness = 2
 
-MinBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        Scroll.Visible = false
-        Main.Size = UDim2.new(0, 320, 0, 40)
-        MinBtn.Text = "+"
-    else
-        Scroll.Visible = true
-        Main.Size = originalSize
-        MinBtn.Text = "—"
+    Settings.Color = Color3.fromRGB(199, 210, 255)
+    Settings.Decay = Color3.fromRGB(120, 140, 180)
+
+    Apply()
+    Toggle.Text = "Atmosphere: ON"
+end)
+
+--// Drag window
+local UIS = game:GetService("UserInputService")
+local Dragging = false
+local DragStart
+local StartPos
+
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        Dragging = true
+        DragStart = input.Position
+        StartPos = Main.Position
     end
 end)
 
---// ============ HOTKEY (RightShift — toggle GUI) ============
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        Main.Visible = not Main.Visible
+UIS.InputChanged:Connect(function(input)
+    if Dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local Delta = input.Position - DragStart
+
+        Main.Position = UDim2.new(
+            StartPos.X.Scale,
+            StartPos.X.Offset + Delta.X,
+            StartPos.Y.Scale,
+            StartPos.Y.Offset + Delta.Y
+        )
     end
 end)
 
---// ============ EXPORTS ============
---// Доступно извне (в т.ч. через executor)
-_G.HybridAtmosphere = {
-    Settings = Settings,
-    Apply = ApplyAtmosphere,
-    Enable = SetAtmosphereEnabled,
-    Update = UpdateAtmosphere,
-    Gui = ScreenGui,
-    Frame = Main,
-}
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        Dragging = false
+    end
+end)
+
+print("Hybrid Atmosphere GUI loaded!")
