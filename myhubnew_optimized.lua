@@ -1,4 +1,3 @@
---+@+@+
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -172,9 +171,9 @@ function v18:CreateWindow(cfg)
 
     -- Section name map: tab title -> { left name, right name }
     local sectionNames = {
-        ["Main"]           = { "COMBAT",   "PLAYER"   },
-        ["Fling/Teleport"] = { "FLING",    "TELEPORT" },
-        ["Rage"]           = { "COMBAT",   "SETTINGS" },
+        ["Main"]           = { "COMBAT",       "PLAYER"        },
+        ["Fling/Teleport"] = { "FLING",        "TELEPORT"      },
+        ["Visuals"]        = { "VISUALS",       "COMBAT VISUAL" },
     }
 
     function adapter:Tab(cfg2)
@@ -5270,8 +5269,7 @@ function t30.Callback()
 end
 
 VisualsTab:Button(t30)
-VisualsTab:Divider()
-VisualsTab:Paragraph({
+VisualsTab._right:Paragraph({
     Title = 'Crosshair',
 })
 
@@ -5393,8 +5391,8 @@ function t31.Callback(p69)
     })
 end
 
-VisualsTab:Toggle(t31)
-VisualsTab:Button({
+VisualsTab._right:Toggle(t31)
+VisualsTab._right:Button({
     Title = 'Open Cursor Picker',
     Description = 'Visual grid with spin toggle \u{2014} click to apply',
     Callback = function()
@@ -5771,11 +5769,10 @@ do
     end)
 
     -- ── UI ──────────────────────────────────────────────────────────────
-    VisualsTab:Divider()
-    VisualsTab:Paragraph({ Title = "Bullet Tracers" })
+    VisualsTab._right:Paragraph({ Title = "Bullet Tracers" })
 
-    VisualsTab:Toggle({
-        Flag = "enable_bullet_tracers",Title    = "Enable Bullet Tracers",
+    VisualsTab._right:Toggle({
+        Flag = "enable_bullet_tracers", Title = "Enable Bullet Tracers",
         Default  = false,
         Callback = function(val)
             BT.Enabled = val
@@ -5788,28 +5785,28 @@ do
         end,
     })
 
-    VisualsTab:ColorPicker({
-        Flag = "tracer_color",Title    = "Tracer Color",
+    VisualsTab._right:ColorPicker({
+        Flag = "tracer_color", Title = "Tracer Color",
         Default  = BT.Color,
         Callback = function(col) BT.Color = col end,
     })
 
-    VisualsTab:Slider({
-        Flag = "tracer_width",Title    = "Tracer Width",
+    VisualsTab._right:Slider({
+        Flag = "tracer_width", Title = "Tracer Width",
         Value    = { Min = 1, Max = 20, Default = 12 },
         Rounding = 0,
         Callback = function(val) BT.Size = val * 0.01 end,
     })
 
-    VisualsTab:Slider({
-        Flag = "tracer_duration_0_1s",Title    = "Tracer Duration (×0.1s)",
+    VisualsTab._right:Slider({
+        Flag = "tracer_duration_0_1s", Title = "Tracer Duration (×0.1s)",
         Value    = { Min = 1, Max = 30, Default = 6 },
         Rounding = 0,
         Callback = function(val) BT.TimeAlive = val * 0.1 end,
     })
 
-    VisualsTab:Slider({
-        Flag = "tracer_transparency",Title    = "Tracer Transparency",
+    VisualsTab._right:Slider({
+        Flag = "tracer_transparency", Title = "Tracer Transparency",
         Value    = { Min = 0, Max = 9, Default = 0 },
         Rounding = 0,
         Callback = function(val) BT.Transparency = val * 0.1 end,
