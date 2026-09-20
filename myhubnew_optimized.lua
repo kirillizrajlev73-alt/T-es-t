@@ -1,3 +1,4 @@
+--+@+@+
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -171,9 +172,9 @@ function v18:CreateWindow(cfg)
 
     -- Section name map: tab title -> { left name, right name }
     local sectionNames = {
-        ["Main"]           = { "MAIN",   "EXTRA"    },
-        ["Fling/Teleport"] = { "FLING",  "TELEPORT" },
-        ["Rage"]           = { "COMBAT", "SETTINGS" },
+        ["Main"]           = { "COMBAT",   "PLAYER"   },
+        ["Fling/Teleport"] = { "FLING",    "TELEPORT" },
+        ["Rage"]           = { "COMBAT",   "SETTINGS" },
     }
 
     function adapter:Tab(cfg2)
@@ -4677,104 +4678,8 @@ end
         })
     end
 
-    v303:Paragraph({
-        Title = 'Teleport Players',
-    })
-
-    do
-        local teleportNames = {}
-        local teleportSelected = nil
-
-        local teleportDropdown
-        local function rebuildTeleportNames()
-            teleportNames = {}
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer then
-                    table.insert(teleportNames, player.Name)
-                end
-            end
-            table.sort(teleportNames)
-            if teleportSelected and not table.find(teleportNames, teleportSelected) then
-                teleportSelected = nil
-            end
-            if teleportDropdown then
-                teleportDropdown:Refresh(teleportNames)
-                if teleportSelected then
-                    teleportDropdown:Select(teleportSelected)
-                end
-            end
-        end
-
-        rebuildTeleportNames()
-
-        teleportDropdown = v303:Dropdown({
-            Flag = "select_player",Title = 'Select Player',
-            Values = teleportNames,
-            Value = teleportSelected,
-            Callback = function(value)
-                teleportSelected = value
-            end,
-        })
-
-        v303:Button({
-            Title = 'Teleport to Player',
-            Description = 'Teleport to the selected player',
-            Callback = function()
-                if not teleportSelected then
-                    v18:Notify({
-                        Title = 'CrystalHub',
-                        Content = 'Select a player first!',
-                        Duration = 3,
-                        Icon = 'bell',
-                    })
-                    return
-                end
-
-                local target = Players:FindFirstChild(teleportSelected)
-                local character = LocalPlayer.Character
-                local targetCharacter = target and target.Character
-                local hrp = character and character:FindFirstChild('HumanoidRootPart')
-                local targetHRP = targetCharacter and targetCharacter:FindFirstChild('HumanoidRootPart')
-
-                if not (hrp and targetHRP) then
-                    v18:Notify({
-                        Title = 'CrystalHub',
-                        Content = 'Player or character not found!',
-                        Duration = 3,
-                        Icon = 'bell',
-                    })
-                    return
-                end
-
-                hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
-                v18:Notify({
-                    Title = 'CrystalHub',
-                    Content = tostring('Teleported to: ' .. target.Name),
-                    Duration = 3,
-                    Icon = 'bell',
-                })
-            end,
-        })
-
-        v303:Button({
-            Title = 'Refresh Teleport List',
-            Description = 'Update the player list',
-            Callback = function()
-                rebuildTeleportNames()
-            end,
-        })
-
-        Players.PlayerAdded:Connect(function()
-            task.delay(0.3, rebuildTeleportNames)
-        end)
-        Players.PlayerRemoving:Connect(function()
-            task.delay(0.3, rebuildTeleportNames)
-        end)
-    end
-
-    v303:Paragraph({
-        Title = 'Fling Players',
-    })
+-- ── FLING column (left) ──────────────────────────────────────
+    v303._left:Paragraph({ Title = 'Fling Players' })
 
     do
         local flingNames = {}
@@ -4803,16 +4708,14 @@ end
 
         rebuildFlingList()
 
-        flingDropdown = v303:Dropdown({
-            Flag = "select_player_2",Title = 'Select Player',
+        flingDropdown = v303._left:Dropdown({
+            Flag = "select_player_2", Title = 'Select Player',
             Values = flingNames,
             Value = flingSelected,
-            Callback = function(value)
-                flingSelected = value
-            end,
+            Callback = function(value) flingSelected = value end,
         })
 
-        v303:Button({
+        v303._left:Button({
             Title = 'Fling Selected Player',
             Description = 'Fling the selected player',
             Callback = function()
@@ -4857,7 +4760,7 @@ end
             end,
         })
 
-        v303:Button({
+        v303._left:Button({
             Title = 'Refresh Fling List',
             Description = 'Update the player list',
             Callback = rebuildFlingList,
@@ -4869,6 +4772,78 @@ end
 
         Players.PlayerRemoving:Connect(function()
             task.delay(0.3, rebuildFlingList)
+        end)
+    end
+
+-- ── TELEPORT column (right) ──────────────────────────────────
+    v303._right:Paragraph({ Title = 'Teleport Players' })
+
+    do
+        local teleportNames = {}
+        local teleportSelected = nil
+
+        local teleportDropdown
+        local function rebuildTeleportNames()
+            teleportNames = {}
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    table.insert(teleportNames, player.Name)
+                end
+            end
+            table.sort(teleportNames)
+            if teleportSelected and not table.find(teleportNames, teleportSelected) then
+                teleportSelected = nil
+            end
+            if teleportDropdown then
+                teleportDropdown:Refresh(teleportNames)
+                if teleportSelected then
+                    teleportDropdown:Select(teleportSelected)
+                end
+            end
+        end
+
+        rebuildTeleportNames()
+
+        teleportDropdown = v303._right:Dropdown({
+            Flag = "select_player", Title = 'Select Player',
+            Values = teleportNames,
+            Value = teleportSelected,
+            Callback = function(value) teleportSelected = value end,
+        })
+
+        v303._right:Button({
+            Title = 'Teleport to Player',
+            Description = 'Teleport to the selected player',
+            Callback = function()
+                if not teleportSelected then
+                    v18:Notify({ Title = 'CrystalHub', Content = 'Select a player first!', Duration = 3, Icon = 'bell' })
+                    return
+                end
+                local target = Players:FindFirstChild(teleportSelected)
+                local character = LocalPlayer.Character
+                local targetCharacter = target and target.Character
+                local hrp = character and character:FindFirstChild('HumanoidRootPart')
+                local targetHRP = targetCharacter and targetCharacter:FindFirstChild('HumanoidRootPart')
+                if not (hrp and targetHRP) then
+                    v18:Notify({ Title = 'CrystalHub', Content = 'Player or character not found!', Duration = 3, Icon = 'bell' })
+                    return
+                end
+                hrp.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+                v18:Notify({ Title = 'CrystalHub', Content = 'Teleported to: ' .. target.Name, Duration = 3, Icon = 'bell' })
+            end,
+        })
+
+        v303._right:Button({
+            Title = 'Refresh Teleport List',
+            Description = 'Update the player list',
+            Callback = function() rebuildTeleportNames() end,
+        })
+
+        Players.PlayerAdded:Connect(function()
+            task.delay(0.3, rebuildTeleportNames)
+        end)
+        Players.PlayerRemoving:Connect(function()
+            task.delay(0.3, rebuildTeleportNames)
         end)
     end
 
@@ -5988,9 +5963,8 @@ do
 end
 -- ═══════════════════════════════════════════════════════
 
-    v301:Paragraph({
-        Title = 'Auto-Loaded Buttons',
-    })
+-- ── COMBAT column (left) ──────────────────────────────────────
+v301._left:Paragraph({ Title = 'Combat Buttons' })
 
     local t27 = {
         Flag = "show_gold_bomb",
@@ -6003,7 +5977,7 @@ end
         u304(p56)
     end
 
-    v301:Toggle(t27)
+    v301._left:Toggle(t27)
 
     local t28 = {
         Flag = "show_normal_bomb",
@@ -6016,7 +5990,7 @@ end
         u306(p57)
     end
 
-    v301:Toggle(t28)
+    v301._left:Toggle(t28)
 
     local t29 = {
         Flag = "show_shoot_throw",
@@ -6029,49 +6003,53 @@ end
         u308(p58)
     end
 
-    v301:Toggle(t29)
+    v301._left:Toggle(t29)
 end
 
-v301:Divider()
-v301:Paragraph({
-    Title = 'Optional Buttons',
-})
-v301:Toggle({
-    Flag = "load_esp_toggle",Title = 'Load ESP Toggle',
+v301._left:Toggle({
+    Flag = "load_grab_gun", Title = 'Load Grab Gun',
     Default = false,
-    Callback = function(p59)
-        u252(p59)
+    Callback = function(p61) u276(p61) end,
+})
+
+v301._left:Toggle({
+    Flag = "auto_ping_prediction",
+    Title = 'Auto Ping Prediction',
+    Description = 'Adds ping offset to shoot and throw',
+    Default = false,
+    Callback = function(p75)
+        u13 = p75
+        v18:Notify({
+            Title = 'CrystalHub',
+            Content = p75 and 'Ping Prediction ON' or 'Ping Prediction OFF',
+            Duration = 3, Icon = 'bell',
+        })
     end,
 })
-v301:Toggle({
-    Flag = "load_flick",Title = 'Load Flick',
+
+-- ── PLAYER column (right) ─────────────────────────────────────
+v301._right:Paragraph({ Title = 'Optional Buttons' })
+v301._right:Toggle({
+    Flag = "load_esp_toggle", Title = 'Load ESP Toggle',
     Default = false,
-    Callback = function(p60)
-        u257(p60)
-    end,
+    Callback = function(p59) u252(p59) end,
 })
-v301:Toggle({
-    Flag = "load_grab_gun",Title = 'Load Grab Gun',
+v301._right:Toggle({
+    Flag = "load_flick", Title = 'Load Flick',
     Default = false,
-    Callback = function(p61)
-        u276(p61)
-    end,
+    Callback = function(p60) u257(p60) end,
 })
-v301:Toggle({
-    Flag = "load_speed_glitch",Title = 'Load Speed Glitch',
+v301._right:Toggle({
+    Flag = "load_speed_glitch", Title = 'Load Speed Glitch',
     Default = false,
-    Callback = function(p62)
-        u263(p62)
-    end,
+    Callback = function(p62) u263(p62) end,
 })
-v301:Toggle({
-    Flag = "load_stretch",Title = 'Load Stretch',
+v301._right:Toggle({
+    Flag = "load_stretch", Title = 'Load Stretch',
     Default = false,
-    Callback = function(p63)
-        u270(p63)
-    end,
+    Callback = function(p63) u270(p63) end,
 })
-v301:Button({
+v301._right:Button({
     Title = 'Stretch Resolution Slider',
     Description = '10% = very wide  /  100% = normal',
     Callback = function()
@@ -6080,60 +6058,32 @@ v301:Button({
 
         u126('Stretch Resolution', 10, 100, v608, 5, function(p64)
             n17 = p64 / 100
-
-            if u120 then
-                u127(true)
-            end
-
-            local v886 = 'Stretch set to ' .. p64 .. '%  (1.0 = normal)'
-
-            u128:Notify({
-                Title = 'CrystalHub',
-                Content = tostring(v886),
-                Duration = 3,
-                Icon = 'bell',
-            })
+            if u120 then u127(true) end
+            u128:Notify({ Title = 'CrystalHub', Content = 'Stretch set to ' .. p64 .. '%  (1.0 = normal)', Duration = 3, Icon = 'bell' })
         end, function()
             n17 = 0.5
-
-            if u120 then
-                u127(true)
-            end
-
-            u128:Notify({
-                Title = 'CrystalHub',
-                Content = tostring('Stretch reset to 50%'),
-                Duration = 3,
-                Icon = 'bell',
-            })
+            if u120 then u127(true) end
+            u128:Notify({ Title = 'CrystalHub', Content = 'Stretch reset to 50%', Duration = 3, Icon = 'bell' })
         end)
     end,
 })
-v301:Toggle({
-    Flag = "load_fling_murderer",Title = 'Load Fling Murderer',
+v301._right:Toggle({
+    Flag = "load_fling_murderer", Title = 'Load Fling Murderer',
     Default = false,
-    Callback = function(p65)
-        u287(p65)
-    end,
+    Callback = function(p65) u287(p65) end,
 })
-v301:Toggle({
-    Flag = "load_fling_sheriff",Title = 'Load Fling Sheriff',
+v301._right:Toggle({
+    Flag = "load_fling_sheriff", Title = 'Load Fling Sheriff',
     Default = false,
-    Callback = function(p66)
-        u293(p66)
-    end,
+    Callback = function(p66) u293(p66) end,
 })
-v301:Toggle({
-    Flag = "load_wall_hop",Title = 'Load Wall Hop',
+v301._right:Toggle({
+    Flag = "load_wall_hop", Title = 'Load Wall Hop',
     Default = false,
-    Callback = function(p67)
-        u281(p67)
-    end,
+    Callback = function(p67) u281(p67) end,
 })
-v301:Divider()
-v301:Paragraph({
-    Title = 'Graphics',
-})
+
+v301._right:Paragraph({ Title = 'Graphics' })
 
 local t32 = {
     Flag = "low_graphics_fps_boost",
@@ -6212,7 +6162,7 @@ function t32.Callback(p71)
     u316()
 end
 
-v301:Toggle(t32)
+v301._right:Toggle(t32)
 
 local t33 = {
     Flag = "high_graphics_beautiful",
@@ -6296,7 +6246,7 @@ function t33.Callback(p72)
     u319()
 end
 
-v301:Toggle(t33)
+v301._right:Toggle(t33)
 
 local t34 = {
     Flag = "fov_slider",
@@ -6324,11 +6274,8 @@ function t34.Callback()
     end)
 end
 
-v301:Button(t34)
-v301:Divider()
-v301:Paragraph({
-    Title = 'Extra Scripts',
-})
+v301._right:Button(t34)
+v301._right:Paragraph({ Title = 'Extra Scripts' })
 
 local t35 = {
     Flag = "load_emotes_gui",
@@ -6351,7 +6298,7 @@ function t35.Callback()
     })
 end
 
-v301:Button(t35)
+v301._right:Button(t35)
 
 local t36 = {
     Flag = "load_infinite_yield",
@@ -6374,8 +6321,7 @@ function t36.Callback()
     })
 end
 
-v301:Button(t36)
-v301:Divider()
+v301._right:Button(t36)
 
 local t37 = {
     Flag = "anti_fling",
@@ -6398,30 +6344,7 @@ function t37.Callback(p74)
     })
 end
 
-v301:Toggle(t37)
-
-local t38 = {
-    Flag = "auto_ping_prediction",
-    Title = 'Auto Ping Prediction',
-    Description = 'Adds ping offset to shoot and throw',
-    Default = false,
-}
-local u332 = v18
-
-function t38.Callback(p75)
-    u13 = p75
-
-    local v821 = p75 and 'Ping Prediction ON' or 'Ping Prediction OFF'
-
-    u332:Notify({
-        Title = 'CrystalHub',
-        Content = tostring(v821),
-        Duration = 3,
-        Icon = 'bell',
-    })
-end
-
-v301:Toggle(t38)
+v301._right:Toggle(t37)
 
 local t39 = {
     Flag = "speed_glitch_slider",
@@ -6436,27 +6359,14 @@ function t39.Callback()
         n2 = p76
     end, function()
         n2 = 200
-
-        u335:Notify({
-            Title = 'CrystalHub',
-            Content = tostring('Speed reset to 200'),
-            Duration = 3,
-            Icon = 'bell',
-        })
+        u335:Notify({ Title = 'CrystalHub', Content = 'Speed reset to 200', Duration = 3, Icon = 'bell' })
     end)
 end
 
-v301:Button(t39)
-v301:Dropdown({
-    Flag = "velocity_cap_anti_fling",Title = 'Velocity Cap (Anti-Fling)',
-    Options = {
-        '50',
-        '100',
-        '150',
-        '200',
-        '300',
-        '500',
-    },
+v301._right:Button(t39)
+v301._right:Dropdown({
+    Flag = "velocity_cap_anti_fling", Title = 'Velocity Cap (Anti-Fling)',
+    Options = { '50', '100', '150', '200', '300', '500' },
     Default = '200',
     Callback = function(p77)
         n1 = tonumber(p77) or 200
