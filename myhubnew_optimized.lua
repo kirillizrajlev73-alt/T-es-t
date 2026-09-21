@@ -1,4 +1,3 @@
--- fix lua synth
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4243,6 +4242,24 @@ end
         local humanoid_protected = {}
         local hooked_metatables = {}
 
+        -- Safe wrappers: executor metatables may expose __index/__newindex
+        -- as tables or nil instead of callable functions.
+        local function safe_old_index(indexer, self, index)
+            if type(indexer) == "function" then
+                return indexer(self, index)
+            elseif type(indexer) == "table" then
+                return indexer[index]
+            end
+            return nil
+        end
+
+        local function safe_old_newindex(indexer, self, index, value)
+            if type(indexer) == "function" then
+                return indexer(self, index, value)
+            end
+            return nil
+        end
+
         local function apply_hrp_fix(hrp)
             if hrp_protected[hrp] then return end
             hrp_protected[hrp] = true
@@ -4258,7 +4275,7 @@ end
                     if not checkcaller() and self and index == "CFrame" and (#anti_aim ~= 0 or purchasing) and not vehicle then
                         return local_client_position
                     end
-                    return old_index(self, index)
+                    return safe_old_index(old_index, self, index)
                 end),
                 __newindex = newcclosure(function(self, index, value)
                     if not checkcaller() and self then
@@ -4269,7 +4286,7 @@ end
                             return
                         end
                     end
-                    return old_newindex(self, index, value)
+                    return safe_old_newindex(old_newindex, self, index, value)
                 end)
             }
 
@@ -4301,7 +4318,7 @@ end
                         return
                     end
                 end
-                return old_newindex(self, index, value)
+                return safe_old_newindex(old_newindex, self, index, value)
             end)
 
             setrawmetatable(part, new_mt)
@@ -4326,7 +4343,7 @@ end
                         return
                     end
                 end
-                return old_newindex(self, index, value)
+                return safe_old_newindex(old_newindex, self, index, value)
             end)
 
             setrawmetatable(humanoid, new_mt)
