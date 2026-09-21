@@ -1,4 +1,3 @@
---ezzzzzz players mm2 and shitaro/kiti
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -73,8 +72,7 @@ local function makeControlAdapter(section)
         cfg = cfg or {}
         local text = tostring(cfg.Title or "")
         if cfg.Content and cfg.Content ~= "" then
-            text = text .. "\
-" .. tostring(cfg.Content)
+            text = text .. "\\n" .. tostring(cfg.Content)
         end
         return section:AddLabel(text, true)
     end
@@ -2487,16 +2485,12 @@ end
                 for name, v in pairs(tbl) do
                     lines[#lines+1] = name.."="..v.xs..","..v.xo..","..v.ys..","..v.yo
                 end
-                return table.concat(lines, "
-")
+                return table.concat(lines, "\n")
             end
 
             local function _deserializePos(raw)
                 local out = {}
-                for line in (raw.."
-"):gmatch("([^
-]*)
-") do
+                for line in (raw.."\n"):gmatch("([^\n]*)\n") do
                     local name, xs, xo, ys, yo = line:match("^(.-)=([^,]+),([^,]+),([^,]+),([^,]+)$")
                     if name then
                         out[name] = {
@@ -2834,8 +2828,7 @@ end
 
             function v232(p45)
                 if p45 then
-                    u227('GoldBomb', u228.GoldBomb, u229, Color3.fromRGB(255, 215, 0), 'GOLD
-JUMP')
+                    u227('GoldBomb', u228.GoldBomb, u229, Color3.fromRGB(255, 215, 0), 'GOLD\nJUMP')
                     u226.GoldBomb.btn.MouseButton1Click:Connect(function()
                         if not u9 then
                             u231('GoldBomb', true)
@@ -2869,8 +2862,7 @@ JUMP')
 
             function v239(p46)
                 if p46 then
-                    u234('NormalBomb', u235.NormalBomb, u236, Color3.fromRGB(0, 170, 255), 'NORMAL
-JUMP')
+                    u234('NormalBomb', u235.NormalBomb, u236, Color3.fromRGB(0, 170, 255), 'NORMAL\nJUMP')
                     u233.NormalBomb.btn.MouseButton1Click:Connect(function()
                         if not u10 then
                             u238('FakeBomb', false)
@@ -2927,8 +2919,7 @@ JUMP')
 
         function u252(p48)
             if p48 then
-                u246('ESP', u247.ESP, u248, Color3.fromRGB(10, 140, 30), 'ESP
-OFF')
+                u246('ESP', u247.ESP, u248, Color3.fromRGB(10, 140, 30), 'ESP\nOFF')
                 u245.ESP.btn.MouseButton1Click:Connect(function()
                     local v926 = not u61
 
@@ -3114,8 +3105,7 @@ OFF')
 
     function u276(p52)
         if p52 then
-            u272('GrabGun', u273.GrabGun, u274, Color3.fromRGB(200, 120, 0), 'GRAB
-GUN')
+            u272('GrabGun', u273.GrabGun, u274, Color3.fromRGB(200, 120, 0), 'GRAB\nGUN')
             u271.GrabGun.btn.MouseButton1Click:Connect(u275)
 
             return
@@ -3134,8 +3124,7 @@ GUN')
 
     function u281(p53)
         if p53 then
-            u278('WallHop', u279.WallHop, u280, Color3.fromRGB(0, 210, 210), 'WALL
-HOP')
+            u278('WallHop', u279.WallHop, u280, Color3.fromRGB(0, 210, 210), 'WALL\nHOP')
             u277.WallHop.btn.MouseButton1Click:Connect(u110)
 
             return
@@ -3194,8 +3183,7 @@ HOP')
 
     function u287(p54)
         if p54 then
-            u283('FlingMurderer', u284.FlingMurderer, u285, Color3.fromRGB(255, 50, 50), 'FLING
-MURD')
+            u283('FlingMurderer', u284.FlingMurderer, u285, Color3.fromRGB(255, 50, 50), 'FLING\nMURD')
             u282.FlingMurderer.btn.MouseButton1Click:Connect(u286)
 
             return
@@ -3254,8 +3242,7 @@ MURD')
 
     function u293(p55)
         if p55 then
-            u289('FlingSheriff', u290.FlingSheriff, u291, Color3.fromRGB(40, 130, 255), 'FLING
-SHERIF')
+            u289('FlingSheriff', u290.FlingSheriff, u291, Color3.fromRGB(40, 130, 255), 'FLING\nSHERIF')
             u288.FlingSheriff.btn.MouseButton1Click:Connect(u292)
 
             return
@@ -3299,12 +3286,10 @@ SHERIF')
         _uiLastTick = _now
 
         if u295.GoldBomb then
-            _setLbl('gb', u295.GoldBomb.lbl, u9 and 'WAIT...' or 'GOLD
-JUMP')
+            _setLbl('gb', u295.GoldBomb.lbl, u9 and 'WAIT...' or 'GOLD\nJUMP')
         end
         if u295.NormalBomb then
-            _setLbl('nb', u295.NormalBomb.lbl, u10 and 'WAIT...' or 'NORMAL
-JUMP')
+            _setLbl('nb', u295.NormalBomb.lbl, u10 and 'WAIT...' or 'NORMAL\nJUMP')
         end
         if u295.Shoot and u295.Shoot.img then
             local v779 = u296.Backpack:FindFirstChild('Knife') or u296.Character and u296.Character:FindFirstChild('Knife')
@@ -3317,9 +3302,7 @@ JUMP')
         end
         if u295.ESP then
             local v780 = u61 and Color3.fromRGB(50, 220, 80) or Color3.fromRGB(10, 140, 30)
-            _setLbl('esp', u295.ESP.lbl, u61 and 'ESP
-ON' or 'ESP
-OFF')
+            _setLbl('esp', u295.ESP.lbl, u61 and 'ESP\nON' or 'ESP\nOFF')
             _setColor('esp', u295.ESP.lbl, u295.ESP.stroke, v780)
         end
         if u295.Flick then
@@ -3331,28 +3314,23 @@ OFF')
         if u295.WallHop then
             local v783 = u297.MouseBehavior == Enum.MouseBehavior.LockCenter
             local v784 = u105 and Color3.fromRGB(255, 120, 0) or (v783 and Color3.fromRGB(0, 255, 220) or Color3.fromRGB(0, 210, 210))
-            _setLbl('wh', u295.WallHop.lbl, u105 and 'WAIT...' or 'WALL
-HOP')
+            _setLbl('wh', u295.WallHop.lbl, u105 and 'WAIT...' or 'WALL\nHOP')
             _setColor('wh', u295.WallHop.lbl, u295.WallHop.stroke, v784)
         end
         if u295.Speed then
             local v785 = u116 and Color3.fromRGB(0, 220, 200) or Color3.fromRGB(0, 140, 120)
-            _setLbl('sp', u295.Speed.lbl, u116 and 'SPEED
-ON' or 'SPEED')
+            _setLbl('sp', u295.Speed.lbl, u116 and 'SPEED\nON' or 'SPEED')
             _setColor('sp', u295.Speed.lbl, u295.Speed.stroke, v785)
         end
         if u295.Stretch then
             local v786 = u120 and Color3.fromRGB(255, 140, 30) or Color3.fromRGB(200, 80, 0)
-            _setLbl('st', u295.Stretch.lbl, u120 and 'STRETCH
-ON' or 'STRETCH')
+            _setLbl('st', u295.Stretch.lbl, u120 and 'STRETCH\nON' or 'STRETCH')
             _setColor('st', u295.Stretch.lbl, u295.Stretch.stroke, v786)
         end
         if u295.GrabGun then
             local GunDrop = u298:FindFirstChild('GunDrop', true)
             local v788 = GunDrop and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(200, 100, 0)
-            _setLbl('gg', u295.GrabGun.lbl, GunDrop and 'GRAB
-GUN' or 'NO
-GUN')
+            _setLbl('gg', u295.GrabGun.lbl, GunDrop and 'GRAB\nGUN' or 'NO\nGUN')
             _setColor('gg', u295.GrabGun.lbl, u295.GrabGun.stroke, v788)
         end
         if u295.FlingMurderer then
@@ -3364,9 +3342,7 @@ GUN')
                 end
             end
             local v792 = u157 and Color3.fromRGB(255, 180, 0) or (v789 and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(200, 20, 20))
-            _setLbl('fm', u295.FlingMurderer.lbl, u157 and 'FLING...' or (v789 and 'FLING
-MURD' or 'NO
-MURD'))
+            _setLbl('fm', u295.FlingMurderer.lbl, u157 and 'FLING...' or (v789 and 'FLING\nMURD' or 'NO\nMURD'))
             _setColor('fm', u295.FlingMurderer.lbl, u295.FlingMurderer.stroke, v792)
         end
         if u295.FlingSheriff then
@@ -3378,17 +3354,13 @@ MURD'))
                 end
             end
             local v796 = u157 and Color3.fromRGB(255, 180, 0) or (v793 and Color3.fromRGB(40, 130, 255) or Color3.fromRGB(10, 80, 200))
-            _setLbl('fs', u295.FlingSheriff.lbl, u157 and 'FLING...' or (v793 and 'FLING
-SHERIF' or 'NO
-SHERIF'))
+            _setLbl('fs', u295.FlingSheriff.lbl, u157 and 'FLING...' or (v793 and 'FLING\nSHERIF' or 'NO\nSHERIF'))
             _setColor('fs', u295.FlingSheriff.lbl, u295.FlingSheriff.stroke, v796)
         end
     end)
     v18:Notify({
         Title = 'CrystalHub Mmv And Mm2',
-        Content = 'v7.3 loaded!\
-Bombs and Shoot auto-loaded.\
-Open menu to configure everything.',
+        Content = 'v7.3 loaded!\\nBombs and Shoot auto-loaded.\\nOpen menu to configure everything.',
         Duration = 5,
     })
 
@@ -5987,8 +5959,6 @@ do
     })
 end
 -- ═══════════════════════════════════════════════════════
-
-
 
 -- ============================================================
 -- AMBIENCE SYSTEM (Visuals - Column 1)
