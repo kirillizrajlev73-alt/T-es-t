@@ -1,11 +1,4 @@
-print("hey welcome to gay party nigga remake by shitaro detka")
-do
-	local band, bxor, bnot = bit32.band, bit32.bxor, bit32.bnot
-	local rrot, rshift = bit32.rrotate, bit32.rshift
-	local schar, sbyte, srep, ssub = string.char, string.byte, string.rep, string.sub
-	local tconcat = table.concat
-	local floor = math.floor
-
+--27727
 	local K = {
 		0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
 		0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
