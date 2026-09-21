@@ -1,3 +1,4 @@
+--81818
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -42,9 +43,19 @@ do
     WindUI has been replaced by the supplied NeverLose UI.
     Existing feature code keeps its original control API through this adapter.
 ]]
-local NeverLose = loadstring(game:HttpGet(
+local _nlChunk = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/kirillizrajlev73-alt/Ul_onlypastamyneverlose/refs/heads/main/Ui.lua"
-))()
+))
+local NeverLose = _nlChunk and _nlChunk() or nil
+if not NeverLose then
+    -- UI не загрузился — создаём заглушку чтобы скрипт не крашился
+    NeverLose = {
+        GlobalLogo = "",
+        CreateWindow = function(self, _) return { AddTab = function(self2, _) return { AddSection = function(self3, _) return { AddLabel = function(self4, _) return { AddToggle = function() return {} end, AddSlider = function() return {} end, AddDropdown = function() return {} end, AddColorPicker = function() return {} end } end, AddButton = function() return {} end } end } end } end,
+        CreateNotification = function() return nil end,
+    }
+    warn("[CrystalHub] NeverLose UI failed to load — using stub")
+end
 
 -- Keep a shared reference available to the button/config section below.
 getgenv().CrystalHubNeverLose = NeverLose
@@ -7870,82 +7881,126 @@ do
 		pcall(tick)
 	end)
 
--- ── SILENT AIM UI (left column, Main tab) ────────────────────
-v301._left:Divider()
-v301._left:Paragraph({ Title = 'Silent Aim' })
+	-- ── SILENT AIM UI (NeverLose native API) ────────────────────
+	local silent_section = v301._sectionLeft
 
-v301._left:Toggle({
-    Title = "Silent Aim",
-    Flag = "silent_aim_enable",
-    Default = false,
-    Callback = function(val)
-        S.enabled = val
-        getgenv().SILENT_AIM_ACTIVE = val
-        if val then
-            task.spawn(function()
-                pcall(install_hooks)
-                pcall(connect_gun_fired)
-                pcall(setup_watch)
-                pcall(refresh_target)
-            end)
-        else
-            clear_watch()
-            track_clear()
-        end
-    end,
-})
+	silent_section:AddToggle({
+		Name = "silent",
+		Default = false,
+		Flag = "silent",
+		Callback = function(v)
+			S.enabled = v
+			getgenv().SILENT_AIM_ACTIVE = v
+			if v then
+				task.spawn(function()
+					pcall(install_hooks)
+					pcall(connect_gun_fired)
+					pcall(setup_watch)
+					pcall(refresh_target)
+				end)
+			else
+				clear_watch()
+				track_clear()
+			end
+		end
+	})
 
-v301._left:Toggle({
-    Title = "Prediction",
-    Flag = "silent_aim_prediction",
-    Default = true,
-    Callback = function(val)
-        S.predict = val
-        if not val then track_clear() end
-    end,
-})
+	local predict_tog = silent_section:AddToggle({
+		Name = "prediction",
+		Default = true,
+		Flag = "Silent Prediction",
+		Callback = function(v)
+			S.predict = v
+			if not v then track_clear() end
+		end
+	})
 
-v301._left:Toggle({
-    Title = "Force Shoot",
-    Flag = "silent_force_shoot",
-    Default = false,
-    Callback = function(val)
-        S.force = val
-        if not val then restore_origin() end
-    end,
-})
+	local force_tog = silent_section:AddToggle({
+		Name = "force shoot",
+		ToolTip = "Shoots through walls",
+		Default = false,
+		Flag = "Silent Force",
+		Option = true,
+		Callback = function(v)
+			S.force = v
+			if not v then restore_origin() end
+		end
+	})
 
-v301._left:Slider({
-    Title = "Origin Offset",
-    Flag = "silent_stand_off",
-    Value = { Min = 0, Max = 40, Default = 15 },
-    Rounding = 0,
-    Suffix = " studs",
-    Callback = function(val)
-        S.stand_off = val
-    end,
-})
+	force_tog.Option:AddSlider({
+		Name = "origin",
+		Default = 15,
+		Min = 0,
+		Max = 40,
+		Round = 0,
+		Type = " studs",
+		Flag = "silent_stand_off",
+		Callback = function(v)
+			S.stand_off = v
+		end
+	})
 
-v301._left:Toggle({
-    Title = "Auto Shoot",
-    Flag = "silent_auto_shoot",
-    Default = false,
-    Callback = function(val)
-        S.auto_on = val
-    end,
-})
+	local auto_tog = silent_section:AddToggle({
+		Name = "auto shoot",
+		ToolTip = "Auto shoot on murder",
+		Default = false,
+		Flag = "Auto Shoot",
+		Option = true,
+		Callback = function(v)
+			S.auto_on = v
+		end
+	})
 
-v301._left:Slider({
-    Title = "Auto Delay (ms)",
-    Flag = "silent_auto_delay",
-    Value = { Min = 0, Max = 600, Default = 0 },
-    Rounding = 0,
-    Suffix = "ms",
-    Callback = function(val)
-        S.auto_delay = val / 1000
-    end,
-})
--- ── END SILENT AIM ────────────────────────────────────────────
+	auto_tog.Option:AddSlider({
+		Name = "delay",
+		Default = 0,
+		Min = 0,
+		Max = 600,
+		Round = 0,
+		Type = "ms",
+		Flag = "silent_auto_delay",
+		Callback = function(v)
+			S.auto_delay = v / 1000
+		end
+	})
+
+	getgenv().SILENT_INSTALL_HOOKS = function()
+		pcall(install_hooks)
+	end
+
+	task.spawn(function()
+		pcall(install_hooks)
+		pcall(connect_gun_fired)
+	end)
+
+	getgenv().SILENT_UNLOAD = function()
+		S.enabled = false
+		S.predict = false
+		S.force = false
+		S.auto_on = false
+		getgenv().SILENT_AIM_ACTIVE = false
+		restore_origin()
+		clear_watch()
+		track_clear()
+		if gun_fired_conn then
+			pcall(function() gun_fired_conn:Disconnect() end)
+			gun_fired_conn = nil
+		end
+		if main_conn then
+			pcall(function() main_conn:Disconnect() end)
+			main_conn = nil
+		end
+		local m = weapon_service
+		if m then
+			pcall(function() setreadonly(m, false) end)
+			if orig_mouse then
+				pcall(function() m.GetMouseTargetCFrame = orig_mouse end)
+			end
+			if orig_screen then
+				pcall(function() m.GetTargetPosition = orig_screen end)
+			end
+		end
+	end
 end
 
 -- ── COMBAT column (left) ──────────────────────────────────────
