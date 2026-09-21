@@ -1,17 +1,4 @@
-if not LPH_OBFUSCATED then
-	local a = function() end
-	local g = getgenv and getgenv() or _G
-	g.LPH_ATTRIBUTES = a
-	g.ENCRYPT, g.VM, g.PRESET, g.OPTIMIZE, g.TRANSFORM, g.ERROR_HANDLING = a, a, a, a, a, a
-	g.UNROLL, g.INLINE, g.NO_UPVALUES = a, a, a
-	g.NONE, g.OPAL, g.ONYX, g.FAST, g.BALANCED, g.SECURE = a, a, a, a, a, a
-	g.EXTRACT, g.CONTROL_FLOW, g.REWRITE_NAMECALLS, g.GLOBALS, g.CONSTANTS = a, a, a, a, a
-end
-
 print("hey welcome to gay party nigga remake by shitaro detka")
-
-end
-
 do
 	local band, bxor, bnot = bit32.band, bit32.bxor, bit32.bnot
 	local rrot, rshift = bit32.rrotate, bit32.rshift
