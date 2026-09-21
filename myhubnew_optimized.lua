@@ -1,3 +1,4 @@
+--777333
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -7450,21 +7451,40 @@ do
             _wb_fsaved = saved
         end
         _wb_fstamp = os.clock()
-        local ok3  = pcall(function() att.WorldCFrame = cf end)
+        -- Convert world CFrame to local CFrame relative to parent to avoid executor freeze
+        local ok3 = pcall(function()
+            local parent = att.Parent
+            if parent and parent:IsA("BasePart") then
+                att.CFrame = parent.CFrame:ToObjectSpace(cf)
+            else
+                att.CFrame = cf
+            end
+        end)
         if not ok3 then _wb_restore(); return false end
-        task.defer(_wb_restore)
+        task.delay(0, _wb_restore)
         return true
     end
 
     local function _wb_resolve_force()
         local part = _wb_tpart
         if not part or not part.Parent then return nil, nil end
-        local live = part.Position
-        local att  = _wb_gun_att()
-        local mypos = att and att.Position or live
-        local dir   = (live - mypos)
+        local ok1, live = pcall(function() return part.Position end)
+        if not ok1 or typeof(live) ~= "Vector3" then return nil, nil end
+        local att = _wb_gun_att()
+        local mypos = live
+        if att then
+            local ok2, wp = pcall(function()
+                local p = att.Parent
+                if p and p:IsA("BasePart") then
+                    return (p.CFrame * att.CFrame).Position
+                end
+                return att.WorldPosition
+            end)
+            if ok2 and typeof(wp) == "Vector3" then mypos = wp end
+        end
+        local dir = (live - mypos)
         if dir.Magnitude < 1 then dir = Vector3.new(0, 0, -1) end
-        local u    = dir.Unit
+        local u     = dir.Unit
         local back  = live - u * _WB.stand_off
         local front = live + u * math.max(8, _WB.stand_off)
         return CFrame.new(back, front), CFrame.new(front)
