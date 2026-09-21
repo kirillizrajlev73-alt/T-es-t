@@ -1,3 +1,4 @@
+--81818
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4181,431 +4182,743 @@ end
     end
 
     -- ═══════════════════════════════════════════
-    -- RAGE TAB: ANTI-AIM (Matcha-style Desync + Fake Position)
+    -- RAGE TAB: ANTI-AIM (imported implementation)
     -- ═══════════════════════════════════════════
     do
-        -- ── State ──────────────────────────────────────────────────────
-        local aaDesync = {
-            Enabled      = false,
-            Mode         = "Custom",
-            RandomAmount = 20,
-            Visualize    = false,
-            Line         = false,
-            Status       = false,
-            Dot          = false,
-            CustomX      = 0,
-            CustomY      = 0,
-            CustomZ      = 0,
-        }
+        -- ============================================================
+        -- ANTI-AIM — вырезано из shitaro
+        -- (fake position + velocity spoof + protection)
+        -- ============================================================
 
-        local aaFakePos = {
-            Enabled      = false,
-            Mode         = "Voidless",
-            Version      = "Version 1",
-            ReturnDelay  = 0.5,
-            Active       = false,
-            OriginalPos  = nil,
-        }
+        local run_service = game:GetService("RunService")
+        local players_service = game:GetService("Players")
+        local local_player = players_service.LocalPlayer
 
-        -- ── Desync clone (invisible body at fake pos) ──────────────────
-        local DesyncClone = nil
-        local DesyncHighlight = nil
-        local DesyncGlow = nil
+        local render_stepped = run_service.RenderStepped
+        local render_stepped_wait = render_stepped.Wait
+        local vector3_new = Vector3.new
+        local cframe_new = CFrame.new
+        local vector3_zero = Vector3.zero
+        local cframe_angles = CFrame.Angles
+        local math_random = math.random
+        local rad = math.rad
+        local clock = os.clock
+        local floor = math.floor
+        local spawn = task.spawn
+        local wait = task.wait
 
+        local function round(num, decimals)
+            local mult = 10^(decimals or 0)
+            return floor(num * mult + 0.5 - (num < 0 and 1 or 0)) / mult
+        end
+
+        -- ==== СОСТОЯНИЕ ====
+        local local_server_position = cframe_new()
+        local local_client_position = cframe_new()
+        local local_parts = {}
+        local local_fps = 200
+        local anti_aim = {}
+        local vehicle = nil
+        local purchasing = nil
+        local stomping = false
+        local fake_pos_active = false
+
+        getgenv().FAKE_POS_ACTIVE = false
+        getgenv().FAKE_POS_MULTI_AXIS = {X = true, Y = true, Z = true}
+        getgenv().FAKE_POS_RANGE_X = 9e9
+        getgenv().FAKE_POS_RANGE_Y = 9e9
+        getgenv().FAKE_POS_RANGE_Z = 9e9
+
+        local function remove(tbl, index)
+            local length = #tbl
+            for i = index, length - 1 do
+                tbl[i] = tbl[i + 1]
+            end
+            tbl[length] = nil
+        end
+
+        -- ==== ЗАЩИТА МЕТАТАБЛИЦ ====
+        local hrp_protected = {}
+        local part_protected = {}
+        local humanoid_protected = {}
+        local hooked_metatables = {}
+
+        local function apply_hrp_fix(hrp)
+            if hrp_protected[hrp] then return end
+            hrp_protected[hrp] = true
+            local old = getrawmetatable(hrp)
+            if not old then return end
+            local old_index = old.__index
+            local old_newindex = old.__newindex
+
+            hooked_metatables[hrp] = {mt = old, target = hrp}
+
+            local new = {
+                __index = newcclosure(function(self, index)
+                    if not checkcaller() and self and index == "CFrame" and (#anti_aim ~= 0 or purchasing) and not vehicle then
+                        return local_client_position
+                    end
+                    return old_index(self, index)
+                end),
+                __newindex = newcclosure(function(self, index, value)
+                    if not checkcaller() and self then
+                        if index == "Anchored" then
+                            return
+                        end
+                        if (index == "CFrame" or index == "Position") and (#anti_aim ~= 0 or purchasing) then
+                            return
+                        end
+                    end
+                    return old_newindex(self, index, value)
+                end)
+            }
+
+            for k, v in old do
+                if not new[k] then
+                    new[k] = v
+                end
+            end
+
+            setrawmetatable(hrp, new)
+        end
+
+        local function protect_part(part)
+            if part_protected[part] then return end
+            part_protected[part] = true
+            local old_mt = getrawmetatable(part)
+            if not old_mt then return end
+            local old_newindex = old_mt.__newindex
+            if not old_newindex then return end
+
+            hooked_metatables[part] = {mt = old_mt, target = part}
+
+            local new_mt = {}
+            for k, v in old_mt do new_mt[k] = v end
+
+            new_mt.__newindex = newcclosure(function(self, index, value)
+                if not checkcaller() and self then
+                    if index == "Anchored" or index == "CanCollide" then
+                        return
+                    end
+                end
+                return old_newindex(self, index, value)
+            end)
+
+            setrawmetatable(part, new_mt)
+        end
+
+        local function protect_humanoid(humanoid)
+            if humanoid_protected[humanoid] then return end
+            humanoid_protected[humanoid] = true
+            local old_mt = getrawmetatable(humanoid)
+            if not old_mt then return end
+            local old_newindex = old_mt.__newindex
+            if not old_newindex then return end
+
+            hooked_metatables[humanoid] = {mt = old_mt, target = humanoid}
+
+            local new_mt = {}
+            for k, v in old_mt do new_mt[k] = v end
+
+            new_mt.__newindex = newcclosure(function(self, index, value)
+                if not checkcaller() and self and fake_pos_active then
+                    if index == "Health" and type(value) == "number" and value <= 0 then
+                        return
+                    end
+                end
+                return old_newindex(self, index, value)
+            end)
+
+            setrawmetatable(humanoid, new_mt)
+        end
+
+        -- ==== FAKE POSITION ====
+        local update_server_position = function(hrp)
+            local_server_position = hrp.CFrame
+        end
+
+        local fake_position_sitting = false
+        local local_fake_position = nil
+        local orig_display_pos = nil
+        local fake_position_sender_rate_old
         pcall(function()
-            DesyncClone = game:GetObjects("rbxassetid://8246626421")[1]
-            DesyncClone.Parent = Workspace
-            DesyncClone.Humanoid:Destroy()
-            DesyncClone.Head.Face:Destroy()
-            for _, v in pairs(DesyncClone:GetDescendants()) do
-                if v:IsA("BasePart") or v:IsA("MeshPart") then
-                    v.CanCollide = false
-                    v.Transparency = 0
+            fake_position_sender_rate_old = getfflag("S2PhysicsSenderRate")
+        end)
+        local fake_position_refresh_connection = nil
+        local fake_position_refresh_connection2 = nil
+        local fake_position_refresh_connection3 = nil
+
+        local fallen_height_old = nil
+
+        -- маркер (иконка над реальной позицией)
+        local marker_enabled = true
+        local marker_color = Color3.fromRGB(193, 247, 255)
+
+        local b64set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        local function b64dec(data)
+            data = data:gsub("[^" .. b64set .. "=]", "")
+            return (data:gsub(".", function(x)
+                if x == "=" then return "" end
+                local r, f = "", b64set:find(x) - 1
+                for i = 6, 1, -1 do r = r .. (f % 2 ^ i - f % 2 ^ (i - 1) > 0 and "1" or "0") end
+                return r
+            end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+                if #x ~= 8 then return "" end
+                local c = 0
+                for i = 1, 8 do c = c + (x:sub(i, i) == "1" and 2 ^ (8 - i) or 0) end
+                return string.char(c)
+            end))
+        end
+
+        local marker_data = b64dec("iVBORw0KGgoAAAANSUhEUgAAAB0AAAAdCAMAAABhTZc9AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAPUExURQAAAP///wwMDP39/QAAAJn0DigAAAAFdFJOU/////8A+7YOUwAAAAlwSFlzAABLlgAAS5YBPIKNxAAAABh0RVh0U29mdHdhcmUAUGFpbnQuTkVUIDUuMS4y+7wDtgAAALZlWElmSUkqAAgAAAAFABoBBQABAAAASgAAABsBBQABAAAAUgAAACgBAwABAAAAAgAAADEBAgAQAAAAWgAAAGmHBAABAAAAagAAAAAAAAD7fwcA6AMAAPt/BwDoAwAAUGFpbnQuTkVUIDUuMS4yAAMAAJAHAAQAAAAwMjMwAaADAAEAAAABAAAABaAEAAEAAACUAAAAAAAAAAIAAQACAAQAAABSOTgAAgAHAAQAAAAwMTAwAAAAAFgdiCkiK10LAAAAZ0lEQVQ4T+XT0QqAMAgF0Gv5/9/cdJrXPYweopeEoe5MGKOgHMDSR/aAiPSNyBaGnT9S4Oi3pnqOtuEqE5kfaiHxG8pYTJoHrMzdzFu1h0qt57oLH58a/YhFfUU/4s967tT/Iv4mVS+LEAmXjonxPAAAAABJRU5ErkJggg==")
+
+        local marker_bad_prop = {}
+        local function marker_set(obj, prop, value)
+            if marker_bad_prop[prop] then return end
+            if not pcall(function() obj[prop] = value end) then
+                marker_bad_prop[prop] = true
+            end
+        end
+
+        local marker_glow = Drawing.new("Image")
+        marker_set(marker_glow, "Data", marker_data)
+        marker_set(marker_glow, "Color", marker_color)
+        marker_set(marker_glow, "Transparency", 0.35)
+        marker_set(marker_glow, "ZIndex", 1)
+        marker_set(marker_glow, "Visible", false)
+
+        local marker_icon = Drawing.new("Image")
+        marker_set(marker_icon, "Data", marker_data)
+        marker_set(marker_icon, "Color", marker_color)
+        marker_set(marker_icon, "Transparency", 1)
+        marker_set(marker_icon, "ZIndex", 2)
+        marker_set(marker_icon, "Visible", false)
+
+        local function hide_marker()
+            marker_set(marker_glow, "Visible", false)
+            marker_set(marker_icon, "Visible", false)
+        end
+
+        local function draw_marker(cx, cy)
+            local gs = 46
+            marker_set(marker_glow, "Size", Vector2.new(gs, gs))
+            marker_set(marker_glow, "Position", Vector2.new(cx - gs / 2, cy - gs / 2))
+            marker_set(marker_glow, "Color", marker_color)
+            marker_set(marker_glow, "Visible", true)
+            local isz = 30
+            marker_set(marker_icon, "Size", Vector2.new(isz, isz))
+            marker_set(marker_icon, "Position", Vector2.new(cx - isz / 2, cy - isz / 2))
+            marker_set(marker_icon, "Color", marker_color)
+            marker_set(marker_icon, "Visible", true)
+        end
+
+        local function set_world_limits(disable)
+            if disable then
+                pcall(function() fallen_height_old = gethiddenproperty(workspace, "FallenPartsDestroyHeight") end)
+                pcall(function() sethiddenproperty(workspace, "FallenPartsDestroyHeight", -9e9) end)
+            else
+                pcall(function() sethiddenproperty(workspace, "FallenPartsDestroyHeight", fallen_height_old or -500) end)
+            end
+        end
+
+        -- локальная прозрачность тела
+        local ltm_parts = {}
+        local ltm_char = nil
+        local ltm_valid = false
+        local ltm_conns = {}
+
+        local function ltm_parts_for(character)
+            if ltm_char ~= character then
+                ltm_char = character
+                ltm_valid = false
+                for i = 1, #ltm_conns do
+                    pcall(function() ltm_conns[i]:Disconnect() end)
+                end
+                table.clear(ltm_conns)
+                if character then
+                    local function dirty(d)
+                        if d:IsA("BasePart") then ltm_valid = false end
+                    end
+                    ltm_conns[1] = character.DescendantAdded:Connect(dirty)
+                    ltm_conns[2] = character.DescendantRemoving:Connect(dirty)
                 end
             end
-            DesyncClone.HumanoidRootPart.Transparency = 0.5
-            DesyncClone.HumanoidRootPart.CFrame = CFrame.new(9999, 9999, 9999)
+            if not ltm_valid then
+                table.clear(ltm_parts)
+                local n = 0
+                for _, part in character:GetDescendants() do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        n = n + 1
+                        ltm_parts[n] = part
+                    end
+                end
+                ltm_valid = true
+            end
+            return ltm_parts
+        end
 
-            DesyncHighlight = Instance.new("Highlight")
-            DesyncHighlight.Enabled = false
-            DesyncHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            DesyncHighlight.FillColor = Color3.fromRGB(0, 255, 0)
-            DesyncHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            DesyncHighlight.FillTransparency = 0.3
-            DesyncHighlight.OutlineTransparency = 0
-            DesyncHighlight.Adornee = DesyncClone
-            DesyncHighlight.Parent = DesyncClone
-
-            DesyncGlow = Instance.new("PointLight")
-            DesyncGlow.Color = Color3.fromRGB(0, 255, 100)
-            DesyncGlow.Brightness = 4
-            DesyncGlow.Range = 2
-            DesyncGlow.Parent = DesyncClone.HumanoidRootPart
-        end)
-
-        -- ── Drawing overlays ──────────────────────────────────────────
-        local aaLine = Drawing.new("Line")
-        aaLine.Thickness = 2
-        aaLine.Color = Color3.fromRGB(0, 255, 0)
-        aaLine.Visible = false
-        aaLine.Transparency = 1
-
-        local aaDot = Drawing.new("Circle")
-        aaDot.Radius = 6
-        aaDot.Thickness = 1.5
-        aaDot.NumSides = 16
-        aaDot.Color = Color3.fromRGB(0, 255, 100)
-        aaDot.Filled = true
-        aaDot.Transparency = 1
-        aaDot.Visible = false
-
-        local aaStatus = Drawing.new("Text")
-        aaStatus.Text = "Desync: OFF"
-        aaStatus.Size = 16
-        aaStatus.Font = 2
-        aaStatus.Color = Color3.fromRGB(255, 0, 0)
-        aaStatus.Outline = true
-        aaStatus.OutlineColor = Color3.fromRGB(0, 0, 0)
-        aaStatus.Center = false
-        aaStatus.Visible = false
-        aaStatus.Position = Vector2.new(100, 100)
-
-        -- ── Camera setback part (keeps camera at real pos) ────────────
-        local desync_setback = Instance.new("Part")
-        desync_setback.Name = "CrystalDesyncSetback"
-        desync_setback.Size = Vector3.new(2, 2, 1)
-        desync_setback.CanCollide = false
-        desync_setback.Anchored = true
-        desync_setback.Transparency = 1
-        desync_setback.Parent = Workspace
-
-        -- ── Status-label drag ─────────────────────────────────────────
-        local aaDragging = false
-        UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 and aaDesync.Status then
-                local mp = UserInputService:GetMouseLocation()
-                local tp = aaStatus.Position
-                local ts = aaStatus.TextBounds
-                if mp.X >= tp.X and mp.X <= tp.X + ts.X and
-                   mp.Y >= tp.Y and mp.Y <= tp.Y + ts.Y then
-                    aaDragging = true
+        local function set_local_body_transparency(value)
+            local character = local_player.Character
+            if not character then return end
+            local parts = ltm_parts_for(character)
+            local target = value and 0.6 or 0
+            for i = 1, #parts do
+                local part = parts[i]
+                if part.Parent then
+                    part.LocalTransparencyModifier = target
                 end
             end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                aaDragging = false
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if aaDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                aaStatus.Position = UserInputService:GetMouseLocation()
-            end
-        end)
+        end
 
-        -- ── Desync heartbeat ──────────────────────────────────────────
-        RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        local do_refresh_fake_position = function()
+            if local_server_position then
+                local_fake_position = local_server_position.p
+            end
+        end
 
-            if not char or not hrp then
-                if DesyncClone then
-                    DesyncClone:SetPrimaryPartCFrame(CFrame.new(9999, 9999, 9999))
-                    if DesyncHighlight then DesyncHighlight.Enabled = false end
-                end
-                aaLine.Visible   = false
-                aaDot.Visible    = false
-                aaStatus.Visible = false
+        local pending_teleport = nil
+        local tp_settle_until = 0
+
+        local do_fake_position = function(dt, hrp)
+            pcall(function() setfflag("S2PhysicsSenderRate", tostring(round(local_fps, 1))) end)
+            if fake_position_sitting then
+                local_fake_position = nil
                 return
             end
-
-            local oldCFrame   = hrp.CFrame
-            local desyncCFrame = oldCFrame
-
-            if aaDesync.Enabled then
-                local m = aaDesync.Mode
-                if m == "Destroy Cheaters" then
-                    desyncCFrame = CFrame.new(9e9, 1, 1) * oldCFrame.Rotation
-                elseif m == "Underground" then
-                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(0, 12, 0)) * oldCFrame.Rotation
-                elseif m == "Void Spam" then
-                    desyncCFrame = math.random(1,2)==1 and oldCFrame
-                        or CFrame.new(math.random(10000,50000), math.random(10000,50000), math.random(10000,50000)) * oldCFrame.Rotation
-                elseif m == "Void" then
-                    desyncCFrame = CFrame.new(hrp.Position + Vector3.new(
-                        math.random(-444444,444444),
-                        math.random(-444444,444444),
-                        math.random(-44444,44444)
-                    )) * oldCFrame.Rotation
-                elseif m == "Random" then
-                    local amt = aaDesync.RandomAmount
-                    desyncCFrame = CFrame.new(hrp.Position + Vector3.new(
-                        math.random(-amt, amt),
-                        math.random(-amt/2, amt/2),
-                        math.random(-amt, amt)
-                    )) * oldCFrame.Rotation
-                elseif m == "Safe Shoot" then
-                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(0,5,0))
-                        * CFrame.Angles(math.random(0,360), math.random(0,360), math.rad(180))
-                elseif m == "Custom" then
-                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(
-                        aaDesync.CustomX, aaDesync.CustomY, aaDesync.CustomZ
-                    )) * oldCFrame.Rotation
-                end
-
-                hrp.CFrame = desyncCFrame
-                Camera.CameraSubject = desync_setback
-                RunService.RenderStepped:Wait()
-                desync_setback.CFrame = oldCFrame * CFrame.new(0, hrp.Size.Y/2 + 0.5, 0)
-                hrp.CFrame = oldCFrame
+            if dt > 0.45 then
+                return
+            end
+            if hrp then
+                pcall(function() sethiddenproperty(hrp, "NetworkIsSleeping", false) end)
+                pcall(function()
+                    if hrp.AssemblyLinearVelocity.Magnitude < 1 then
+                        hrp.AssemblyLinearVelocity = vector3_new(0, 0.1, 0)
+                    end
+                end)
             end
 
-            -- Visualize clone
-            local vizCF = aaDesync.Enabled and desyncCFrame or oldCFrame
-            if aaDesync.Visualize and DesyncClone then
-                DesyncClone:SetPrimaryPartCFrame(vizCF)
-                if DesyncHighlight then DesyncHighlight.Enabled = true end
-            elseif DesyncClone then
-                if DesyncHighlight then DesyncHighlight.Enabled = false end
-                DesyncClone:SetPrimaryPartCFrame(CFrame.new(9999, 9999, 9999))
+            local axes = getgenv().FAKE_POS_MULTI_AXIS
+            local rx = getgenv().FAKE_POS_RANGE_X
+            local ry = getgenv().FAKE_POS_RANGE_Y
+            local rz = getgenv().FAKE_POS_RANGE_Z
+            local base = local_client_position and local_client_position.p or vector3_zero
+            local x = axes.X and ((math.random() * 2 - 1) * rx) or base.X
+            local y = axes.Y and (-(math.random()) * ry) or base.Y
+            local z = axes.Z and ((math.random() * 2 - 1) * rz) or base.Z
+
+            if pending_teleport then
+                pcall(function()
+                    hrp.CFrame = pending_teleport
+                    hrp.AssemblyLinearVelocity = vector3_zero
+                    hrp.AssemblyAngularVelocity = vector3_zero
+                end)
+                local_client_position = pending_teleport
+                pending_teleport = nil
             end
 
-            -- Line
-            if aaDesync.Line then
-                local sp, on = Camera:WorldToViewportPoint(vizCF.Position)
-                local mp = UserInputService:GetMouseLocation()
-                if on then
-                    aaLine.From    = mp
-                    aaLine.To      = Vector2.new(sp.X, sp.Y)
-                    aaLine.Visible = true
+            local old = hrp.CFrame
+            local fake_cf = cframe_new(vector3_new(x, y, z)) * cframe_angles(rad(math_random(1,359)), rad(math_random(1,359)), rad(math_random(1,359)))
+            orig_display_pos = fake_cf.Position
+            hrp.CFrame = fake_cf
+            render_stepped_wait(render_stepped)
+            hrp.CFrame = old
+        end
+
+        getgenv().SHITARO_TELEPORT = function(cf)
+            if typeof(cf) == "Vector3" then cf = cframe_new(cf) end
+            if typeof(cf) ~= "CFrame" then return false end
+            local hrp = local_parts["HumanoidRootPart"]
+            if not hrp then return false end
+            if fake_pos_active then
+                cf = cframe_new(cf.Position)
+                tp_settle_until = clock() + 0.35
+                pending_teleport = cf
+            else
+                pcall(function() hrp.CFrame = cf end)
+                local_client_position = cf
+            end
+            return true
+        end
+
+        local function fake_position_stop_sitting(character)
+            local humanoid = local_parts["Humanoid"]
+            if not humanoid then return end
+            fake_position_sitting = humanoid.Sit
+
+            if fake_position_refresh_connection3 then
+                pcall(function() fake_position_refresh_connection3:Disconnect() end)
+                fake_position_refresh_connection3 = nil
+            end
+
+            fake_position_refresh_connection3 = humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
+                fake_position_sitting = humanoid.Sit
+                if not fake_position_sitting then
+                    spawn(do_refresh_fake_position)
                 else
-                    aaLine.Visible = false
+                    local_fake_position = local_client_position and local_client_position.p
                 end
-            else
-                aaLine.Visible = false
+            end)
+        end
+
+        local function fake_position_enable(value)
+            local_fake_position = nil
+            pending_teleport = nil
+            fake_pos_active = value
+            getgenv().FAKE_POS_ACTIVE = value
+
+            for i = 1, #anti_aim do
+                if anti_aim[i] == do_fake_position then
+                    remove(anti_aim, i)
+                    break
+                end
             end
 
-            -- Dot
-            if aaDesync.Dot then
-                local sp, on = Camera:WorldToViewportPoint(vizCF.Position)
-                if on then
-                    aaDot.Position = Vector2.new(sp.X, sp.Y)
-                    aaDot.Visible  = true
-                else
-                    aaDot.Visible = false
-                end
-            else
-                aaDot.Visible = false
+            if fake_position_refresh_connection then
+                pcall(function() fake_position_refresh_connection:Disconnect() end)
+                fake_position_refresh_connection = nil
+            end
+            if fake_position_refresh_connection2 then
+                pcall(function() fake_position_refresh_connection2:Disconnect() end)
+                fake_position_refresh_connection2 = nil
+            end
+            if fake_position_refresh_connection3 then
+                pcall(function() fake_position_refresh_connection3:Disconnect() end)
+                fake_position_refresh_connection3 = nil
             end
 
-            -- Status text
-            if aaDesync.Status then
-                aaStatus.Text    = "Desync: " .. (aaDesync.Enabled and "TRUE" or "FALSE")
-                aaStatus.Color   = aaDesync.Enabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
-                aaStatus.Visible = true
+            set_local_body_transparency(value)
+
+            if value then
+                set_world_limits(true)
+                anti_aim[#anti_aim+1] = do_fake_position
+
+                local hrp = local_parts["HumanoidRootPart"]
+                if hrp then
+                    pcall(function()
+                        sethiddenproperty(hrp, "NetworkIsSleeping", false)
+                        hrp.AssemblyLinearVelocity = vector3_new(0, 0.1, 0)
+                    end)
+                end
+
+                fake_position_refresh_connection = local_player.CharacterAdded:Connect(function()
+                    task.wait(0.5)
+                    spawn(do_refresh_fake_position)
+                    if local_parts["Humanoid"] then
+                        fake_position_stop_sitting(local_player.Character)
+                    end
+                    if fake_pos_active then
+                        set_local_body_transparency(true)
+                    end
+                end)
+
+                if local_player.Character then
+                    fake_position_stop_sitting(local_player.Character)
+                end
+
+                spawn(do_refresh_fake_position)
             else
-                aaStatus.Visible = false
+                set_world_limits(false)
+                pcall(function() setfflag("S2PhysicsSenderRate", fake_position_sender_rate_old or "15") end)
+                pcall(function() setfpscap(0) end)
+                local hrp = local_parts["HumanoidRootPart"]
+                if hrp and local_client_position then
+                    pcall(function()
+                        sethiddenproperty(hrp, "NetworkIsSleeping", false)
+                        hrp.CFrame = local_client_position
+                        hrp.AssemblyLinearVelocity = vector3_new(0, 0.1, 0)
+                    end)
+                end
+                orig_display_pos = nil
+                hide_marker()
+            end
+        end
+
+        -- ==== VELOCITY SPOOF ====
+        local velocity_desync_type = "low"
+        local velocity_desync_rotate = false
+
+        local do_velocity_desync = function(dt, hrp)
+            if hrp and not stomping and not purchasing and (getgenv().FLING_ACTIVE or 0) == 0 then
+                pcall(function() setfflag("S2PhysicsSenderRate", tostring(round(local_fps, 1))) end)
+                pcall(function() sethiddenproperty(hrp, "NetworkIsSleeping", false) end)
+                local old_lin = hrp.AssemblyLinearVelocity
+                local old_ang = hrp.AssemblyAngularVelocity
+                local vel = velocity_desync_type == "y high" and vector3_new(0, 16384, 0)
+                    or velocity_desync_type == "limit" and vector3_new(
+                        math_random(-9223372036854775808, 9223372036854775807),
+                        math_random(-9223372036854775808, 9223372036854775807),
+                        math_random(-9223372036854775808, 9223372036854775807)
+                    )
+                    or velocity_desync_type == "low" and vector3_new(
+                        math_random(1,2) == 1 and -300 or 300,
+                        math_random(1,2) == 1 and -300 or 300,
+                        math_random(1,2) == 1 and -300 or 300
+                    )
+                    or velocity_desync_type == "high" and vector3_new(
+                        math_random(1,2) == 1 and -16384 or 16384,
+                        math_random(1,2) == 1 and -14384 or 16384,
+                        math_random(1,2) == 1 and -16384 or 16384
+                    )
+                    or velocity_desync_type == "zero" and vector3_zero
+                    or vector3_zero
+
+                getgenv().VELOCITY_DESYNC_UNTIL = clock() + 0.35
+                hrp.AssemblyLinearVelocity = vel
+                if velocity_desync_rotate then
+                    hrp.AssemblyAngularVelocity = vel
+                end
+
+                render_stepped_wait(render_stepped)
+                hrp.AssemblyLinearVelocity = old_lin
+                hrp.AssemblyAngularVelocity = old_ang
+                getgenv().VELOCITY_DESYNC_UNTIL = clock() + 0.05
+            end
+        end
+
+        local function velocity_desync_enable(value)
+            for i = 1, #anti_aim do
+                if anti_aim[i] == do_velocity_desync then
+                    remove(anti_aim, i)
+                    break
+                end
+            end
+            if value then
+                anti_aim[#anti_aim+1] = do_velocity_desync
+            else
+                pcall(function() setfflag("S2PhysicsSenderRate", fake_position_sender_rate_old or "15") end)
+            end
+        end
+
+        -- ==== ИНИЦИАЛИЗАЦИЯ ПЕРСОНАЖА ====
+        local function init_character(character)
+            if not character then return end
+            local hrp = character:WaitForChild("HumanoidRootPart", 5)
+            if hrp then
+                local_parts["HumanoidRootPart"] = hrp
+                local humanoid = character:WaitForChild("Humanoid", 5)
+                local_parts["Humanoid"] = humanoid
+                apply_hrp_fix(hrp)
+                if humanoid then
+                    protect_humanoid(humanoid)
+                end
+
+                for _, part in character:GetDescendants() do
+                    if part:IsA("BasePart") then
+                        protect_part(part)
+                    end
+                end
+                character.DescendantAdded:Connect(function(part)
+                    if part:IsA("BasePart") then
+                        protect_part(part)
+                    elseif part:IsA("Humanoid") then
+                        protect_humanoid(part)
+                    end
+                end)
+
+                if fake_pos_active then
+                    set_local_body_transparency(true)
+                end
+            end
+        end
+
+        init_character(local_player.Character)
+        local char_added_conn = local_player.CharacterAdded:Connect(init_character)
+
+        -- ==== ГЛАВНЫЙ ЦИКЛ ====
+        local last_fps = clock()
+        local heartbeat_conn = run_service.Heartbeat:Connect(function(dt)
+            local_fps = 1/(clock() - last_fps)
+            last_fps = clock()
+
+            local hrp = vehicle or local_parts["HumanoidRootPart"]
+
+            if hrp then
+                local_client_position = hrp.CFrame
+            end
+
+            if hrp and clock() < tp_settle_until then
+                pcall(function()
+                    hrp.AssemblyLinearVelocity = vector3_zero
+                    hrp.AssemblyAngularVelocity = vector3_zero
+                end)
+            end
+
+            for i = 1, #anti_aim do
+                local func = anti_aim[i]
+                if func then
+                    spawn(func, dt, hrp)
+                end
+            end
+
+            if hrp then
+                local_server_position = hrp.CFrame
             end
         end)
 
-        -- ── Fake Position helpers ─────────────────────────────────────
-        local function getFakePosOffset()
-            if aaFakePos.Version == "Version 1" then return CFrame.new(100000,100000,100000)
-            elseif aaFakePos.Version == "Version 2" then return CFrame.new(50000000,50000000,50000000)
-            elseif aaFakePos.Version == "Version 3" then return CFrame.new(9e9,9e9,9e9) end
-        end
-
-        local function applyFakePosition()
-            if aaFakePos.Active then return end
-            local char = LocalPlayer.Character
-            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            aaFakePos.Active = true
-            aaFakePos.OriginalPos = hrp.CFrame
-            local oldFall = Workspace.FallenPartsDestroyHeight
-            Workspace.FallenPartsDestroyHeight = -math.huge
-            pcall(function() getgenv().Desync = true end)
-            if aaFakePos.Mode == "Voidless" then
-                local off = getFakePosOffset()
-                if off then hrp.CFrame = off end
-                task.spawn(function()
-                    task.wait(aaFakePos.ReturnDelay)
-                    if hrp and aaFakePos.OriginalPos then
-                        hrp.CFrame = aaFakePos.OriginalPos
+        -- отрисовка маркера + прозрачность тела
+        local transparency_conn = run_service.RenderStepped:Connect(function()
+            if fake_pos_active then
+                set_local_body_transparency(true)
+                if marker_enabled and orig_display_pos then
+                    local cam = workspace.CurrentCamera
+                    local pos = cam:WorldToViewportPoint(orig_display_pos)
+                    if pos.Z > 0 then
+                        draw_marker(pos.X, pos.Y)
+                    else
+                        hide_marker()
                     end
-                    Workspace.FallenPartsDestroyHeight = oldFall
-                    aaFakePos.Active = false
-                end)
-            elseif aaFakePos.Mode == "On the spot" then
-                task.spawn(function()
-                    task.wait(aaFakePos.ReturnDelay)
-                    Workspace.FallenPartsDestroyHeight = oldFall
-                    aaFakePos.Active = false
-                end)
-            end
-        end
-
-        local function disableFakePosition()
-            aaFakePos.Active = false
-            Workspace.FallenPartsDestroyHeight = 0/0
-            pcall(function() getgenv().Desync = false end)
-        end
-
-        -- ── Camera reset ──────────────────────────────────────────────
-        local function resetCamera()
-            if LocalPlayer.Character then
-                Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            end
-        end
-
-        -- ══════════════════════════════════════════════════════════════
-        -- UI — Desync
-        -- ══════════════════════════════════════════════════════════════
-        v304:Paragraph({
-            Title   = "Anti-Aim",
-        })
-
-        v304:Toggle({
-            Flag = "desync",Title   = "Desync",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Enabled = val
-                if not val then resetCamera() end
-                v18:Notify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
-            end,
-        })
-
-        v304:Dropdown({
-            Flag = "desync_mode",Title  = "Desync Mode",
-            Values = { "Destroy Cheaters", "Underground", "Void Spam", "Void", "Random", "Safe Shoot", "Custom" },
-            Value  = "Custom",
-            Callback = function(val)
-                aaDesync.Mode = val
-            end,
-        })
-
-        v304:Slider({
-            Flag = "random_amount",Title   = "Random Amount",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = 1, Max = 1000000, Default = 20 },
-            Callback = function(val)
-                aaDesync.RandomAmount = tonumber(val) or 20
-            end,
-        })
-
-        v304:Slider({
-            Flag = "custom_x",Title   = "Custom X",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = -10000, Max = 10000, Default = 0 },
-            Callback = function(val)
-                aaDesync.CustomX = tonumber(val) or 0
-            end,
-        })
-
-        v304:Slider({
-            Flag = "custom_y",Title   = "Custom Y",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = -10000, Max = 10000, Default = 0 },
-            Callback = function(val)
-                aaDesync.CustomY = tonumber(val) or 0
-            end,
-        })
-
-        v304:Slider({
-            Flag = "custom_z",Title   = "Custom Z",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = -10000, Max = 10000, Default = 0 },
-            Callback = function(val)
-                aaDesync.CustomZ = tonumber(val) or 0
-            end,
-        })
-
-        v304:Divider()
-
-        v304:Toggle({
-            Flag = "visualize_desync",Title   = "Visualize Desync",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Visualize = val
-            end,
-        })
-
-        v304:Toggle({
-            Flag = "desync_line",Title   = "Desync Line",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Line = val
-            end,
-        })
-
-        v304:Toggle({
-            Flag = "desync_dot",Title   = "Desync Dot",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Dot = val
-            end,
-        })
-
-        v304:Toggle({
-            Flag = "desync_status_text",Title   = "Desync Status Text",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Status = val
-            end,
-        })
-
-        v304:Divider()
-
-        -- ══════════════════════════════════════════════════════════════
-        -- UI — Fake Position
-        -- ══════════════════════════════════════════════════════════════
-        v304:Paragraph({
-            Title   = "Fake Position",
-        })
-
-        v304:Toggle({
-            Flag = "enable_fake_position",Title   = "Enable Fake Position",
-            Default = false,
-            Callback = function(val)
-                aaFakePos.Enabled = val
-                if val then
-                    applyFakePosition()
                 else
-                    disableFakePosition()
+                    hide_marker()
                 end
-                v18:Notify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+            else
+                hide_marker()
+            end
+        end)
+
+        -- защита от телепорта камеры
+        run_service:BindToRenderStep("shitaro_fakepos_cam", Enum.RenderPriority.Camera.Value - 1, function()
+            if not fake_pos_active then return end
+            local hrp = local_parts["HumanoidRootPart"]
+            if not hrp or not local_client_position then return end
+            local ok, pos = pcall(function() return hrp.Position end)
+            if ok and (pos - local_client_position.p).Magnitude > 500 then
+                pcall(function() hrp.CFrame = local_client_position end)
+            end
+        end)
+
+        -- ==== API ====
+        getgenv().FAKE_POS = {
+            enable = function(v)
+                fake_position_enable(v)
+            end,
+            setRange = function(axis, value)
+                if axis == "x" then getgenv().FAKE_POS_RANGE_X = value * 1e9 end
+                if axis == "y" then getgenv().FAKE_POS_RANGE_Y = value * 1e9 end
+                if axis == "z" then getgenv().FAKE_POS_RANGE_Z = value * 1e9 end
+            end,
+            setAxis = function(axis, on)
+                getgenv().FAKE_POS_MULTI_AXIS[axis] = on
+            end,
+            setMarker = function(on, color)
+                marker_enabled = on
+                if color then marker_color = color end
+                if not on then hide_marker() end
+            end,
+            teleport = function(cf)
+                return getgenv().SHITARO_TELEPORT(cf)
+            end,
+        }
+
+        getgenv().VELOCITY_SPOOF = {
+            enable = function(v)
+                velocity_desync_enable(v)
+            end,
+            setPreset = function(preset)
+                velocity_desync_type = preset
+            end,
+            setRotate = function(v)
+                velocity_desync_rotate = v
+            end,
+        }
+
+        getgenv().ANTIAIM_UNLOAD = function()
+            if fake_pos_active then
+                fake_position_enable(false)
+            end
+            velocity_desync_enable(false)
+            if heartbeat_conn then
+                pcall(function() heartbeat_conn:Disconnect() end)
+                heartbeat_conn = nil
+            end
+            if transparency_conn then
+                pcall(function() transparency_conn:Disconnect() end)
+                transparency_conn = nil
+            end
+            pcall(function() run_service:UnbindFromRenderStep("shitaro_fakepos_cam") end)
+            if char_added_conn then
+                pcall(function() char_added_conn:Disconnect() end)
+                char_added_conn = nil
+            end
+            set_world_limits(false)
+            set_local_body_transparency(false)
+            for i = 1, #ltm_conns do
+                pcall(function() ltm_conns[i]:Disconnect() end)
+            end
+            table.clear(ltm_conns)
+            ltm_char = nil
+            ltm_valid = false
+            orig_display_pos = nil
+            pcall(function() marker_glow:Remove() end)
+            pcall(function() marker_icon:Remove() end)
+            for target, data in pairs(hooked_metatables) do
+                pcall(function()
+                    setrawmetatable(target, data.mt)
+                end)
+            end
+            hooked_metatables = {}
+            hrp_protected = {}
+            part_protected = {}
+            humanoid_protected = {}
+            anti_aim = {}
+            pcall(function()
+                setfflag("S2PhysicsSenderRate", fake_position_sender_rate_old or "15")
+            end)
+            pcall(function() setfpscap(0) end)
+        end
+
+        v304:Paragraph({Title = "Anti-Aim"})
+
+        v304:Toggle({
+            Flag = "aa_fake_position",
+            Title = "Fake Position",
+            Default = false,
+            Callback = function(value)
+                if getgenv().FAKE_POS then
+                    getgenv().FAKE_POS.enable(value)
+                end
             end,
         })
 
         v304:Dropdown({
-            Flag = "fakepos_version",Title  = "FakePos Version",
-            Values = { "Version 1", "Version 2", "Version 3" },
-            Value  = "Version 1",
-            Callback = function(val)
-                aaFakePos.Version = val
+            Flag = "aa_velocity_preset",
+            Title = "Velocity Preset",
+            Values = {"normal", "high", "zero"},
+            Value = "normal",
+            Callback = function(value)
+                if getgenv().VELOCITY_SPOOF then
+                    getgenv().VELOCITY_SPOOF.setPreset(value)
+                end
             end,
         })
 
-        v304:Dropdown({
-            Flag = "fakepos_mode",Title  = "FakePos Mode",
-            Values = { "Voidless", "On the spot" },
-            Value  = "Voidless",
-            Callback = function(val)
-                aaFakePos.Mode = val
+        v304:Toggle({
+            Flag = "aa_velocity_spoof",
+            Title = "Velocity Spoof",
+            Default = false,
+            Callback = function(value)
+                if getgenv().VELOCITY_SPOOF then
+                    getgenv().VELOCITY_SPOOF.enable(value)
+                end
             end,
         })
 
-        v304:Slider({
-            Flag = "return_delay_s",Title   = "Return Delay (s)",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = 0.1, Max = 3, Default = 0.5 },
-            Callback = function(val)
-                aaFakePos.ReturnDelay = tonumber(val) or 0.5
+        v304:Toggle({
+            Flag = "aa_velocity_rotate",
+            Title = "Velocity Rotate",
+            Default = false,
+            Callback = function(value)
+                if getgenv().VELOCITY_SPOOF then
+                    getgenv().VELOCITY_SPOOF.setRotate(value)
+                end
+            end,
+        })
+
+        v304:Button({
+            Title = "Unload Anti-Aim",
+            Callback = function()
+                if getgenv().ANTIAIM_UNLOAD then
+                    getgenv().ANTIAIM_UNLOAD()
+                end
             end,
         })
     end
@@ -4716,7 +5029,6 @@ end
 
         v303._left:Button({
             Title = 'Fling Selected Player',
-            Description = 'Fling the selected player',
             Callback = function()
                 if not flingSelected then
                     v18:Notify({
@@ -4761,7 +5073,6 @@ end
 
         v303._left:Button({
             Title = 'Refresh Fling List',
-            Description = 'Update the player list',
             Callback = rebuildFlingList,
         })
 
@@ -4812,7 +5123,6 @@ end
 
         v303._right:Button({
             Title = 'Teleport to Player',
-            Description = 'Teleport to the selected player',
             Callback = function()
                 if not teleportSelected then
                     v18:Notify({ Title = 'CrystalHub', Content = 'Select a player first!', Duration = 3, Icon = 'bell' })
@@ -4834,7 +5144,6 @@ end
 
         v303._right:Button({
             Title = 'Refresh Teleport List',
-            Description = 'Update the player list',
             Callback = function() rebuildTeleportNames() end,
         })
 
@@ -4946,7 +5255,6 @@ end
         -- Master ON/OFF
         VisualsTab._left:Toggle({
             Flag = "enable_auras",Title = "Enable Auras",
-            Description = "Apply selected auras to your character",
             Default = false,
             Callback = function(state)
                 aura_active = state
@@ -4980,7 +5288,6 @@ end
 
         VisualsTab._left:Dropdown({
             Flag = "color_preset",Title = "Color Preset",
-            Description = "Pick a preset color",
             Values = colorPresets,
             Value = "Default (Blue)",
             Callback = function(val)
@@ -5015,7 +5322,6 @@ end
         -- Clear button
         VisualsTab._left:Button({
             Title = "Clear All Auras",
-            Description = "Remove all aura effects from character",
             Callback = function()
                 clearAura()
                 v18:Notify({
@@ -5036,7 +5342,6 @@ VisualsTab._left:Paragraph({
 })
 VisualsTab._left:Button({
     Title = 'Open Skybox Picker',
-    Description = 'Color preview list \u{2014} click to apply instantly',
     Callback = function()
         local RuzSkyboxPicker = game.CoreGui:FindFirstChild('RuzSkyboxPicker')
 
@@ -5276,7 +5581,6 @@ VisualsTab._right:Paragraph({
 local t31 = {
     Flag = "enable_custom_crosshair",
     Title = 'Enable Custom Crosshair',
-    Description = 'Visible only while ShiftLock is on',
     Default = false,
 }
 
@@ -5394,7 +5698,6 @@ end
 VisualsTab._right:Toggle(t31)
 VisualsTab._right:Button({
     Title = 'Open Cursor Picker',
-    Description = 'Visual grid with spin toggle \u{2014} click to apply',
     Callback = function()
         local RuzCursorPicker = game.CoreGui:FindFirstChild('RuzCursorPicker')
 
@@ -6428,7 +6731,6 @@ do
     VisualsTab._left:Toggle({
         Flag = "ambience_enabled",
         Title = "Enable Ambience",
-        Description = "Apply the selected lighting preset",
         Default = false,
         Callback = function(state)
             setAmbience(state)
@@ -6504,7 +6806,6 @@ v301._left:Toggle({
 v301._left:Toggle({
     Flag = "auto_ping_prediction",
     Title = 'Auto Ping Prediction',
-    Description = 'Adds ping offset to shoot and throw',
     Default = false,
     Callback = function(p75)
         u13 = p75
@@ -6821,7 +7122,6 @@ do
     v301._left:Toggle({
         Flag    = "wallbang_auto",
         Title   = 'Auto Wallbang',
-        Description = 'Automatically fires at murderer',
         Default = false,
         Callback = function(p)
             getgenv().WALLBANG.setAuto(p, 0)
@@ -6860,7 +7160,6 @@ v301._right:Toggle({
 })
 v301._right:Button({
     Title = 'Stretch Resolution Slider',
-    Description = '10% = very wide  /  100% = normal',
     Callback = function()
         local v607 = n17 * 100
         local v608 = math.round(v607)
@@ -7060,7 +7359,6 @@ v301._right:Toggle(t33)
 local t34 = {
     Flag = "fov_slider",
     Title = 'FOV Slider',
-    Description = 'Mobile-friendly field of view selector',
 }
 local u322 = v25
 local u323 = CurrentCamera
@@ -7089,7 +7387,6 @@ v301._right:Paragraph({ Title = 'Extra Scripts' })
 local t35 = {
     Flag = "load_emotes_gui",
     Title = 'Load Emotes GUI',
-    Description = '7yd7 emote panel',
 }
 local u326 = v18
 
@@ -7112,7 +7409,6 @@ v301._right:Button(t35)
 local t36 = {
     Flag = "load_infinite_yield",
     Title = 'Load Infinite Yield',
-    Description = 'Admin script',
 }
 local u328 = v18
 
@@ -7135,7 +7431,6 @@ v301._right:Button(t36)
 local t37 = {
     Flag = "anti_fling",
     Title = 'Anti-Fling',
-    Description = 'Limits velocity to prevent being launched',
     Default = false,
 }
 local u330 = v18
@@ -7158,7 +7453,6 @@ v301._right:Toggle(t37)
 local t39 = {
     Flag = "speed_glitch_slider",
     Title = 'Speed Glitch Slider',
-    Description = 'Mobile-friendly speed selector',
 }
 local u334 = v25
 local u335 = v18
@@ -7288,7 +7582,6 @@ v302:Toggle(t45)
 local t46 = {
     Flag = "dropped_gun_esp",
     Title = 'Dropped Gun ESP',
-    Description = 'Highlight and label when a gun is on the map',
     Default = true,
 }
 local u351 = v18
