@@ -1,4 +1,3 @@
---щыды
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4717,7 +4716,6 @@ end
 
         v303._left:Button({
             Title = 'Fling Selected Player',
-            Description = 'Fling the selected player',
             Callback = function()
                 if not flingSelected then
                     v18:Notify({
@@ -4762,7 +4760,6 @@ end
 
         v303._left:Button({
             Title = 'Refresh Fling List',
-            Description = 'Update the player list',
             Callback = rebuildFlingList,
         })
 
@@ -4813,7 +4810,6 @@ end
 
         v303._right:Button({
             Title = 'Teleport to Player',
-            Description = 'Teleport to the selected player',
             Callback = function()
                 if not teleportSelected then
                     v18:Notify({ Title = 'CrystalHub', Content = 'Select a player first!', Duration = 3, Icon = 'bell' })
@@ -4835,7 +4831,6 @@ end
 
         v303._right:Button({
             Title = 'Refresh Teleport List',
-            Description = 'Update the player list',
             Callback = function() rebuildTeleportNames() end,
         })
 
@@ -4947,7 +4942,6 @@ end
         -- Master ON/OFF
         VisualsTab._left:Toggle({
             Flag = "enable_auras",Title = "Enable Auras",
-            Description = "Apply selected auras to your character",
             Default = false,
             Callback = function(state)
                 aura_active = state
@@ -4981,7 +4975,6 @@ end
 
         VisualsTab._left:Dropdown({
             Flag = "color_preset",Title = "Color Preset",
-            Description = "Pick a preset color",
             Values = colorPresets,
             Value = "Default (Blue)",
             Callback = function(val)
@@ -5016,7 +5009,6 @@ end
         -- Clear button
         VisualsTab._left:Button({
             Title = "Clear All Auras",
-            Description = "Remove all aura effects from character",
             Callback = function()
                 clearAura()
                 v18:Notify({
@@ -5037,7 +5029,6 @@ VisualsTab._left:Paragraph({
 })
 VisualsTab._left:Button({
     Title = 'Open Skybox Picker',
-    Description = 'Color preview list \u{2014} click to apply instantly',
     Callback = function()
         local RuzSkyboxPicker = game.CoreGui:FindFirstChild('RuzSkyboxPicker')
 
@@ -5277,7 +5268,6 @@ VisualsTab._right:Paragraph({
 local t31 = {
     Flag = "enable_custom_crosshair",
     Title = 'Enable Custom Crosshair',
-    Description = 'Visible only while ShiftLock is on',
     Default = false,
 }
 
@@ -5395,7 +5385,6 @@ end
 VisualsTab._right:Toggle(t31)
 VisualsTab._right:Button({
     Title = 'Open Cursor Picker',
-    Description = 'Visual grid with spin toggle \u{2014} click to apply',
     Callback = function()
         local RuzCursorPicker = game.CoreGui:FindFirstChild('RuzCursorPicker')
 
@@ -6429,7 +6418,6 @@ do
     VisualsTab._left:Toggle({
         Flag = "ambience_enabled",
         Title = "Enable Ambience",
-        Description = "Apply the selected lighting preset",
         Default = false,
         Callback = function(state)
             setAmbience(state)
@@ -6505,7 +6493,7 @@ v301._left:Toggle({
 v301._left:Toggle({
     Flag = "auto_ping_prediction",
     Title = 'Auto Ping Prediction',
-    Description = 'Adds ping offset to shoot and throw',
+
     Default = false,
     Callback = function(p75)
         u13 = p75
@@ -7245,7 +7233,7 @@ do
 
     -- ── UI controls (Silent Aim) ──────────────────────────────
     v301._left:Divider()
-    v301._left:Paragraph({ Title = 'Silent Aim', Content = 'Auto-aim at the murderer' })
+    v301._left:Paragraph({ Title = 'Silent Aim' })
 
     v301._left:Toggle({
         Flag    = "silent_aim_enable",
@@ -7265,7 +7253,7 @@ do
     v301._left:Toggle({
         Flag    = "silent_aim_predict",
         Title   = 'Prediction',
-        Description = 'Leads the target based on velocity and ping',
+
         Default = true,
         Callback = function(p)
             S.predict = p
@@ -7280,7 +7268,7 @@ do
     v301._left:Toggle({
         Flag    = "silent_aim_auto",
         Title   = 'Auto Shoot',
-        Description = 'Automatically fires at the murderer',
+
         Default = false,
         Callback = function(p)
             S.auto_on = p
@@ -7318,7 +7306,7 @@ do
         force     = true,
         auto_on   = false,
         auto_delay = 0,
-        stand_off  = 1,
+        stand_off  = 3,
         am_sheriff = false,
         last_shot  = 0,
     }
@@ -7591,7 +7579,7 @@ do
 
     -- ── UI controls ─────────────────────────────────────────────
     v301._left:Divider()
-    v301._left:Paragraph({ Title = 'Wallbang', Content = 'Force shoot through walls' })
+    v301._left:Paragraph({ Title = 'Wallbang' })
 
     v301._left:Toggle({
         Flag    = "wallbang_enable",
@@ -7634,7 +7622,6 @@ v301._right:Toggle({
 })
 v301._right:Button({
     Title = 'Stretch Resolution Slider',
-    Description = '10% = very wide  /  100% = normal',
     Callback = function()
         local v607 = n17 * 100
         local v608 = math.round(v607)
@@ -7834,7 +7821,6 @@ v301._right:Toggle(t33)
 local t34 = {
     Flag = "fov_slider",
     Title = 'FOV Slider',
-    Description = 'Mobile-friendly field of view selector',
 }
 local u322 = v25
 local u323 = CurrentCamera
@@ -7863,7 +7849,6 @@ v301._right:Paragraph({ Title = 'Extra Scripts' })
 local t35 = {
     Flag = "load_emotes_gui",
     Title = 'Load Emotes GUI',
-    Description = '7yd7 emote panel',
 }
 local u326 = v18
 
@@ -7886,7 +7871,6 @@ v301._right:Button(t35)
 local t36 = {
     Flag = "load_infinite_yield",
     Title = 'Load Infinite Yield',
-    Description = 'Admin script',
 }
 local u328 = v18
 
@@ -7909,7 +7893,6 @@ v301._right:Button(t36)
 local t37 = {
     Flag = "anti_fling",
     Title = 'Anti-Fling',
-    Description = 'Limits velocity to prevent being launched',
     Default = false,
 }
 local u330 = v18
@@ -7932,7 +7915,6 @@ v301._right:Toggle(t37)
 local t39 = {
     Flag = "speed_glitch_slider",
     Title = 'Speed Glitch Slider',
-    Description = 'Mobile-friendly speed selector',
 }
 local u334 = v25
 local u335 = v18
@@ -8062,7 +8044,6 @@ v302:Toggle(t45)
 local t46 = {
     Flag = "dropped_gun_esp",
     Title = 'Dropped Gun ESP',
-    Description = 'Highlight and label when a gun is on the map',
     Default = true,
 }
 local u351 = v18
