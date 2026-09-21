@@ -1,3 +1,4 @@
+--щыды
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -7277,21 +7278,6 @@ do
     })
 
     v301._left:Toggle({
-        Flag    = "silent_aim_force",
-        Title   = 'Force (Wallbang)',
-        Description = 'Shoots through walls using origin offset',
-        Default = false,
-        Callback = function(p)
-            S.force = p
-            v18:Notify({
-                Title   = 'CrystalHub',
-                Content = p and 'Force Mode ON' or 'Force Mode OFF',
-                Duration = 3, Icon = 'bell',
-            })
-        end,
-    })
-
-    v301._left:Toggle({
         Flag    = "silent_aim_auto",
         Title   = 'Auto Shoot',
         Description = 'Automatically fires at the murderer',
@@ -7315,6 +7301,7 @@ do
             S.auto_delay = p / 1000
         end,
     })
+
 end
 -- ── END SILENT AIM ────────────────────────────────────────────
 
@@ -7331,7 +7318,7 @@ do
         force     = true,
         auto_on   = false,
         auto_delay = 0,
-        stand_off  = 5,
+        stand_off  = 1,
         am_sheriff = false,
         last_shot  = 0,
     }
@@ -7615,21 +7602,6 @@ do
             v18:Notify({
                 Title   = 'CrystalHub',
                 Content = p and 'Wallbang ON' or 'Wallbang OFF',
-                Duration = 3, Icon = 'bell',
-            })
-        end,
-    })
-
-    v301._left:Toggle({
-        Flag    = "wallbang_auto",
-        Title   = 'Auto Wallbang',
-        Description = 'Automatically fires at murderer',
-        Default = false,
-        Callback = function(p)
-            getgenv().WALLBANG.setAuto(p, 0)
-            v18:Notify({
-                Title   = 'CrystalHub',
-                Content = p and 'Auto Wallbang ON' or 'Auto Wallbang OFF',
                 Duration = 3, Icon = 'bell',
             })
         end,
