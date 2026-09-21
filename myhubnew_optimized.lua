@@ -4373,25 +4373,38 @@ end
 
         local marker_bad_prop = {}
         local function marker_set(obj, prop, value)
+            if not obj then return end
             if marker_bad_prop[prop] then return end
             if not pcall(function() obj[prop] = value end) then
                 marker_bad_prop[prop] = true
             end
         end
 
-        local marker_glow = Drawing.new("Image")
-        marker_set(marker_glow, "Data", marker_data)
-        marker_set(marker_glow, "Color", marker_color)
-        marker_set(marker_glow, "Transparency", 0.35)
-        marker_set(marker_glow, "ZIndex", 1)
-        marker_set(marker_glow, "Visible", false)
+        -- Drawing Image is optional: some executors expose Drawing but not Image.
+        -- Keep the anti-aim logic running even when the marker type is unavailable.
+        local marker_glow, marker_icon
+        pcall(function()
+            if Drawing and type(Drawing.new) == "function" then
+                marker_glow = Drawing.new("Image")
+                marker_icon = Drawing.new("Image")
+            end
+        end)
 
-        local marker_icon = Drawing.new("Image")
-        marker_set(marker_icon, "Data", marker_data)
-        marker_set(marker_icon, "Color", marker_color)
-        marker_set(marker_icon, "Transparency", 1)
-        marker_set(marker_icon, "ZIndex", 2)
-        marker_set(marker_icon, "Visible", false)
+        if marker_glow then
+            marker_set(marker_glow, "Data", marker_data)
+            marker_set(marker_glow, "Color", marker_color)
+            marker_set(marker_glow, "Transparency", 0.35)
+            marker_set(marker_glow, "ZIndex", 1)
+            marker_set(marker_glow, "Visible", false)
+        end
+
+        if marker_icon then
+            marker_set(marker_icon, "Data", marker_data)
+            marker_set(marker_icon, "Color", marker_color)
+            marker_set(marker_icon, "Transparency", 1)
+            marker_set(marker_icon, "ZIndex", 2)
+            marker_set(marker_icon, "Visible", false)
+        end
 
         local function hide_marker()
             marker_set(marker_glow, "Visible", false)
