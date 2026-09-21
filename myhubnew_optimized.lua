@@ -1,3 +1,4 @@
+--ezzzzzz players mm2 and shitaro/kiti
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -72,7 +73,8 @@ local function makeControlAdapter(section)
         cfg = cfg or {}
         local text = tostring(cfg.Title or "")
         if cfg.Content and cfg.Content ~= "" then
-            text = text .. "\\n" .. tostring(cfg.Content)
+            text = text .. "\
+" .. tostring(cfg.Content)
         end
         return section:AddLabel(text, true)
     end
@@ -2485,12 +2487,16 @@ end
                 for name, v in pairs(tbl) do
                     lines[#lines+1] = name.."="..v.xs..","..v.xo..","..v.ys..","..v.yo
                 end
-                return table.concat(lines, "\n")
+                return table.concat(lines, "
+")
             end
 
             local function _deserializePos(raw)
                 local out = {}
-                for line in (raw.."\n"):gmatch("([^\n]*)\n") do
+                for line in (raw.."
+"):gmatch("([^
+]*)
+") do
                     local name, xs, xo, ys, yo = line:match("^(.-)=([^,]+),([^,]+),([^,]+),([^,]+)$")
                     if name then
                         out[name] = {
@@ -2828,7 +2834,8 @@ end
 
             function v232(p45)
                 if p45 then
-                    u227('GoldBomb', u228.GoldBomb, u229, Color3.fromRGB(255, 215, 0), 'GOLD\nJUMP')
+                    u227('GoldBomb', u228.GoldBomb, u229, Color3.fromRGB(255, 215, 0), 'GOLD
+JUMP')
                     u226.GoldBomb.btn.MouseButton1Click:Connect(function()
                         if not u9 then
                             u231('GoldBomb', true)
@@ -2862,7 +2869,8 @@ end
 
             function v239(p46)
                 if p46 then
-                    u234('NormalBomb', u235.NormalBomb, u236, Color3.fromRGB(0, 170, 255), 'NORMAL\nJUMP')
+                    u234('NormalBomb', u235.NormalBomb, u236, Color3.fromRGB(0, 170, 255), 'NORMAL
+JUMP')
                     u233.NormalBomb.btn.MouseButton1Click:Connect(function()
                         if not u10 then
                             u238('FakeBomb', false)
@@ -2919,7 +2927,8 @@ end
 
         function u252(p48)
             if p48 then
-                u246('ESP', u247.ESP, u248, Color3.fromRGB(10, 140, 30), 'ESP\nOFF')
+                u246('ESP', u247.ESP, u248, Color3.fromRGB(10, 140, 30), 'ESP
+OFF')
                 u245.ESP.btn.MouseButton1Click:Connect(function()
                     local v926 = not u61
 
@@ -3105,7 +3114,8 @@ end
 
     function u276(p52)
         if p52 then
-            u272('GrabGun', u273.GrabGun, u274, Color3.fromRGB(200, 120, 0), 'GRAB\nGUN')
+            u272('GrabGun', u273.GrabGun, u274, Color3.fromRGB(200, 120, 0), 'GRAB
+GUN')
             u271.GrabGun.btn.MouseButton1Click:Connect(u275)
 
             return
@@ -3124,7 +3134,8 @@ end
 
     function u281(p53)
         if p53 then
-            u278('WallHop', u279.WallHop, u280, Color3.fromRGB(0, 210, 210), 'WALL\nHOP')
+            u278('WallHop', u279.WallHop, u280, Color3.fromRGB(0, 210, 210), 'WALL
+HOP')
             u277.WallHop.btn.MouseButton1Click:Connect(u110)
 
             return
@@ -3183,7 +3194,8 @@ end
 
     function u287(p54)
         if p54 then
-            u283('FlingMurderer', u284.FlingMurderer, u285, Color3.fromRGB(255, 50, 50), 'FLING\nMURD')
+            u283('FlingMurderer', u284.FlingMurderer, u285, Color3.fromRGB(255, 50, 50), 'FLING
+MURD')
             u282.FlingMurderer.btn.MouseButton1Click:Connect(u286)
 
             return
@@ -3242,7 +3254,8 @@ end
 
     function u293(p55)
         if p55 then
-            u289('FlingSheriff', u290.FlingSheriff, u291, Color3.fromRGB(40, 130, 255), 'FLING\nSHERIF')
+            u289('FlingSheriff', u290.FlingSheriff, u291, Color3.fromRGB(40, 130, 255), 'FLING
+SHERIF')
             u288.FlingSheriff.btn.MouseButton1Click:Connect(u292)
 
             return
@@ -3286,10 +3299,12 @@ end
         _uiLastTick = _now
 
         if u295.GoldBomb then
-            _setLbl('gb', u295.GoldBomb.lbl, u9 and 'WAIT...' or 'GOLD\nJUMP')
+            _setLbl('gb', u295.GoldBomb.lbl, u9 and 'WAIT...' or 'GOLD
+JUMP')
         end
         if u295.NormalBomb then
-            _setLbl('nb', u295.NormalBomb.lbl, u10 and 'WAIT...' or 'NORMAL\nJUMP')
+            _setLbl('nb', u295.NormalBomb.lbl, u10 and 'WAIT...' or 'NORMAL
+JUMP')
         end
         if u295.Shoot and u295.Shoot.img then
             local v779 = u296.Backpack:FindFirstChild('Knife') or u296.Character and u296.Character:FindFirstChild('Knife')
@@ -3302,7 +3317,9 @@ end
         end
         if u295.ESP then
             local v780 = u61 and Color3.fromRGB(50, 220, 80) or Color3.fromRGB(10, 140, 30)
-            _setLbl('esp', u295.ESP.lbl, u61 and 'ESP\nON' or 'ESP\nOFF')
+            _setLbl('esp', u295.ESP.lbl, u61 and 'ESP
+ON' or 'ESP
+OFF')
             _setColor('esp', u295.ESP.lbl, u295.ESP.stroke, v780)
         end
         if u295.Flick then
@@ -3314,23 +3331,28 @@ end
         if u295.WallHop then
             local v783 = u297.MouseBehavior == Enum.MouseBehavior.LockCenter
             local v784 = u105 and Color3.fromRGB(255, 120, 0) or (v783 and Color3.fromRGB(0, 255, 220) or Color3.fromRGB(0, 210, 210))
-            _setLbl('wh', u295.WallHop.lbl, u105 and 'WAIT...' or 'WALL\nHOP')
+            _setLbl('wh', u295.WallHop.lbl, u105 and 'WAIT...' or 'WALL
+HOP')
             _setColor('wh', u295.WallHop.lbl, u295.WallHop.stroke, v784)
         end
         if u295.Speed then
             local v785 = u116 and Color3.fromRGB(0, 220, 200) or Color3.fromRGB(0, 140, 120)
-            _setLbl('sp', u295.Speed.lbl, u116 and 'SPEED\nON' or 'SPEED')
+            _setLbl('sp', u295.Speed.lbl, u116 and 'SPEED
+ON' or 'SPEED')
             _setColor('sp', u295.Speed.lbl, u295.Speed.stroke, v785)
         end
         if u295.Stretch then
             local v786 = u120 and Color3.fromRGB(255, 140, 30) or Color3.fromRGB(200, 80, 0)
-            _setLbl('st', u295.Stretch.lbl, u120 and 'STRETCH\nON' or 'STRETCH')
+            _setLbl('st', u295.Stretch.lbl, u120 and 'STRETCH
+ON' or 'STRETCH')
             _setColor('st', u295.Stretch.lbl, u295.Stretch.stroke, v786)
         end
         if u295.GrabGun then
             local GunDrop = u298:FindFirstChild('GunDrop', true)
             local v788 = GunDrop and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(200, 100, 0)
-            _setLbl('gg', u295.GrabGun.lbl, GunDrop and 'GRAB\nGUN' or 'NO\nGUN')
+            _setLbl('gg', u295.GrabGun.lbl, GunDrop and 'GRAB
+GUN' or 'NO
+GUN')
             _setColor('gg', u295.GrabGun.lbl, u295.GrabGun.stroke, v788)
         end
         if u295.FlingMurderer then
@@ -3342,7 +3364,9 @@ end
                 end
             end
             local v792 = u157 and Color3.fromRGB(255, 180, 0) or (v789 and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(200, 20, 20))
-            _setLbl('fm', u295.FlingMurderer.lbl, u157 and 'FLING...' or (v789 and 'FLING\nMURD' or 'NO\nMURD'))
+            _setLbl('fm', u295.FlingMurderer.lbl, u157 and 'FLING...' or (v789 and 'FLING
+MURD' or 'NO
+MURD'))
             _setColor('fm', u295.FlingMurderer.lbl, u295.FlingMurderer.stroke, v792)
         end
         if u295.FlingSheriff then
@@ -3354,13 +3378,17 @@ end
                 end
             end
             local v796 = u157 and Color3.fromRGB(255, 180, 0) or (v793 and Color3.fromRGB(40, 130, 255) or Color3.fromRGB(10, 80, 200))
-            _setLbl('fs', u295.FlingSheriff.lbl, u157 and 'FLING...' or (v793 and 'FLING\nSHERIF' or 'NO\nSHERIF'))
+            _setLbl('fs', u295.FlingSheriff.lbl, u157 and 'FLING...' or (v793 and 'FLING
+SHERIF' or 'NO
+SHERIF'))
             _setColor('fs', u295.FlingSheriff.lbl, u295.FlingSheriff.stroke, v796)
         end
     end)
     v18:Notify({
         Title = 'CrystalHub Mmv And Mm2',
-        Content = 'v7.3 loaded!\\nBombs and Shoot auto-loaded.\\nOpen menu to configure everything.',
+        Content = 'v7.3 loaded!\
+Bombs and Shoot auto-loaded.\
+Open menu to configure everything.',
         Duration = 5,
     })
 
@@ -5959,6 +5987,500 @@ do
     })
 end
 -- ═══════════════════════════════════════════════════════
+
+
+
+-- ============================================================
+-- AMBIENCE SYSTEM (Visuals - Column 1)
+-- ============================================================
+do
+	getgenv().WORLD_FOG_END = 1000
+	getgenv().WORLD_FULLBRIGHT_ENABLED = false
+	getgenv().WORLD_AMBIENT_ENABLED = false
+	getgenv().WORLD_AMBIENT_COLOR = Color3.fromRGB(128, 128, 128)
+	
+	local lighting = game:GetService("Lighting")
+	local originalFogColor = lighting.FogColor
+	local originalFogStart = lighting.FogStart
+	local originalFogEnd = lighting.FogEnd
+	local originalBrightness = lighting.Brightness
+	local originalAmbient = lighting.Ambient
+	local originalOutdoorAmbient = lighting.OutdoorAmbient
+	local originalGlobalShadows = lighting.GlobalShadows
+	local originalClockTime = lighting.ClockTime
+	local originalColorShift_Bottom = lighting.ColorShift_Bottom
+	local originalColorShift_Top = lighting.ColorShift_Top
+	local originalEnvironmentDiffuseScale = lighting.EnvironmentDiffuseScale
+	local originalEnvironmentSpecularScale = lighting.EnvironmentSpecularScale
+	local originalGeographicLatitude = lighting.GeographicLatitude
+	local originalExposureCompensation = lighting.ExposureCompensation
+	
+	local shader_enabled = false
+	local shader_type = "morning"
+	local shader_connection = nil
+	local original_effects = {}
+	local created_effects = {}
+	
+	local bloom_effect = nil
+	local blur_effect = nil
+	local colorcor_effect = nil
+	local depth_effect = nil
+	local atmosphere_effect = nil
+	local cloud_effect = nil
+	
+	local shaders = {
+		morning = {
+			yfbghj = Color3.fromRGB(10, 10, 10),
+			khnbfth = 1.5,
+			tgvbyd = 7.5,
+			hgyghkg = Color3.fromRGB(0, 0, 0),
+			yfbhjku = Color3.fromRGB(200, 200, 200),
+			ygyyfgvhbjytrt = 0.1,
+			sdfcddc = 0.1,
+			hyhnngtf = Color3.fromRGB(10, 10, 10),
+			ghuybhuyhj = 44,
+			hdfr7thgr = 0.3,
+			hgnujuu7thgr = true,
+			fhnchvhfjsd = -0.02,
+			ugtbbjhygt = 0.8,
+			tfbghuugbnjhg = -0.5,
+			fvrtccvghghj = Color3.fromRGB(100, 150, 200),
+			jnfdhbnfcvh = 0.2,
+			fvtyghj = 5,
+			ygbhnj = 0.8,
+			njnfg = 2,
+			jdfkd = 0.5,
+			fvgsdfg = 15,
+			sdkvkflv = 5,
+			hbjhd = 0.5,
+			shdbsnjfc = 0.2,
+			skdjfkdm = 0.5,
+			sjdjncdjf = Color3.fromRGB(70, 120, 170),
+			efjdjfk = Color3.fromRGB(10, 50, 100),
+			sejfd = 0.3,
+			jddfjsd = 1,
+			gyhgtg = 0.6,
+			ygbhggv = 0.36,
+			jghbjhgyfd = Color3.fromRGB(255, 255, 255)
+		},
+		midday = {
+			yfbghj = Color3.fromRGB(2, 2, 2),
+			khnbfth = 3.25,
+			tgvbyd = 8,
+			hgyghkg = Color3.fromRGB(0, 0, 0),
+			yfbhjku = Color3.fromRGB(255, 247, 237),
+			ygyyfgvhbjytrt = 0.203,
+			sdfcddc = 0.255,
+			hyhnngtf = Color3.fromRGB(51, 54, 67),
+			ghuybhuyhj = -15.12,
+			hdfr7thgr = 0.85,
+			hgnujuu7thgr = true,
+			fhnchvhfjsd = 0.1,
+			ugtbbjhygt = 0.5,
+			tfbghuugbnjhg = -0.3,
+			fvrtccvghghj = Color3.fromRGB(242, 243, 243),
+			jnfdhbnfcvh = 0.3,
+			fvtyghj = 10,
+			ygbhnj = 0.8,
+			njnfg = 5,
+			jdfkd = 0.277,
+			fvgsdfg = 21.54,
+			sdkvkflv = 16.77,
+			hbjhd = 0.277,
+			shdbsnjfc = 0.364,
+			skdjfkdm = 0.556,
+			sjdjncdjf = Color3.fromRGB(175, 221, 255),
+			efjdjfk = Color3.fromRGB(13, 105, 172),
+			sejfd = 0.36,
+			jddfjsd = 0.72,
+			gyhgtg = 0.75,
+			ygbhggv = 0.26,
+			jghbjhgyfd = Color3.fromRGB(255, 255, 255)
+		},
+		evening = {
+			yfbghj = Color3.fromRGB(2, 2, 2),
+			khnbfth = 2.25,
+			tgvbyd = 16,
+			hgyghkg = Color3.fromRGB(0, 0, 0),
+			yfbhjku = Color3.fromRGB(255, 247, 237),
+			ygyyfgvhbjytrt = 0.203,
+			sdfcddc = 0.215,
+			hyhnngtf = Color3.fromRGB(0, 0, 0),
+			ghuybhuyhj = 45,
+			hdfr7thgr = 0.65,
+			hgnujuu7thgr = true,
+			fhnchvhfjsd = 0.1,
+			ugtbbjhygt = 0.5,
+			tfbghuugbnjhg = -0.3,
+			fvrtccvghghj = Color3.fromRGB(255, 205, 185),
+			jnfdhbnfcvh = 0.3234,
+			fvtyghj = 10,
+			ygbhnj = 0.813,
+			njnfg = 5,
+			jdfkd = 0.217,
+			fvgsdfg = 21.54,
+			sdkvkflv = 16.77,
+			hbjhd = 0.277,
+			shdbsnjfc = 0.364,
+			skdjfkdm = 5.556,
+			sjdjncdjf = Color3.fromRGB(199, 175, 166),
+			efjdjfk = Color3.fromRGB(44, 39, 33),
+			sejfd = 0.36,
+			jddfjsd = 1.72,
+			gyhgtg = 0.55,
+			ygbhggv = 0.43,
+			jghbjhgyfd = Color3.fromRGB(199, 175, 166)
+		},
+		night = {
+			yfbghj = Color3.fromRGB(33, 33, 33),
+			khnbfth = 3.25,
+			tgvbyd = 20,
+			hgyghkg = Color3.fromRGB(0, 0, 0),
+			yfbhjku = Color3.fromRGB(255, 247, 237),
+			ygyyfgvhbjytrt = 0.203,
+			sdfcddc = 0.255,
+			hyhnngtf = Color3.fromRGB(51, 54, 67),
+			ghuybhuyhj = -15,
+			hdfr7thgr = 0.85,
+			hgnujuu7thgr = true,
+			fhnchvhfjsd = -0.06,
+			ugtbbjhygt = -0.02,
+			tfbghuugbnjhg = -0.2,
+			fvrtccvghghj = Color3.fromRGB(242, 243, 243),
+			jnfdhbnfcvh = 0.34,
+			fvtyghj = 10,
+			ygbhnj = 0.813,
+			njnfg = 5,
+			jdfkd = 0.217,
+			fvgsdfg = 11.54,
+			sdkvkflv = 16.77,
+			hbjhd = 0.277,
+			shdbsnjfc = 0.264,
+			skdjfkdm = 0.156,
+			sjdjncdjf = Color3.fromRGB(175, 221, 255),
+			efjdjfk = Color3.fromRGB(13, 105, 172),
+			sejfd = 0.36,
+			jddfjsd = 1.72,
+			gyhgtg = 0.65,
+			ygbhggv = 0.33,
+			jghbjhgyfd = Color3.fromRGB(255, 255, 255)
+		}
+	}
+	
+	local function ensure_effects()
+		if not bloom_effect or not bloom_effect.Parent then
+			bloom_effect = lighting:FindFirstChildOfClass("BloomEffect")
+			if not bloom_effect then
+				bloom_effect = Instance.new("BloomEffect")
+				bloom_effect.Enabled = false
+				bloom_effect.Parent = lighting
+				created_effects.bloom = true
+			end
+		end
+		if not blur_effect or not blur_effect.Parent then
+			blur_effect = lighting:FindFirstChildOfClass("BlurEffect")
+			if not blur_effect then
+				blur_effect = Instance.new("BlurEffect")
+				blur_effect.Enabled = false
+				blur_effect.Size = 0
+				blur_effect.Parent = lighting
+				created_effects.blur = true
+			end
+		end
+		if not colorcor_effect or not colorcor_effect.Parent then
+			colorcor_effect = lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+			if not colorcor_effect then
+				colorcor_effect = Instance.new("ColorCorrectionEffect")
+				colorcor_effect.Enabled = false
+				colorcor_effect.Parent = lighting
+				created_effects.colorcor = true
+			end
+		end
+		if not depth_effect or not depth_effect.Parent then
+			depth_effect = lighting:FindFirstChildOfClass("DepthOfFieldEffect")
+			if not depth_effect then
+				depth_effect = Instance.new("DepthOfFieldEffect")
+				depth_effect.Enabled = false
+				depth_effect.Parent = lighting
+				created_effects.depth = true
+			end
+		end
+		if not atmosphere_effect or not atmosphere_effect.Parent then
+			atmosphere_effect = lighting:FindFirstChildOfClass("Atmosphere")
+			if not atmosphere_effect then
+				atmosphere_effect = Instance.new("Atmosphere")
+				atmosphere_effect.Parent = lighting
+				created_effects.atmosphere = true
+			end
+		end
+		if workspace.Terrain and (not cloud_effect or not cloud_effect.Parent) then
+			cloud_effect = workspace.Terrain:FindFirstChildOfClass("Clouds")
+			if not cloud_effect then
+				cloud_effect = Instance.new("Clouds")
+				cloud_effect.Cover = 0
+				cloud_effect.Density = 0
+				cloud_effect.Parent = workspace.Terrain
+				created_effects.cloud = true
+			end
+		end
+	end
+	
+	local function save_original_effects()
+		bloom_effect = lighting:FindFirstChildOfClass("BloomEffect")
+		blur_effect = lighting:FindFirstChildOfClass("BlurEffect")
+		colorcor_effect = lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+		depth_effect = lighting:FindFirstChildOfClass("DepthOfFieldEffect")
+		atmosphere_effect = lighting:FindFirstChildOfClass("Atmosphere")
+		if workspace.Terrain then
+			cloud_effect = workspace.Terrain:FindFirstChildOfClass("Clouds")
+		end
+		
+		if colorcor_effect then
+			original_effects.colorcor = {
+				Brightness = colorcor_effect.Brightness,
+				Contrast = colorcor_effect.Contrast,
+				Saturation = colorcor_effect.Saturation,
+				TintColor = colorcor_effect.TintColor,
+				Enabled = colorcor_effect.Enabled
+			}
+		end
+		if bloom_effect then
+			original_effects.bloom = {
+				Intensity = bloom_effect.Intensity,
+				Size = bloom_effect.Size,
+				Threshold = bloom_effect.Threshold,
+				Enabled = bloom_effect.Enabled
+			}
+		end
+		if blur_effect then
+			original_effects.blur = {
+				Size = blur_effect.Size,
+				Enabled = blur_effect.Enabled
+			}
+		end
+		if depth_effect then
+			original_effects.depth = {
+				FarIntensity = depth_effect.FarIntensity,
+				FocusDistance = depth_effect.FocusDistance,
+				InFocusRadius = depth_effect.InFocusRadius,
+				NearIntensity = depth_effect.NearIntensity,
+				Enabled = depth_effect.Enabled
+			}
+		end
+		if atmosphere_effect then
+			original_effects.atmosphere = {
+				Density = atmosphere_effect.Density,
+				Offset = atmosphere_effect.Offset,
+				Color = atmosphere_effect.Color,
+				Decay = atmosphere_effect.Decay,
+				Glare = atmosphere_effect.Glare,
+				Haze = atmosphere_effect.Haze
+			}
+		end
+		if cloud_effect then
+			original_effects.cloud = {
+				Cover = cloud_effect.Cover,
+				Density = cloud_effect.Density,
+				Color = cloud_effect.Color
+			}
+		end
+	end
+	
+	local shader_fog_inf = math.huge
+	local shader_fog_color = Color3.fromRGB(255, 255, 255)
+
+	local function apply_shader(shader_data)
+		ensure_effects()
+		local v = shader_data.yfbghj
+		if lighting.Ambient ~= v then lighting.Ambient = v end
+		v = shader_data.khnbfth
+		if lighting.Brightness ~= v then lighting.Brightness = v end
+		v = shader_data.tgvbyd
+		if lighting.ClockTime ~= v then lighting.ClockTime = v end
+		v = shader_data.hgyghkg
+		if lighting.ColorShift_Bottom ~= v then lighting.ColorShift_Bottom = v end
+		v = shader_data.yfbhjku
+		if lighting.ColorShift_Top ~= v then lighting.ColorShift_Top = v end
+		v = shader_data.ygyyfgvhbjytrt
+		if lighting.EnvironmentDiffuseScale ~= v then lighting.EnvironmentDiffuseScale = v end
+		v = shader_data.sdfcddc
+		if lighting.EnvironmentSpecularScale ~= v then lighting.EnvironmentSpecularScale = v end
+		v = shader_data.hyhnngtf
+		if lighting.OutdoorAmbient ~= v then lighting.OutdoorAmbient = v end
+		v = shader_data.ghuybhuyhj
+		if lighting.GeographicLatitude ~= v then lighting.GeographicLatitude = v end
+		v = shader_data.hdfr7thgr
+		if lighting.ExposureCompensation ~= v then lighting.ExposureCompensation = v end
+		v = shader_data.hgnujuu7thgr
+		if lighting.GlobalShadows ~= v then lighting.GlobalShadows = v end
+		if lighting.FogEnd ~= shader_fog_inf then lighting.FogEnd = shader_fog_inf end
+		if lighting.FogColor ~= shader_fog_color then lighting.FogColor = shader_fog_color end
+		if lighting.FogStart ~= shader_fog_inf then lighting.FogStart = shader_fog_inf end
+		
+		if colorcor_effect then
+			v = shader_data.fhnchvhfjsd
+			if colorcor_effect.Brightness ~= v then colorcor_effect.Brightness = v end
+			v = shader_data.ugtbbjhygt
+			if colorcor_effect.Contrast ~= v then colorcor_effect.Contrast = v end
+			v = shader_data.tfbghuugbnjhg
+			if colorcor_effect.Saturation ~= v then colorcor_effect.Saturation = v end
+			v = shader_data.fvrtccvghghj
+			if colorcor_effect.TintColor ~= v then colorcor_effect.TintColor = v end
+			if colorcor_effect.Enabled ~= true then colorcor_effect.Enabled = true end
+		end
+		if bloom_effect then
+			v = shader_data.jnfdhbnfcvh
+			if bloom_effect.Intensity ~= v then bloom_effect.Intensity = v end
+			v = shader_data.fvtyghj
+			if bloom_effect.Size ~= v then bloom_effect.Size = v end
+			v = shader_data.ygbhnj
+			if bloom_effect.Threshold ~= v then bloom_effect.Threshold = v end
+			if bloom_effect.Enabled ~= true then bloom_effect.Enabled = true end
+		end
+		if blur_effect then
+			v = shader_data.njnfg
+			if blur_effect.Size ~= v then blur_effect.Size = v end
+			if blur_effect.Enabled ~= false then blur_effect.Enabled = false end
+		end
+		if depth_effect then
+			v = shader_data.jdfkd
+			if depth_effect.FarIntensity ~= v then depth_effect.FarIntensity = v end
+			v = shader_data.fvgsdfg
+			if depth_effect.FocusDistance ~= v then depth_effect.FocusDistance = v end
+			v = shader_data.sdkvkflv
+			if depth_effect.InFocusRadius ~= v then depth_effect.InFocusRadius = v end
+			v = shader_data.hbjhd
+			if depth_effect.NearIntensity ~= v then depth_effect.NearIntensity = v end
+			if depth_effect.Enabled ~= true then depth_effect.Enabled = true end
+		end
+		if atmosphere_effect then
+			v = shader_data.shdbsnjfc
+			if atmosphere_effect.Density ~= v then atmosphere_effect.Density = v end
+			v = shader_data.skdjfkdm
+			if atmosphere_effect.Offset ~= v then atmosphere_effect.Offset = v end
+			v = shader_data.sjdjncdjf
+			if atmosphere_effect.Color ~= v then atmosphere_effect.Color = v end
+			v = shader_data.efjdjfk
+			if atmosphere_effect.Decay ~= v then atmosphere_effect.Decay = v end
+			v = shader_data.sejfd
+			if atmosphere_effect.Glare ~= v then atmosphere_effect.Glare = v end
+			v = shader_data.jddfjsd
+			if atmosphere_effect.Haze ~= v then atmosphere_effect.Haze = v end
+		end
+		if cloud_effect then
+			v = shader_data.gyhgtg
+			if cloud_effect.Cover ~= v then cloud_effect.Cover = v end
+			v = shader_data.ygbhggv
+			if cloud_effect.Density ~= v then cloud_effect.Density = v end
+			v = shader_data.jghbjhgyfd
+			if cloud_effect.Color ~= v then cloud_effect.Color = v end
+		end
+	end
+	
+	local function restore_original()
+		if original_effects.colorcor and colorcor_effect then
+			for prop, value in pairs(original_effects.colorcor) do
+				colorcor_effect[prop] = value
+			end
+		elseif created_effects.colorcor and colorcor_effect then
+			colorcor_effect:Destroy()
+			colorcor_effect = nil
+			created_effects.colorcor = nil
+		end
+		if original_effects.bloom and bloom_effect then
+			for prop, value in pairs(original_effects.bloom) do
+				bloom_effect[prop] = value
+			end
+		elseif created_effects.bloom and bloom_effect then
+			bloom_effect:Destroy()
+			bloom_effect = nil
+			created_effects.bloom = nil
+		end
+		if original_effects.blur and blur_effect then
+			for prop, value in pairs(original_effects.blur) do
+				blur_effect[prop] = value
+			end
+		elseif created_effects.blur and blur_effect then
+			blur_effect:Destroy()
+			blur_effect = nil
+			created_effects.blur = nil
+		end
+		if original_effects.depth and depth_effect then
+			for prop, value in pairs(original_effects.depth) do
+				depth_effect[prop] = value
+			end
+		elseif created_effects.depth and depth_effect then
+			depth_effect:Destroy()
+			depth_effect = nil
+			created_effects.depth = nil
+		end
+		if original_effects.atmosphere and atmosphere_effect then
+			for prop, value in pairs(original_effects.atmosphere) do
+				atmosphere_effect[prop] = value
+			end
+		elseif created_effects.atmosphere and atmosphere_effect then
+			atmosphere_effect:Destroy()
+			atmosphere_effect = nil
+			created_effects.atmosphere = nil
+		end
+		if original_effects.cloud and cloud_effect then
+			for prop, value in pairs(original_effects.cloud) do
+				cloud_effect[prop] = value
+			end
+		elseif created_effects.cloud and cloud_effect then
+			cloud_effect:Destroy()
+			cloud_effect = nil
+			created_effects.cloud = nil
+		end
+	end
+
+    local ambience_enabled = false
+    local ambience_style = "morning"
+
+    local function setAmbience(enabled)
+        ambience_enabled = enabled
+        if enabled then
+            local data = shaders[ambience_style]
+            if data then
+                apply_shader(data)
+            end
+        else
+            restore_original()
+        end
+    end
+
+    VisualsTab._left:Divider()
+    VisualsTab._left:Paragraph({
+        Title = "Ambience",
+        Content = "Lighting and atmosphere presets"
+    })
+
+    VisualsTab._left:Toggle({
+        Flag = "ambience_enabled",
+        Title = "Enable Ambience",
+        Description = "Apply the selected lighting preset",
+        Default = false,
+        Callback = function(state)
+            setAmbience(state)
+        end,
+    })
+
+    VisualsTab._left:Dropdown({
+        Flag = "ambience_style",
+        Title = "Ambience Style",
+        Values = {"morning", "midday", "evening", "night"},
+        Value = "morning",
+        Callback = function(value)
+            ambience_style = value
+            if ambience_enabled then
+                setAmbience(true)
+            end
+        end,
+    })
+end
+-- ============================================================
+-- END AMBIENCE SYSTEM
+-- ============================================================
 
 -- ── COMBAT column (left) ──────────────────────────────────────
 v301._left:Paragraph({ Title = 'Combat Buttons' })
