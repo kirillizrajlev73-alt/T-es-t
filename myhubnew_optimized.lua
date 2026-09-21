@@ -1,4 +1,3 @@
---777
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4717,6 +4716,7 @@ end
 
         v303._left:Button({
             Title = 'Fling Selected Player',
+            Description = 'Fling the selected player',
             Callback = function()
                 if not flingSelected then
                     v18:Notify({
@@ -4761,6 +4761,7 @@ end
 
         v303._left:Button({
             Title = 'Refresh Fling List',
+            Description = 'Update the player list',
             Callback = rebuildFlingList,
         })
 
@@ -4811,6 +4812,7 @@ end
 
         v303._right:Button({
             Title = 'Teleport to Player',
+            Description = 'Teleport to the selected player',
             Callback = function()
                 if not teleportSelected then
                     v18:Notify({ Title = 'CrystalHub', Content = 'Select a player first!', Duration = 3, Icon = 'bell' })
@@ -4832,6 +4834,7 @@ end
 
         v303._right:Button({
             Title = 'Refresh Teleport List',
+            Description = 'Update the player list',
             Callback = function() rebuildTeleportNames() end,
         })
 
@@ -4943,6 +4946,7 @@ end
         -- Master ON/OFF
         VisualsTab._left:Toggle({
             Flag = "enable_auras",Title = "Enable Auras",
+            Description = "Apply selected auras to your character",
             Default = false,
             Callback = function(state)
                 aura_active = state
@@ -4976,6 +4980,7 @@ end
 
         VisualsTab._left:Dropdown({
             Flag = "color_preset",Title = "Color Preset",
+            Description = "Pick a preset color",
             Values = colorPresets,
             Value = "Default (Blue)",
             Callback = function(val)
@@ -5010,6 +5015,7 @@ end
         -- Clear button
         VisualsTab._left:Button({
             Title = "Clear All Auras",
+            Description = "Remove all aura effects from character",
             Callback = function()
                 clearAura()
                 v18:Notify({
@@ -5030,6 +5036,7 @@ VisualsTab._left:Paragraph({
 })
 VisualsTab._left:Button({
     Title = 'Open Skybox Picker',
+    Description = 'Color preview list \u{2014} click to apply instantly',
     Callback = function()
         local RuzSkyboxPicker = game.CoreGui:FindFirstChild('RuzSkyboxPicker')
 
@@ -5269,6 +5276,7 @@ VisualsTab._right:Paragraph({
 local t31 = {
     Flag = "enable_custom_crosshair",
     Title = 'Enable Custom Crosshair',
+    Description = 'Visible only while ShiftLock is on',
     Default = false,
 }
 
@@ -5386,6 +5394,7 @@ end
 VisualsTab._right:Toggle(t31)
 VisualsTab._right:Button({
     Title = 'Open Cursor Picker',
+    Description = 'Visual grid with spin toggle \u{2014} click to apply',
     Callback = function()
         local RuzCursorPicker = game.CoreGui:FindFirstChild('RuzCursorPicker')
 
@@ -6419,6 +6428,7 @@ do
     VisualsTab._left:Toggle({
         Flag = "ambience_enabled",
         Title = "Enable Ambience",
+        Description = "Apply the selected lighting preset",
         Default = false,
         Callback = function(state)
             setAmbience(state)
@@ -6494,7 +6504,7 @@ v301._left:Toggle({
 v301._left:Toggle({
     Flag = "auto_ping_prediction",
     Title = 'Auto Ping Prediction',
-
+    Description = 'Adds ping offset to shoot and throw',
     Default = false,
     Callback = function(p75)
         u13 = p75
@@ -6505,781 +6515,6 @@ v301._left:Toggle({
         })
     end,
 })
-
--- ── SILENT AIM ───────────────────────────────────────────────
-do
-    -- ===================== SILENT AIM =====================
-    local rs = game:GetService("ReplicatedStorage")
-    local players = game:GetService("Players")
-    local collection = game:GetService("CollectionService")
-    local run = game:GetService("RunService")
-    local lp = players.LocalPlayer
-    local stats = game:GetService("Stats")
-
-    getgenv().SILENT_S = {
-        enabled = false,
-        predict = true,
-        force = false,
-        auto_on = false,
-        auto_delay = 0,
-        am_sheriff = false,
-        fire_gap = 0,
-        last_shot = 0,
-        stand_off = 15,
-    }
-    local S = getgenv().SILENT_S
-
-    local MAX_RANGE = 300
-
-    local gap_min = 0
-    local gap_seen = false
-    local gap_gun = nil
-    local want_since = 0
-
-    local function gap_reset()
-        gap_min = 0
-        gap_seen = false
-        S.fire_gap = 0
-    end
-
-    local function gap_push(value)
-        if value <= 0 then return end
-        if not gap_seen or value < gap_min then
-            gap_min = value
-            gap_seen = true
-            S.fire_gap = value
-        end
-    end
-
-    local round_mod = nil
-
-    local function get_round()
-        if round_mod then return round_mod end
-        local ok, m = pcall(function()
-            return require(rs:WaitForChild("Modules"):WaitForChild("CurrentRoundClient"))
-        end)
-        if ok and type(m) == "table" then round_mod = m end
-        return round_mod
-    end
-
-    local function holds(container, name)
-        return container ~= nil and container:FindFirstChild(name) ~= nil
-    end
-
-    local function lp_has_gun()
-        return holds(lp.Character, "Gun") or holds(lp:FindFirstChildOfClass("Backpack"), "Gun")
-    end
-
-    local target_player = nil
-    local target_char = nil
-    local target_part = nil
-    local target_hum = nil
-
-    local function refresh_target()
-        local found = nil
-        local m = get_round()
-        local data = m and m.PlayerData or nil
-        if type(data) == "table" then
-            local me = data[lp.Name]
-            S.am_sheriff = (me ~= nil and (me.Role == "Sheriff" or me.Role == "Hero")) or lp_has_gun()
-            for name, d in pairs(data) do
-                if type(d) == "table" and d.Role == "Murderer" and not d.Dead then
-                    found = players:FindFirstChild(name)
-                    break
-                end
-            end
-        else
-            S.am_sheriff = lp_has_gun()
-        end
-        if not found then
-            for _, plr in ipairs(players:GetPlayers()) do
-                if plr ~= lp and holds(plr.Character, "Knife") then
-                    found = plr
-                    break
-                end
-            end
-        end
-        if found ~= target_player then
-            target_player = found
-            target_char = nil
-            target_part = nil
-            target_hum = nil
-        end
-        if not found then return end
-        local char = found.Character
-        if char ~= target_char then
-            target_char = char
-            target_part = nil
-            target_hum = nil
-        end
-        if not char then return end
-        if not target_part or not target_part.Parent then
-            target_part = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-        end
-        if not target_hum or not target_hum.Parent then
-            target_hum = char:FindFirstChildOfClass("Humanoid")
-        end
-    end
-
-    local function target_alive()
-        if not target_part or not target_part.Parent then return false end
-        if not target_hum or not target_hum.Parent then return false end
-        return target_hum.Health > 0
-    end
-
-    local ray_params = RaycastParams.new()
-    ray_params.FilterType = Enum.RaycastFilterType.Exclude
-    ray_params.IgnoreWater = false
-
-    local ignore_base = {}
-    local ignore_work = {}
-    local ignore_time = 0
-
-    local function refresh_ignore()
-        local now = os.clock()
-        if #ignore_base > 0 and now - ignore_time < 0.5 then return end
-        ignore_time = now
-        table.clear(ignore_base)
-        local char = lp.Character
-        if char then ignore_base[1] = char end
-        local ok, tagged = pcall(function() return collection:GetTagged("WeaponPassthrough") end)
-        if ok and type(tagged) == "table" then
-            for k = 1, #tagged do
-                ignore_base[#ignore_base + 1] = tagged[k]
-            end
-        end
-    end
-
-    local function trace(origin, direction)
-        refresh_ignore()
-        table.clear(ignore_work)
-        for k = 1, #ignore_base do ignore_work[k] = ignore_base[k] end
-        local result = nil
-        for _ = 1, 6 do
-            ray_params.FilterDescendantsInstances = ignore_work
-            result = workspace:Raycast(origin, direction, ray_params)
-            if not result then break end
-            local inst = result.Instance
-            if not inst then break end
-            local ok, tr = pcall(function() return inst.Transparency end)
-            if not ok or tr ~= 1 then break end
-            ignore_work[#ignore_work + 1] = inst
-        end
-        return result
-    end
-
-    local function gun_attachment()
-        local char = lp.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return nil, nil end
-        return hrp:FindFirstChild("GunRaycastAttachment"), hrp
-    end
-
-    local function origin_cframe()
-        local att, hrp = gun_attachment()
-        if att then return att.WorldCFrame end
-        if hrp then return hrp.CFrame end
-        return nil
-    end
-
-    local function grav()
-        local ok, g = pcall(function() return workspace.Gravity end)
-        if ok and type(g) == "number" and g > 0 then return g end
-        return 0
-    end
-
-    local P = {
-        snap = 48, ring = 48, hit_r = 2.1, pad = 2.6,
-        min_span = 5, max_span = 90, acc_t = 0.15,
-        acc_max = 280, acc_min = 40, speed_floor = 26, speed_head = 1.3,
-    }
-
-    local snap_t = table.create(P.snap, 0)
-    local snap_p = table.create(P.snap, Vector3.zero)
-    local snap_n = 0
-    local snap_i = 0
-
-    local TR = {
-        part = nil, pos = nil, time = 0, vel = Vector3.zero,
-        gap = 0, ready = false, fresh = Vector3.zero, air = false,
-        air_since = 0, jumping = false, jump_v = 0, fresh_ok = false,
-        turn = 0, spoof = 0, clr = 0, air_edge = 0, jump_fresh = false,
-    }
-
-    local SK = {
-        vt = table.create(P.ring, 0),
-        dx = table.create(P.ring, 0),
-        dz = table.create(P.ring, 0),
-        vn = 0, vi = 0,
-    }
-
-    local EC = {
-        ping = 0, rtt = 0, jitter = 0, seen = false,
-        step = 0, step_seen = false,
-    }
-
-    local function step_push(dt)
-        if dt <= 0 or dt > 0.5 then return end
-        if EC.step_seen then
-            EC.step = EC.step * 0.85 + dt * 0.15
-        else
-            EC.step = dt
-            EC.step_seen = true
-        end
-    end
-
-    local function sample_span()
-        local span = math.max(EC.step, TR.gap)
-        if span <= 0 then return 0 end
-        return span
-    end
-
-    local HY = {
-        pos = {}, w = {}, n = 0, weight = 0,
-        primary = nil, stamp = 0, conf = 0,
-    }
-
-    local ground_params = RaycastParams.new()
-    ground_params.FilterType = Enum.RaycastFilterType.Exclude
-    ground_params.IgnoreWater = true
-
-    local ground_filter = {}
-
-    local function ground_below(pos, reach)
-        table.clear(ground_filter)
-        local n = 0
-        local char = target_char
-        if char then n = n + 1; ground_filter[n] = char end
-        local mine = lp.Character
-        if mine then n = n + 1; ground_filter[n] = mine end
-        ground_params.FilterDescendantsInstances = ground_filter
-        local res = workspace:Raycast(pos, Vector3.new(0, -reach, 0), ground_params)
-        if res then return res.Position.Y end
-        return nil
-    end
-
-    local function snap_push(now, pos)
-        snap_i = snap_i % P.snap + 1
-        snap_t[snap_i] = now
-        snap_p[snap_i] = pos
-        if snap_n < P.snap then snap_n = snap_n + 1 end
-    end
-
-    local function snap_get(k)
-        local idx = (snap_i - k - 1) % P.snap + 1
-        return snap_t[idx], snap_p[idx]
-    end
-
-    local function fit_velocity()
-        if snap_n < 3 then return nil end
-        local newest = snap_get(0)
-        local used = 0
-        local sum_d = 0
-        local win = sample_span() * 4
-        for k = 0, snap_n - 1 do
-            local t = snap_get(k)
-            if newest - t > win then break end
-            used = used + 1
-            sum_d = sum_d + t - newest
-        end
-        if used < 3 then return nil end
-        local mean_d = sum_d / used
-        local num = Vector3.zero
-        local den = 0
-        for k = 0, used - 1 do
-            local t, p = snap_get(k)
-            local d = t - newest - mean_d
-            den = den + d * d
-            num = num + p * d
-        end
-        if den < 1e-9 then return nil end
-        return num / den
-    end
-
-    local function sample_ping()
-        local ok, p = pcall(function() return stats.Network.ServerStatsItem["Data Ping"]:GetValue() end)
-        if ok and type(p) == "number" and p > 0 then
-            local rtt = p / 1000
-            if EC.seen then
-                EC.rtt = EC.rtt * 0.8 + rtt * 0.2
-                local diff = math.abs(rtt - EC.rtt)
-                EC.jitter = EC.jitter * 0.8 + diff * 0.2
-            else
-                EC.rtt = rtt
-                EC.jitter = 0
-                EC.seen = true
-            end
-            EC.ping = EC.rtt + EC.jitter
-        end
-    end
-
-    local function lead_time()
-        return math.max(EC.ping, sample_span())
-    end
-
-    local pred_stamp = 0
-
-    local function track_clear()
-        snap_n = 0; snap_i = 0
-        TR.ready = false; TR.part = nil; TR.pos = nil
-        HY.n = 0; HY.weight = 0; HY.primary = nil
-    end
-
-    local function track(now)
-        if not target_part or not target_part.Parent then
-            track_clear(); return
-        end
-        local ok, pos = pcall(function() return target_part.Position end)
-        if not ok then track_clear(); return end
-        if TR.part ~= target_part then
-            track_clear()
-            TR.part = target_part
-        end
-        local dt = (TR.time > 0) and (now - TR.time) or 0
-        step_push(dt)
-        if TR.pos then
-            local delta = pos - TR.pos
-            local speed = (dt > 0) and (delta.Magnitude / dt) or 0
-            if speed < 200 then
-                snap_push(now, pos)
-                local fv = fit_velocity()
-                if fv then
-                    TR.vel = fv; TR.ready = true
-                end
-            end
-        end
-        TR.pos = pos
-        TR.time = now
-        local char = target_char
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hrp and hum then
-            local vy = hrp.Velocity.Y
-            local wasAir = TR.air
-            TR.air = (hum.FloorMaterial == Enum.Material.Air)
-            if TR.air and not wasAir then
-                TR.air_since = now
-                TR.jump_v = vy
-                TR.jumping = vy > 5
-            elseif not TR.air then
-                TR.jumping = false
-            end
-        end
-    end
-
-    local force_att = nil
-    local force_stamp = 0
-    local orig_att_cf = nil
-
-    local function push_origin(cf)
-        local char = lp.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return false end
-        local att = hrp:FindFirstChild("GunRaycastAttachment")
-        if not att then return false end
-        if not force_att then
-            force_att = att
-            orig_att_cf = att.CFrame
-        end
-        pcall(function() att.CFrame = hrp.CFrame:ToObjectSpace(cf) end)
-        force_stamp = os.clock()
-        return true
-    end
-
-    local function restore_origin()
-        if force_att and orig_att_cf then
-            pcall(function() force_att.CFrame = orig_att_cf end)
-        end
-        force_att = nil
-        orig_att_cf = nil
-    end
-
-    local function force_velocity()
-        if TR.ready then return TR.vel end
-        return Vector3.zero
-    end
-
-    local function force_clear(a, b)
-        local dir = b - a
-        local res = trace(a, dir)
-        if not res then return true end
-        local hit = res.Instance
-        if not hit then return true end
-        local char = target_char
-        if char and hit:IsDescendantOf(char) then return true end
-        return false
-    end
-
-    local function pick_point(origin_pos, for_auto)
-        if not TR.pos then return nil end
-        pred_stamp = os.clock()
-        local live = TR.pos
-        local vel = (TR.ready and TR.vel) or Vector3.zero
-        local lt = lead_time()
-
-        -- predicted aim position (HRP)
-        local predicted = live + Vector3.new(vel.X * lt, 0, vel.Z * lt)
-        if TR.air and TR.ready then
-            local g = grav()
-            local phase = math.max(0, pred_stamp - TR.air_since)
-            local vy = TR.vel.Y
-            if TR.jumping and TR.jump_v > 0 and g > 0 then
-                local modeled = TR.jump_v - g * phase
-                if modeled > vy then vy = modeled end
-            end
-            predicted = predicted + Vector3.new(0, vy * lt - 0.5 * g * lt * lt, 0)
-        end
-
-        if origin_pos then
-            local dist = (predicted - origin_pos).Magnitude
-            if dist > MAX_RANGE then return nil end
-        end
-
-        -- prefer Head with prediction
-        local char = target_char
-        local head = char and char:FindFirstChild("Head")
-        if head then
-            local ok, hpos = pcall(function() return head.Position end)
-            if ok then
-                local hp = hpos + Vector3.new(vel.X * lt, 0, vel.Z * lt)
-                if origin_pos then
-                    local res = trace(origin_pos, hp - origin_pos)
-                    if not res then
-                        return hp
-                    end
-                    local inst = res.Instance
-                    if inst and inst:IsDescendantOf(char) then
-                        return hp
-                    end
-                    -- head blocked, try live head without offset
-                    local res2 = trace(origin_pos, hpos - origin_pos)
-                    if not res2 then return hpos end
-                    local inst2 = res2.Instance
-                    if inst2 and inst2:IsDescendantOf(char) then return hpos end
-                else
-                    return hp
-                end
-            end
-        end
-
-        -- fallback to HRP predicted
-        return predicted
-    end
-
-    local function resolve_force()
-        if not TR.pos then return nil, nil end
-        local live = TR.pos
-        local vel = (TR.ready and TR.vel) or Vector3.zero
-        local lt = lead_time()
-        local aim = live + Vector3.new(vel.X * lt, 0, vel.Z * lt)
-        if TR.air and TR.ready then
-            local g = grav()
-            local phase = math.max(0, os.clock() - TR.air_since)
-            local vy = TR.vel.Y
-            if TR.jumping and TR.jump_v > 0 and g > 0 then
-                local modeled = TR.jump_v - g * phase
-                if modeled > vy then vy = modeled end
-            end
-            aim = aim + Vector3.new(0, vy * lt - 0.5 * g * lt * lt, 0)
-        end
-        -- prefer Head
-        local char = target_char
-        local head = char and char:FindFirstChild("Head")
-        if head then
-            local ok, hpos = pcall(function() return head.Position end)
-            if ok then aim = hpos + Vector3.new(vel.X * lt, 0, vel.Z * lt) end
-        end
-        local mine = origin_cframe()
-        if not mine then return nil, nil end
-        local origin = mine.Position
-        local u = (aim - origin)
-        if u.Magnitude < 0.01 then return nil, nil end
-        u = u.Unit
-        local want = P.min_span
-        for probe_step = 1, 8 do
-            local probe = origin + u * want
-            if force_clear(probe, aim) then
-                origin = probe
-                break
-            end
-            want = want - 3
-        end
-        if (aim - origin).Magnitude > P.max_span then
-            origin = aim - u * P.max_span
-        end
-        return CFrame.new(origin, aim), CFrame.new(aim), 0, live
-    end
-
-    local function shot_shift(dt)
-        if not TR.ready or dt <= 0 then return Vector3.zero end
-        local shift = Vector3.new(TR.vel.X * dt, 0, TR.vel.Z * dt)
-        if TR.air then
-            local g = grav()
-            local horizon = lead_time()
-            local vy = TR.vel.Y
-            local phase = math.max(0, os.clock() - TR.air_since)
-            local modeled = TR.jump_v - g * phase
-            if TR.jumping and TR.jump_v > 0 and g > 0 and phase <= TR.jump_v / g and modeled > vy then vy = modeled end
-            shift = Vector3.new(shift.X, vy * dt - g * horizon * dt - 0.5 * g * dt * dt, shift.Z)
-        end
-        return shift
-    end
-
-    local function compensate_force(origin_cf, aim_cf, started)
-        local shift = shot_shift(math.max(0, os.clock() - started))
-        if shift == Vector3.zero then return origin_cf, aim_cf end
-        local origin = origin_cf.Position + shift
-        local aim = aim_cf.Position + shift
-        return CFrame.new(origin, aim), CFrame.new(aim)
-    end
-
-    local function resolve_shot()
-        if not S.enabled or not S.am_sheriff or not target_alive() then return nil end
-        local char = lp.Character
-        if not char then return nil end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return nil end
-        local targetPos = target_part.Position
-        local originPos = hrp.Position + Vector3.new(0, 1, 0)
-        local originCF  = CFrame.new(originPos, targetPos)
-        local targetCF  = CFrame.new(targetPos)
-        return originCF, targetCF
-    end
-
-    local function compensate_resolve(cf)
-        return cf
-    end
-
-    local weapon_service = nil
-    local orig_mouse = nil
-    local orig_screen = nil
-    local hook_mouse = nil
-    local hook_screen = nil
-
-    local function get_weapon_service()
-        if weapon_service then return weapon_service end
-        local ok, m = pcall(function()
-            return require(rs:WaitForChild("ClientServices"):WaitForChild("WeaponService"))
-        end)
-        if ok and type(m) == "table" then weapon_service = m end
-        return weapon_service
-    end
-
-    local function install_hooks()
-        local m = get_weapon_service()
-        if not m then return end
-        if not hook_mouse then
-            local function knife_aim()
-                local fn = getgenv().KNIFE_AIM_RESOLVE
-                if type(fn) ~= "function" then return nil end
-                local ok, cf = pcall(fn)
-                if ok and typeof(cf) == "CFrame" then return cf end
-                return nil
-            end
-            hook_mouse = function(self, ...)
-                local ok, originCF, targetCF = pcall(resolve_shot)
-                if ok and targetCF then return targetCF end
-                local kcf = knife_aim()
-                if kcf then return kcf end
-                return orig_mouse(self, ...)
-            end
-            hook_screen = function(self, x, y, ...)
-                local ok, originCF, targetCF = pcall(resolve_shot)
-                if ok and targetCF then return targetCF end
-                local kcf = knife_aim()
-                if kcf then return kcf end
-                return orig_screen(self, x, y, ...)
-            end
-        end
-        pcall(function() setreadonly(m, false) end)
-        if type(m.GetMouseTargetCFrame) == "function" and m.GetMouseTargetCFrame ~= hook_mouse then
-            orig_mouse = m.GetMouseTargetCFrame
-            pcall(function() m.GetMouseTargetCFrame = hook_mouse end)
-        end
-        if type(m.GetTargetPosition) == "function" and m.GetTargetPosition ~= hook_screen then
-            orig_screen = m.GetTargetPosition
-            pcall(function() m.GetTargetPosition = hook_screen end)
-        end
-    end
-
-    local gun_fired_conn = nil
-    local last_fire_stamp = 0
-
-    local function on_gun_fired(tool)
-        if typeof(tool) ~= "Instance" then return end
-        local char = lp.Character
-        if not ok or not mine then return end
-        local now = os.clock()
-        if last_fire_stamp > 0 and want_since > 0 and want_since <= last_fire_stamp then
-            gap_push(now - last_fire_stamp)
-        end
-        last_fire_stamp = now
-    end
-
-    local function connect_gun_fired()
-        if gun_fired_conn then return end
-        local m = get_weapon_service()
-        if not m then return end
-        local ev = m.GunFired
-        if typeof(ev) ~= "Instance" then return end
-        gun_fired_conn = ev.OnClientEvent:Connect(function(tool)
-            pcall(on_gun_fired, tool)
-        end)
-    end
-
-    local function get_gun()
-        local char = lp.Character
-        if char then
-            local g = char:FindFirstChild("Gun")
-            if g then return g, true end
-        end
-        local bp = lp:FindFirstChildOfClass("Backpack")
-        if bp then
-            local g = bp:FindFirstChild("Gun")
-            if g then return g, false end
-        end
-        return nil, false
-    end
-
-    local function fire_gun(gun, start_cf, aim_cf)
-        if not gun or not start_cf or not aim_cf then return false end
-        local remote = gun:FindFirstChild("Shoot")
-        if not remote or not remote:IsA("RemoteEvent") then return false end
-        return (pcall(function() remote:FireServer(start_cf, aim_cf) end))
-    end
-
-    local function auto_step(now)
-        if not S.auto_on or not S.enabled or not S.am_sheriff or getgenv().AUTOFARM_HOLD or not target_alive() then
-            want_since = 0; return
-        end
-        local gun, equipped = get_gun()
-        if not gun then want_since = 0; return end
-        if not equipped then
-            want_since = 0
-            local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
-            if hum then pcall(function() hum:EquipTool(gun) end) end
-            return
-        end
-        if want_since == 0 then want_since = now end
-        local since = last_fire_stamp > 0 and last_fire_stamp or S.last_shot
-        if now - since < S.auto_delay then return end
-        local ok, originCF, targetCF = pcall(resolve_shot)
-        if not ok or not originCF or not targetCF then return end
-        if fire_gun(gun, originCF, targetCF) then S.last_shot = now end
-    end
-
-    local watch_conns = {}
-
-    local function clear_watch()
-        for k = 1, #watch_conns do
-            pcall(function() watch_conns[k]:Disconnect() end)
-        end
-        table.clear(watch_conns)
-    end
-
-    local function setup_watch()
-        clear_watch()
-        local m = get_round()
-        if m and m.PlayerDataChanged then
-            watch_conns[#watch_conns + 1] = m.PlayerDataChanged.Event:Connect(function()
-                pcall(refresh_target)
-            end)
-        end
-        watch_conns[#watch_conns + 1] = lp.CharacterAdded:Connect(function()
-            task.wait(0.3)
-            pcall(refresh_target)
-        end)
-    end
-
-    local next_role = 0
-    local next_hook = 0
-
-    local function sa_tick()
-        if force_att and os.clock() - force_stamp > 0.05 then restore_origin() end
-        if not S.enabled then return end
-        local now = os.clock()
-        if now >= next_role then
-            next_role = now + 0.2
-            refresh_target()
-        end
-        sample_ping()
-        track(now)
-        if now >= next_hook then
-            next_hook = now + 1
-            install_hooks()
-            connect_gun_fired()
-        end
-        auto_step(now)
-    end
-
-    local sa_main_conn = run.Heartbeat:Connect(function() pcall(sa_tick) end)
-
-    getgenv().SILENT_INSTALL_HOOKS = function() pcall(install_hooks) end
-
-    getgenv().SILENT_UNLOAD = function()
-        S.enabled = false; S.predict = false; S.force = false; S.auto_on = false
-        getgenv().SILENT_AIM_ACTIVE = false
-        restore_origin(); clear_watch(); track_clear()
-        if gun_fired_conn then pcall(function() gun_fired_conn:Disconnect() end); gun_fired_conn = nil end
-        if sa_main_conn then pcall(function() sa_main_conn:Disconnect() end) end
-        local m = weapon_service
-        if m then
-            pcall(function() setreadonly(m, false) end)
-            if orig_mouse then pcall(function() m.GetMouseTargetCFrame = orig_mouse end) end
-            if orig_screen then pcall(function() m.GetTargetPosition = orig_screen end) end
-        end
-    end
-
-    task.spawn(function() pcall(install_hooks); pcall(connect_gun_fired) end)
-    setup_watch()
-
-    -- ── UI controls (Silent Aim) ──────────────────────────────
-    v301._left:Divider()
-    v301._left:Paragraph({ Title = 'Silent Aim' })
-
-    v301._left:Toggle({
-        Flag    = "silent_aim_enable",
-        Title   = 'Enable Silent Aim',
-        Default = false,
-        Callback = function(p)
-            S.enabled = p
-            getgenv().SILENT_AIM_ACTIVE = p
-            v18:Notify({
-                Title   = 'CrystalHub',
-                Content = p and 'Silent Aim ON' or 'Silent Aim OFF',
-                Duration = 3, Icon = 'bell',
-            })
-        end,
-    })
-
-
-    v301._left:Toggle({
-        Flag    = "silent_aim_auto",
-        Title   = 'Auto Shoot',
-
-        Default = false,
-        Callback = function(p)
-            S.auto_on = p
-            v18:Notify({
-                Title   = 'CrystalHub',
-                Content = p and 'Auto Shoot ON' or 'Auto Shoot OFF',
-                Duration = 3, Icon = 'bell',
-            })
-        end,
-    })
-
-    v301._left:Slider({
-        Flag  = "silent_aim_delay",
-        Title = 'Auto Shoot Delay (ms)',
-        Value = { Min = 0, Max = 1000, Default = 0 },
-        Rounding = 0,
-        Callback = function(p)
-            S.auto_delay = p / 1000
-        end,
-    })
-
-end
--- ── END SILENT AIM ────────────────────────────────────────────
 
 -- ── WALLBANG (FORCE SHOOT) ────────────────────────────────────
 do
@@ -7415,92 +6650,6 @@ do
         return _wb_thum.Health > 0
     end
 
-    -- velocity prediction
-    local _wb_snap_n, _wb_snap_i = 0, 0
-    local _wb_SNAP = 48
-    local _wb_snap_t = table.create(48, 0)
-    local _wb_snap_p = table.create(48, Vector3.zero)
-    local _wb_vel = Vector3.zero
-    local _wb_vel_ready = false
-    local _wb_last_pos = nil
-    local _wb_last_time = 0
-    local _wb_ec_rtt = 0
-    local _wb_ec_seen = false
-
-    local function _wb_sample_ping()
-        local ok, p = pcall(function()
-            return game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-        end)
-        if ok and type(p) == "number" and p > 0 then
-            local rtt = p / 1000
-            if _wb_ec_seen then
-                _wb_ec_rtt = _wb_ec_rtt * 0.8 + rtt * 0.2
-            else
-                _wb_ec_rtt = rtt
-                _wb_ec_seen = true
-            end
-        end
-    end
-
-    local function _wb_lead_time()
-        return math.max(_wb_ec_rtt, 0.05)
-    end
-
-    local function _wb_snap_push(now, pos)
-        _wb_snap_i = _wb_snap_i % _wb_SNAP + 1
-        _wb_snap_t[_wb_snap_i] = now
-        _wb_snap_p[_wb_snap_i] = pos
-        if _wb_snap_n < _wb_SNAP then _wb_snap_n = _wb_snap_n + 1 end
-    end
-
-    local function _wb_snap_get(k)
-        local idx = (_wb_snap_i - k - 1) % _wb_SNAP + 1
-        return _wb_snap_t[idx], _wb_snap_p[idx]
-    end
-
-    local function _wb_fit_vel()
-        if _wb_snap_n < 3 then return nil end
-        local newest = _wb_snap_get(0)
-        local used, sum_d = 0, 0
-        local win = _wb_lead_time() * 4
-        for k = 0, _wb_snap_n - 1 do
-            local t = _wb_snap_get(k)
-            if newest - t > win then break end
-            used = used + 1
-            sum_d = sum_d + t - newest
-        end
-        if used < 3 then return nil end
-        local mean_d = sum_d / used
-        local num, den = Vector3.zero, 0
-        for k = 0, used - 1 do
-            local t, p = _wb_snap_get(k)
-            local d = t - newest - mean_d
-            den = den + d * d
-            num = num + p * d
-        end
-        if den < 1e-9 then return nil end
-        return num / den
-    end
-
-    local function _wb_track(now)
-        if not _wb_tpart or not _wb_tpart.Parent then
-            _wb_snap_n = 0; _wb_vel_ready = false; _wb_last_pos = nil; return
-        end
-        local ok, pos = pcall(function() return _wb_tpart.Position end)
-        if not ok then return end
-        local dt = (_wb_last_time > 0) and (now - _wb_last_time) or 0
-        if _wb_last_pos then
-            local speed = (dt > 0) and ((pos - _wb_last_pos).Magnitude / dt) or 0
-            if speed < 200 then
-                _wb_snap_push(now, pos)
-                local fv = _wb_fit_vel()
-                if fv then _wb_vel = fv; _wb_vel_ready = true end
-            end
-        end
-        _wb_last_pos = pos
-        _wb_last_time = now
-    end
-
     -- origin spoofing
     local _wb_fatt, _wb_fsaved, _wb_fstamp = nil, nil, 0
 
@@ -7524,33 +6673,24 @@ do
             _wb_fsaved = saved
         end
         _wb_fstamp = os.clock()
-        -- Convert world CFrame to local CFrame relative to parent to avoid executor freeze
-        local ok3 = pcall(function()
-            local parent = att.Parent
-            if parent and parent:IsA("BasePart") then
-                att.CFrame = parent.CFrame:ToObjectSpace(cf)
-            else
-                att.CFrame = cf
-            end
-        end)
+        local ok3  = pcall(function() att.WorldCFrame = cf end)
         if not ok3 then _wb_restore(); return false end
-        task.delay(0, _wb_restore)
+        task.defer(_wb_restore)
         return true
     end
 
     local function _wb_resolve_force()
         local part = _wb_tpart
         if not part or not part.Parent then return nil, nil end
-        local ok1, targetPos = pcall(function() return part.Position end)
-        if not ok1 or typeof(targetPos) ~= "Vector3" then return nil, nil end
-        local char = _wb_lp.Character
-        if not char then return nil, nil end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return nil, nil end
-        local originPos = hrp.Position + Vector3.new(0, 1, 0)
-        local originCF  = CFrame.new(originPos, targetPos)
-        local targetCF  = CFrame.new(targetPos)
-        return originCF, targetCF
+        local live = part.Position
+        local att  = _wb_gun_att()
+        local mypos = att and att.Position or live
+        local dir   = (live - mypos)
+        if dir.Magnitude < 1 then dir = Vector3.new(0, 0, -1) end
+        local u    = dir.Unit
+        local back  = live - u * _WB.stand_off
+        local front = live + u * math.max(8, _WB.stand_off)
+        return CFrame.new(back, front), CFrame.new(front)
     end
 
     -- weapon service hooks
@@ -7662,7 +6802,7 @@ do
 
     -- ── UI controls ─────────────────────────────────────────────
     v301._left:Divider()
-    v301._left:Paragraph({ Title = 'Wallbang' })
+    v301._left:Paragraph({ Title = 'Wallbang', Content = 'Force shoot through walls' })
 
     v301._left:Toggle({
         Flag    = "wallbang_enable",
@@ -7673,6 +6813,21 @@ do
             v18:Notify({
                 Title   = 'CrystalHub',
                 Content = p and 'Wallbang ON' or 'Wallbang OFF',
+                Duration = 3, Icon = 'bell',
+            })
+        end,
+    })
+
+    v301._left:Toggle({
+        Flag    = "wallbang_auto",
+        Title   = 'Auto Wallbang',
+        Description = 'Automatically fires at murderer',
+        Default = false,
+        Callback = function(p)
+            getgenv().WALLBANG.setAuto(p, 0)
+            v18:Notify({
+                Title   = 'CrystalHub',
+                Content = p and 'Auto Wallbang ON' or 'Auto Wallbang OFF',
                 Duration = 3, Icon = 'bell',
             })
         end,
@@ -7705,6 +6860,7 @@ v301._right:Toggle({
 })
 v301._right:Button({
     Title = 'Stretch Resolution Slider',
+    Description = '10% = very wide  /  100% = normal',
     Callback = function()
         local v607 = n17 * 100
         local v608 = math.round(v607)
@@ -7904,6 +7060,7 @@ v301._right:Toggle(t33)
 local t34 = {
     Flag = "fov_slider",
     Title = 'FOV Slider',
+    Description = 'Mobile-friendly field of view selector',
 }
 local u322 = v25
 local u323 = CurrentCamera
@@ -7932,6 +7089,7 @@ v301._right:Paragraph({ Title = 'Extra Scripts' })
 local t35 = {
     Flag = "load_emotes_gui",
     Title = 'Load Emotes GUI',
+    Description = '7yd7 emote panel',
 }
 local u326 = v18
 
@@ -7954,6 +7112,7 @@ v301._right:Button(t35)
 local t36 = {
     Flag = "load_infinite_yield",
     Title = 'Load Infinite Yield',
+    Description = 'Admin script',
 }
 local u328 = v18
 
@@ -7976,6 +7135,7 @@ v301._right:Button(t36)
 local t37 = {
     Flag = "anti_fling",
     Title = 'Anti-Fling',
+    Description = 'Limits velocity to prevent being launched',
     Default = false,
 }
 local u330 = v18
@@ -7998,6 +7158,7 @@ v301._right:Toggle(t37)
 local t39 = {
     Flag = "speed_glitch_slider",
     Title = 'Speed Glitch Slider',
+    Description = 'Mobile-friendly speed selector',
 }
 local u334 = v25
 local u335 = v18
@@ -8127,6 +7288,7 @@ v302:Toggle(t45)
 local t46 = {
     Flag = "dropped_gun_esp",
     Title = 'Dropped Gun ESP',
+    Description = 'Highlight and label when a gun is on the map',
     Default = true,
 }
 local u351 = v18
