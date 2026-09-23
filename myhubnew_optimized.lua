@@ -1,4 +1,3 @@
---777
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -1365,35 +1364,7 @@ end
 
                                             local CFramePosition = u91.CFrame.Position
                                             local v501 = HumanoidRootPart.Position + Vector3.new(0, 1, 0)
-
-                                            -- Предикция кнопки Shoot: компенсация velocity цели + пинг
-                                            local _shootTargetChar = u82
-                                            local _shootPredPos = CFramePosition
-                                            if _shootTargetChar then
-                                                local _shootPart = _shootTargetChar:FindFirstChild('UpperTorso')
-                                                    or _shootTargetChar:FindFirstChild('Torso')
-                                                    or _shootTargetChar:FindFirstChild('HumanoidRootPart')
-                                                if _shootPart then
-                                                    local _shootVel = _shootPart.AssemblyLinearVelocity
-                                                    local _shootHum = _shootTargetChar:FindFirstChildOfClass('Humanoid')
-                                                    -- Гасим Y при прыжке/падении (менее предсказуемо)
-                                                    local _shootState = _shootHum and _shootHum:GetState()
-                                                    if _shootState == Enum.HumanoidStateType.Freefall
-                                                        or _shootState == Enum.HumanoidStateType.Jumping then
-                                                        _shootVel = Vector3.new(_shootVel.X, _shootVel.Y * 0.35, _shootVel.Z)
-                                                    end
-                                                    -- Время полёта пули = дистанция / 250 (скорость пули MM2) + пинг
-                                                    local _shootDist = (CFramePosition - v501).Magnitude
-                                                    local _shootT    = _shootDist / 250
-                                                    local _pingOk, _pingVal = pcall(function() return u89:GetNetworkPing() end)
-                                                    if _pingOk and _pingVal and _pingVal > 0 then
-                                                        _shootT = _shootT + _pingVal * 0.5
-                                                    end
-                                                    _shootPredPos = CFramePosition + _shootVel * _shootT
-                                                end
-                                            end
-
-                                            local cFrame = CFrame.new(v501, _shootPredPos)
+                                            local cFrame = CFrame.new(v501, CFramePosition)
                                             local _pcall = pcall
                                             local u504 = v499
 
@@ -1405,7 +1376,7 @@ end
                                                     t6.n = select('#', ...)
 
                                                     return t6
-                                                end)(CFrame.new(_shootPredPos))
+                                                end)(CFrame.new(CFramePosition))
 
                                                 Shoot:FireServer(cFrame, unpack(v876, 1, v876.n))
 
@@ -2058,44 +2029,216 @@ end
                     local u154 = RunService
                     local u155 = LocalPlayer
 
-                    function u156(p28)
-                        u152 = p28
+                    -- ── ANTI-FLING (shitaro) ──────────────────────────────
+                    do
+                        local _af_players    = game:GetService("Players")
+                        local _af_run        = game:GetService("RunService")
+                        local _af_ws         = workspace
+                        local _af_lp         = _af_players.LocalPlayer
 
-                        if not p28 then
-                            if u153 then
-                                u153:Disconnect()
+                        local anti_fling     = false
+                        local _af_void_orig  = _af_ws.FallenPartsDestroyHeight
 
-                                u153 = nil
+                        local FLING_MAX_VEL  = 700
+                        local FLING_MAX_ANG  = 90
+                        local FLING_SNAP_DIST = 60
+                        local FLING_HOLD     = 0.25
+                        local FLING_SAFE_VEL = 250
+
+                        local fling_cache    = {}
+                        local fling_reg      = {}
+                        local fling_conns    = {}
+                        local fling_attached = false
+                        local fling_safe_cf  = nil
+                        local fling_hold_until = 0
+                        local fling_active_since = 0
+
+                        local function _af_get_hrp()
+                            local c = _af_lp.Character
+                            return c and c:FindFirstChild("HumanoidRootPart")
+                        end
+
+                        local function _af_fling_busy()
+                            if os.clock() < (getgenv().VELOCITY_DESYNC_UNTIL or 0) then return true end
+                            if (getgenv().FLING_ACTIVE or 0) > 0 then
+                                local now = os.clock()
+                                if fling_active_since == 0 then fling_active_since = now end
+                                if now - fling_active_since < 20 then return true end
+                                getgenv().FLING_ACTIVE = 0; fling_active_since = 0; return false
                             end
-
-                            return
-                        end
-                        if u153 then
-                            u153:Disconnect()
+                            fling_active_since = 0; return false
                         end
 
-                        local _antiFlingLastTick = 0
-                        u153 = u154.Stepped:Connect(function()
-                            if u152 then
-                                local _now = tick()
-                                -- Throttle: запускать не чаще раза в 0.15 секунд
-                                if _now - _antiFlingLastTick < 0.15 then return end
-                                _antiFlingLastTick = _now
-                                for _, plr in ipairs(Players:GetPlayers()) do
-                                    if plr ~= LocalPlayer and plr.Character then
-                                        for _, part in ipairs(plr.Character:GetDescendants()) do
-                                            if part:IsA('BasePart') then
-                                                pcall(function()
-                                                    part.CanCollide = false
-                                                end)
+                        local function _af_kill_part(p)
+                            if fling_cache[p] == nil then fling_cache[p] = p.CanCollide end
+                            if p.CanCollide then p.CanCollide = false end
+                        end
+
+                        local function _af_unregister(model)
+                            local entry = fling_reg[model]
+                            if not entry then return end
+                            fling_reg[model] = nil
+                            for i = 1, #entry.conns do pcall(function() entry.conns[i]:Disconnect() end) end
+                            for p in pairs(entry.parts) do
+                                local v = fling_cache[p]; fling_cache[p] = nil
+                                if v ~= nil and p.Parent then pcall(function() p.CanCollide = v end) end
+                            end
+                            table.clear(entry.parts)
+                        end
+
+                        local function _af_register(model)
+                            if not anti_fling or not model then return end
+                            if fling_reg[model] or model == _af_lp.Character then return end
+                            local entry = { parts = {}, conns = {} }
+                            fling_reg[model] = entry
+                            local function add(d)
+                                if d:IsA("BasePart") and not entry.parts[d] then
+                                    entry.parts[d] = true
+                                    if anti_fling then pcall(_af_kill_part, d) end
+                                end
+                            end
+                            for _, d in model:GetDescendants() do pcall(add, d) end
+                            local function push(c) entry.conns[#entry.conns + 1] = c end
+                            push(model.DescendantAdded:Connect(function(d) if anti_fling then pcall(add, d) end end))
+                            push(model.DescendantRemoving:Connect(function(d)
+                                if entry.parts[d] then entry.parts[d] = nil; fling_cache[d] = nil end
+                            end))
+                            push(model.AncestryChanged:Connect(function(_, parent)
+                                if not parent then _af_unregister(model) end
+                            end))
+                        end
+
+                        local function _af_is_body(m)
+                            return m ~= _af_lp.Character
+                                and m:IsA("Model")
+                                and m:FindFirstChildOfClass("Humanoid") ~= nil
+                        end
+
+                        local function _af_scan()
+                            for _, pl in _af_players:GetPlayers() do
+                                if pl ~= _af_lp and pl.Character then _af_register(pl.Character) end
+                            end
+                            for _, m in _af_ws:GetChildren() do
+                                if _af_is_body(m) then _af_register(m) end
+                            end
+                        end
+
+                        local function _af_sweep()
+                            for model, entry in pairs(fling_reg) do
+                                if not model.Parent or model == _af_lp.Character then
+                                    _af_unregister(model)
+                                else
+                                    for p in pairs(entry.parts) do
+                                        if p.Parent then
+                                            if p.CanCollide then
+                                                if fling_cache[p] == nil then fling_cache[p] = true end
+                                                p.CanCollide = false
                                             end
-                                        end
+                                        else entry.parts[p] = nil; fling_cache[p] = nil end
                                     end
                                 end
+                            end
+                        end
 
-                                return
+                        local function _af_guard(full)
+                            local hrp = _af_get_hrp()
+                            if not hrp or not hrp.Parent then fling_safe_cf = nil; return end
+                            if _af_fling_busy() then fling_safe_cf = nil; return end
+                            local lin = hrp.AssemblyLinearVelocity
+                            local ang = hrp.AssemblyAngularVelocity
+                            local spike = lin.Magnitude > FLING_MAX_VEL or ang.Magnitude > FLING_MAX_ANG
+                            local now = os.clock()
+                            if spike then fling_hold_until = now + FLING_HOLD end
+                            if spike or now < fling_hold_until then
+                                hrp.AssemblyLinearVelocity = Vector3.zero
+                                hrp.AssemblyAngularVelocity = Vector3.zero
+                                if full and fling_safe_cf then
+                                    if (hrp.Position - fling_safe_cf.Position).Magnitude > FLING_SNAP_DIST then
+                                        hrp.CFrame = fling_safe_cf
+                                    end
+                                end
+                            elseif full and lin.Magnitude < FLING_SAFE_VEL then
+                                fling_safe_cf = hrp.CFrame
+                            end
+                        end
+
+                        local function _af_detach()
+                            fling_attached = false
+                            for i = 1, #fling_conns do pcall(function() fling_conns[i]:Disconnect() end) end
+                            table.clear(fling_conns)
+                        end
+
+                        local function _af_attach()
+                            if fling_attached then return end
+                            fling_attached = true
+                            local function push(c) fling_conns[#fling_conns + 1] = c end
+                            local function watch(pl)
+                                if pl == _af_lp then return end
+                                push(pl.CharacterAdded:Connect(function(c) if anti_fling then _af_register(c) end end))
+                                push(pl.CharacterRemoving:Connect(function(c) _af_unregister(c) end))
+                            end
+                            for _, pl in _af_players:GetPlayers() do watch(pl) end
+                            push(_af_players.PlayerAdded:Connect(function(pl)
+                                watch(pl)
+                                if anti_fling and pl.Character then _af_register(pl.Character) end
+                            end))
+                            push(_af_players.PlayerRemoving:Connect(function(pl)
+                                if pl.Character then _af_unregister(pl.Character) end
+                            end))
+                            push(_af_ws.ChildAdded:Connect(function(m)
+                                if not anti_fling then return end
+                                task.defer(function()
+                                    if anti_fling and m.Parent == _af_ws and _af_is_body(m) then _af_register(m) end
+                                end)
+                            end))
+                            push(_af_lp.CharacterAdded:Connect(function(c)
+                                _af_unregister(c); fling_safe_cf = nil; fling_hold_until = 0
+                                if anti_fling then task.defer(_af_scan) end
+                            end))
+                            _af_scan()
+                        end
+
+                        local function _af_restore()
+                            _af_detach()
+                            for model in pairs(fling_reg) do _af_unregister(model) end
+                            table.clear(fling_reg)
+                            for p, v in pairs(fling_cache) do
+                                if p and p.Parent then pcall(function() p.CanCollide = v end) end
+                            end
+                            table.clear(fling_cache)
+                            fling_safe_cf = nil; fling_hold_until = 0
+                        end
+
+                        _af_run.Stepped:Connect(function()
+                            if anti_fling then
+                                if not fling_attached then pcall(_af_attach) end
+                                pcall(_af_sweep)
+                                pcall(_af_guard, true)
                             end
                         end)
+
+                        _af_run.Heartbeat:Connect(function()
+                            if anti_fling then pcall(_af_guard, false) end
+                        end)
+
+                        getgenv().ANTI_FLING = {
+                            enable = function(v)
+                                anti_fling = v
+                                if v then _af_attach() else _af_restore() end
+                            end,
+                            unload = function()
+                                anti_fling = false
+                                pcall(function() _af_ws.FallenPartsDestroyHeight = _af_void_orig end)
+                                _af_restore()
+                            end,
+                        }
+                    end
+
+                    -- u156 теперь делегирует в ANTI_FLING
+                    function u156(p28)
+                        if getgenv().ANTI_FLING then
+                            getgenv().ANTI_FLING.enable(p28)
+                        end
                     end
                 end
 
