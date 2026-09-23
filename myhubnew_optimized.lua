@@ -1,3 +1,4 @@
+--777
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -1364,7 +1365,35 @@ end
 
                                             local CFramePosition = u91.CFrame.Position
                                             local v501 = HumanoidRootPart.Position + Vector3.new(0, 1, 0)
-                                            local cFrame = CFrame.new(v501, CFramePosition)
+
+                                            -- Предикция кнопки Shoot: компенсация velocity цели + пинг
+                                            local _shootTargetChar = u82
+                                            local _shootPredPos = CFramePosition
+                                            if _shootTargetChar then
+                                                local _shootPart = _shootTargetChar:FindFirstChild('UpperTorso')
+                                                    or _shootTargetChar:FindFirstChild('Torso')
+                                                    or _shootTargetChar:FindFirstChild('HumanoidRootPart')
+                                                if _shootPart then
+                                                    local _shootVel = _shootPart.AssemblyLinearVelocity
+                                                    local _shootHum = _shootTargetChar:FindFirstChildOfClass('Humanoid')
+                                                    -- Гасим Y при прыжке/падении (менее предсказуемо)
+                                                    local _shootState = _shootHum and _shootHum:GetState()
+                                                    if _shootState == Enum.HumanoidStateType.Freefall
+                                                        or _shootState == Enum.HumanoidStateType.Jumping then
+                                                        _shootVel = Vector3.new(_shootVel.X, _shootVel.Y * 0.35, _shootVel.Z)
+                                                    end
+                                                    -- Время полёта пули = дистанция / 250 (скорость пули MM2) + пинг
+                                                    local _shootDist = (CFramePosition - v501).Magnitude
+                                                    local _shootT    = _shootDist / 250
+                                                    local _pingOk, _pingVal = pcall(function() return u89:GetNetworkPing() end)
+                                                    if _pingOk and _pingVal and _pingVal > 0 then
+                                                        _shootT = _shootT + _pingVal * 0.5
+                                                    end
+                                                    _shootPredPos = CFramePosition + _shootVel * _shootT
+                                                end
+                                            end
+
+                                            local cFrame = CFrame.new(v501, _shootPredPos)
                                             local _pcall = pcall
                                             local u504 = v499
 
@@ -1376,7 +1405,7 @@ end
                                                     t6.n = select('#', ...)
 
                                                     return t6
-                                                end)(CFrame.new(CFramePosition))
+                                                end)(CFrame.new(_shootPredPos))
 
                                                 Shoot:FireServer(cFrame, unpack(v876, 1, v876.n))
 
@@ -6535,7 +6564,7 @@ local S = {
     am_sheriff = false,
     fire_gap = 0,
     last_shot = 0,
-    stand_off = 5,
+    stand_off = 3,
 }
 
 local MAX_RANGE = 300
