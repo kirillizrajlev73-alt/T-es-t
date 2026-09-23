@@ -1,3 +1,4 @@
+-- LOL
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4353,431 +4354,186 @@ end
     end
 
     -- ═══════════════════════════════════════════
-    -- RAGE TAB: ANTI-AIM (Matcha-style Desync + Fake Position)
+    -- RAGE TAB: VELOCITY SPOOF
     -- ═══════════════════════════════════════════
     do
-        -- ── State ──────────────────────────────────────────────────────
-        local aaDesync = {
-            Enabled      = false,
-            Mode         = "Custom",
-            RandomAmount = 20,
-            Visualize    = false,
-            Line         = false,
-            Status       = false,
-            Dot          = false,
-            CustomX      = 0,
-            CustomY      = 0,
-            CustomZ      = 0,
-        }
+        -- ── Velocity Spoof (дословно из оригинала) ───────────────────
+        local _vs_run_service  = game:GetService("RunService")
+        local _vs_players      = game:GetService("Players")
+        local _vs_lp           = _vs_players.LocalPlayer
 
-        local aaFakePos = {
-            Enabled      = false,
-            Mode         = "Voidless",
-            Version      = "Version 1",
-            ReturnDelay  = 0.5,
-            Active       = false,
-            OriginalPos  = nil,
-        }
+        local _vs_render_stepped      = _vs_run_service.RenderStepped
+        local _vs_render_stepped_wait = _vs_render_stepped.Wait
+        local _vs_vector3_new         = Vector3.new
+        local _vs_vector3_zero        = Vector3.zero
+        local _vs_math_random         = math.random
+        local _vs_clock               = os.clock
 
-        -- ── Desync clone (invisible body at fake pos) ──────────────────
-        local DesyncClone = nil
-        local DesyncHighlight = nil
-        local DesyncGlow = nil
+        local _vs_anti_aim    = {}
+        local _vs_local_fps   = 200
+        local _vs_local_parts = {}
+        local _vs_stomping    = false
+        local _vs_purchasing  = false
 
+        local _vs_fake_position_sender_rate_old
         pcall(function()
-            DesyncClone = game:GetObjects("rbxassetid://8246626421")[1]
-            DesyncClone.Parent = Workspace
-            DesyncClone.Humanoid:Destroy()
-            DesyncClone.Head.Face:Destroy()
-            for _, v in pairs(DesyncClone:GetDescendants()) do
-                if v:IsA("BasePart") or v:IsA("MeshPart") then
-                    v.CanCollide = false
-                    v.Transparency = 0
-                end
-            end
-            DesyncClone.HumanoidRootPart.Transparency = 0.5
-            DesyncClone.HumanoidRootPart.CFrame = CFrame.new(9999, 9999, 9999)
-
-            DesyncHighlight = Instance.new("Highlight")
-            DesyncHighlight.Enabled = false
-            DesyncHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            DesyncHighlight.FillColor = Color3.fromRGB(0, 255, 0)
-            DesyncHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            DesyncHighlight.FillTransparency = 0.3
-            DesyncHighlight.OutlineTransparency = 0
-            DesyncHighlight.Adornee = DesyncClone
-            DesyncHighlight.Parent = DesyncClone
-
-            DesyncGlow = Instance.new("PointLight")
-            DesyncGlow.Color = Color3.fromRGB(0, 255, 100)
-            DesyncGlow.Brightness = 4
-            DesyncGlow.Range = 2
-            DesyncGlow.Parent = DesyncClone.HumanoidRootPart
+            _vs_fake_position_sender_rate_old = getfflag("S2PhysicsSenderRate")
         end)
 
-        -- ── Drawing overlays ──────────────────────────────────────────
-        local aaLine = Drawing.new("Line")
-        aaLine.Thickness = 2
-        aaLine.Color = Color3.fromRGB(0, 255, 0)
-        aaLine.Visible = false
-        aaLine.Transparency = 1
-
-        local aaDot = Drawing.new("Circle")
-        aaDot.Radius = 6
-        aaDot.Thickness = 1.5
-        aaDot.NumSides = 16
-        aaDot.Color = Color3.fromRGB(0, 255, 100)
-        aaDot.Filled = true
-        aaDot.Transparency = 1
-        aaDot.Visible = false
-
-        local aaStatus = Drawing.new("Text")
-        aaStatus.Text = "Desync: OFF"
-        aaStatus.Size = 16
-        aaStatus.Font = 2
-        aaStatus.Color = Color3.fromRGB(255, 0, 0)
-        aaStatus.Outline = true
-        aaStatus.OutlineColor = Color3.fromRGB(0, 0, 0)
-        aaStatus.Center = false
-        aaStatus.Visible = false
-        aaStatus.Position = Vector2.new(100, 100)
-
-        -- ── Camera setback part (keeps camera at real pos) ────────────
-        local desync_setback = Instance.new("Part")
-        desync_setback.Name = "CrystalDesyncSetback"
-        desync_setback.Size = Vector3.new(2, 2, 1)
-        desync_setback.CanCollide = false
-        desync_setback.Anchored = true
-        desync_setback.Transparency = 1
-        desync_setback.Parent = Workspace
-
-        -- ── Status-label drag ─────────────────────────────────────────
-        local aaDragging = false
-        UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 and aaDesync.Status then
-                local mp = UserInputService:GetMouseLocation()
-                local tp = aaStatus.Position
-                local ts = aaStatus.TextBounds
-                if mp.X >= tp.X and mp.X <= tp.X + ts.X and
-                   mp.Y >= tp.Y and mp.Y <= tp.Y + ts.Y then
-                    aaDragging = true
-                end
-            end
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                aaDragging = false
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if aaDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                aaStatus.Position = UserInputService:GetMouseLocation()
-            end
-        end)
-
-        -- ── Desync heartbeat ──────────────────────────────────────────
-        RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-
-            if not char or not hrp then
-                if DesyncClone then
-                    DesyncClone:SetPrimaryPartCFrame(CFrame.new(9999, 9999, 9999))
-                    if DesyncHighlight then DesyncHighlight.Enabled = false end
-                end
-                aaLine.Visible   = false
-                aaDot.Visible    = false
-                aaStatus.Visible = false
-                return
-            end
-
-            local oldCFrame   = hrp.CFrame
-            local desyncCFrame = oldCFrame
-
-            if aaDesync.Enabled then
-                local m = aaDesync.Mode
-                if m == "Destroy Cheaters" then
-                    desyncCFrame = CFrame.new(9e9, 1, 1) * oldCFrame.Rotation
-                elseif m == "Underground" then
-                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(0, 12, 0)) * oldCFrame.Rotation
-                elseif m == "Void Spam" then
-                    desyncCFrame = math.random(1,2)==1 and oldCFrame
-                        or CFrame.new(math.random(10000,50000), math.random(10000,50000), math.random(10000,50000)) * oldCFrame.Rotation
-                elseif m == "Void" then
-                    desyncCFrame = CFrame.new(hrp.Position + Vector3.new(
-                        math.random(-444444,444444),
-                        math.random(-444444,444444),
-                        math.random(-44444,44444)
-                    )) * oldCFrame.Rotation
-                elseif m == "Random" then
-                    local amt = aaDesync.RandomAmount
-                    desyncCFrame = CFrame.new(hrp.Position + Vector3.new(
-                        math.random(-amt, amt),
-                        math.random(-amt/2, amt/2),
-                        math.random(-amt, amt)
-                    )) * oldCFrame.Rotation
-                elseif m == "Safe Shoot" then
-                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(0,5,0))
-                        * CFrame.Angles(math.random(0,360), math.random(0,360), math.rad(180))
-                elseif m == "Custom" then
-                    desyncCFrame = CFrame.new(hrp.Position - Vector3.new(
-                        aaDesync.CustomX, aaDesync.CustomY, aaDesync.CustomZ
-                    )) * oldCFrame.Rotation
-                end
-
-                hrp.CFrame = desyncCFrame
-                Camera.CameraSubject = desync_setback
-                RunService.RenderStepped:Wait()
-                desync_setback.CFrame = oldCFrame * CFrame.new(0, hrp.Size.Y/2 + 0.5, 0)
-                hrp.CFrame = oldCFrame
-            end
-
-            -- Visualize clone
-            local vizCF = aaDesync.Enabled and desyncCFrame or oldCFrame
-            if aaDesync.Visualize and DesyncClone then
-                DesyncClone:SetPrimaryPartCFrame(vizCF)
-                if DesyncHighlight then DesyncHighlight.Enabled = true end
-            elseif DesyncClone then
-                if DesyncHighlight then DesyncHighlight.Enabled = false end
-                DesyncClone:SetPrimaryPartCFrame(CFrame.new(9999, 9999, 9999))
-            end
-
-            -- Line
-            if aaDesync.Line then
-                local sp, on = Camera:WorldToViewportPoint(vizCF.Position)
-                local mp = UserInputService:GetMouseLocation()
-                if on then
-                    aaLine.From    = mp
-                    aaLine.To      = Vector2.new(sp.X, sp.Y)
-                    aaLine.Visible = true
-                else
-                    aaLine.Visible = false
-                end
-            else
-                aaLine.Visible = false
-            end
-
-            -- Dot
-            if aaDesync.Dot then
-                local sp, on = Camera:WorldToViewportPoint(vizCF.Position)
-                if on then
-                    aaDot.Position = Vector2.new(sp.X, sp.Y)
-                    aaDot.Visible  = true
-                else
-                    aaDot.Visible = false
-                end
-            else
-                aaDot.Visible = false
-            end
-
-            -- Status text
-            if aaDesync.Status then
-                aaStatus.Text    = "Desync: " .. (aaDesync.Enabled and "TRUE" or "FALSE")
-                aaStatus.Color   = aaDesync.Enabled and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
-                aaStatus.Visible = true
-            else
-                aaStatus.Visible = false
-            end
-        end)
-
-        -- ── Fake Position helpers ─────────────────────────────────────
-        local function getFakePosOffset()
-            if aaFakePos.Version == "Version 1" then return CFrame.new(100000,100000,100000)
-            elseif aaFakePos.Version == "Version 2" then return CFrame.new(50000000,50000000,50000000)
-            elseif aaFakePos.Version == "Version 3" then return CFrame.new(9e9,9e9,9e9) end
+        local function _vs_round(num, decimals)
+            local mult = 10^(decimals or 0)
+            return math.floor(num * mult + 0.5 - (num < 0 and 1 or 0)) / mult
         end
 
-        local function applyFakePosition()
-            if aaFakePos.Active then return end
-            local char = LocalPlayer.Character
-            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            aaFakePos.Active = true
-            aaFakePos.OriginalPos = hrp.CFrame
-            local oldFall = Workspace.FallenPartsDestroyHeight
-            Workspace.FallenPartsDestroyHeight = -math.huge
-            pcall(function() getgenv().Desync = true end)
-            if aaFakePos.Mode == "Voidless" then
-                local off = getFakePosOffset()
-                if off then hrp.CFrame = off end
-                task.spawn(function()
-                    task.wait(aaFakePos.ReturnDelay)
-                    if hrp and aaFakePos.OriginalPos then
-                        hrp.CFrame = aaFakePos.OriginalPos
-                    end
-                    Workspace.FallenPartsDestroyHeight = oldFall
-                    aaFakePos.Active = false
+        local function _vs_remove(tbl, index)
+            local length = #tbl
+            for i = index, length - 1 do
+                tbl[i] = tbl[i + 1]
+            end
+            tbl[length] = nil
+        end
+
+        local function LPH_ATTRIBUTES() end
+        local function VM() end
+        local NONE = nil
+
+        -- ── Пресет и флаг ─────────────────────────────────────────────
+        local _vs_velocity_desync_type   = "low"
+        local _vs_velocity_desync_rotate = false
+
+        local _vs_do_velocity_desync = function(dt, hrp)
+            LPH_ATTRIBUTES(VM(NONE))
+            if hrp and not _vs_stomping and not _vs_purchasing
+                and (getgenv().FLING_ACTIVE or 0) == 0 then
+
+                pcall(function()
+                    setfflag("S2PhysicsSenderRate", tostring(_vs_round(_vs_local_fps, 1)))
                 end)
-            elseif aaFakePos.Mode == "On the spot" then
-                task.spawn(function()
-                    task.wait(aaFakePos.ReturnDelay)
-                    Workspace.FallenPartsDestroyHeight = oldFall
-                    aaFakePos.Active = false
+                pcall(function()
+                    sethiddenproperty(hrp, "NetworkIsSleeping", false)
+                end)
+
+                local old_lin = hrp.AssemblyLinearVelocity
+                local old_ang = hrp.AssemblyAngularVelocity
+
+                local vel = _vs_velocity_desync_type == "y high" and _vs_vector3_new(0, 16384, 0)
+                    or _vs_velocity_desync_type == "limit" and _vs_vector3_new(
+                        _vs_math_random(-9223372036854775808, 9223372036854775807),
+                        _vs_math_random(-9223372036854775808, 9223372036854775807),
+                        _vs_math_random(-9223372036854775808, 9223372036854775807)
+                    )
+                    or _vs_velocity_desync_type == "low" and _vs_vector3_new(
+                        _vs_math_random(1,2) == 1 and -300 or 300,
+                        _vs_math_random(1,2) == 1 and -300 or 300,
+                        _vs_math_random(1,2) == 1 and -300 or 300
+                    )
+                    or _vs_velocity_desync_type == "high" and _vs_vector3_new(
+                        _vs_math_random(1,2) == 1 and -16384 or 16384,
+                        _vs_math_random(1,2) == 1 and -14384 or 16384,
+                        _vs_math_random(1,2) == 1 and -16384 or 16384
+                    )
+                    or _vs_velocity_desync_type == "zero" and _vs_vector3_zero
+                    or _vs_vector3_zero
+
+                getgenv().VELOCITY_DESYNC_UNTIL = _vs_clock() + 0.35
+                hrp.AssemblyLinearVelocity = vel
+                if _vs_velocity_desync_rotate then
+                    hrp.AssemblyAngularVelocity = vel
+                end
+
+                _vs_render_stepped_wait(_vs_render_stepped)
+                hrp.AssemblyLinearVelocity = old_lin
+                hrp.AssemblyAngularVelocity = old_ang
+                getgenv().VELOCITY_DESYNC_UNTIL = _vs_clock() + 0.05
+            end
+        end
+
+        local function _vs_velocity_desync_enable(value)
+            for i = 1, #_vs_anti_aim do
+                if _vs_anti_aim[i] == _vs_do_velocity_desync then
+                    _vs_remove(_vs_anti_aim, i)
+                    break
+                end
+            end
+            if value then
+                _vs_anti_aim[#_vs_anti_aim + 1] = _vs_do_velocity_desync
+            else
+                pcall(function()
+                    setfflag("S2PhysicsSenderRate", _vs_fake_position_sender_rate_old or "15")
                 end)
             end
         end
 
-        local function disableFakePosition()
-            aaFakePos.Active = false
-            Workspace.FallenPartsDestroyHeight = 0/0
-            pcall(function() getgenv().Desync = false end)
-        end
-
-        -- ── Camera reset ──────────────────────────────────────────────
-        local function resetCamera()
-            if LocalPlayer.Character then
-                Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        -- ── Инициализация персонажа ────────────────────────────────────
+        local function _vs_init_character(character)
+            if not character then return end
+            local hrp = character:WaitForChild("HumanoidRootPart", 5)
+            if hrp then
+                _vs_local_parts["HumanoidRootPart"] = hrp
+                _vs_local_parts["Humanoid"]         = character:WaitForChild("Humanoid", 5)
             end
         end
 
-        -- ══════════════════════════════════════════════════════════════
-        -- UI — Desync
-        -- ══════════════════════════════════════════════════════════════
-        v304:Paragraph({
-            Title   = "Anti-Aim",
-        })
+        _vs_init_character(_vs_lp.Character)
+        _vs_lp.CharacterAdded:Connect(_vs_init_character)
 
-        v304:Toggle({
-            Flag = "desync",Title   = "Desync",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Enabled = val
-                if not val then resetCamera() end
-                v18:Notify({ Title = "CrystalHub", Content = "Desync " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
-            end,
-        })
+        -- ── Heartbeat ──────────────────────────────────────────────────
+        local _vs_last_fps = _vs_clock()
+        _vs_run_service.Heartbeat:Connect(function(dt)
+            local diff = _vs_clock() - _vs_last_fps
+            if diff > 0 then _vs_local_fps = 1 / diff end
+            _vs_last_fps = _vs_clock()
 
-        v304:Dropdown({
-            Flag = "desync_mode",Title  = "Desync Mode",
-            Values = { "Destroy Cheaters", "Underground", "Void Spam", "Void", "Random", "Safe Shoot", "Custom" },
-            Value  = "Custom",
-            Callback = function(val)
-                aaDesync.Mode = val
-            end,
-        })
-
-        v304:Slider({
-            Flag = "random_amount",Title   = "Random Amount",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = 1, Max = 1000000, Default = 20 },
-            Callback = function(val)
-                aaDesync.RandomAmount = tonumber(val) or 20
-            end,
-        })
-
-        v304:Slider({
-            Flag = "custom_x",Title   = "Custom X",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = -10000, Max = 10000, Default = 0 },
-            Callback = function(val)
-                aaDesync.CustomX = tonumber(val) or 0
-            end,
-        })
-
-        v304:Slider({
-            Flag = "custom_y",Title   = "Custom Y",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = -10000, Max = 10000, Default = 0 },
-            Callback = function(val)
-                aaDesync.CustomY = tonumber(val) or 0
-            end,
-        })
-
-        v304:Slider({
-            Flag = "custom_z",Title   = "Custom Z",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = -10000, Max = 10000, Default = 0 },
-            Callback = function(val)
-                aaDesync.CustomZ = tonumber(val) or 0
-            end,
-        })
-
-        v304:Divider()
-
-        v304:Toggle({
-            Flag = "visualize_desync",Title   = "Visualize Desync",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Visualize = val
-            end,
-        })
-
-        v304:Toggle({
-            Flag = "desync_line",Title   = "Desync Line",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Line = val
-            end,
-        })
-
-        v304:Toggle({
-            Flag = "desync_dot",Title   = "Desync Dot",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Dot = val
-            end,
-        })
-
-        v304:Toggle({
-            Flag = "desync_status_text",Title   = "Desync Status Text",
-            Default = false,
-            Callback = function(val)
-                aaDesync.Status = val
-            end,
-        })
-
-        v304:Divider()
-
-        -- ══════════════════════════════════════════════════════════════
-        -- UI — Fake Position
-        -- ══════════════════════════════════════════════════════════════
-        v304:Paragraph({
-            Title   = "Fake Position",
-        })
-
-        v304:Toggle({
-            Flag = "enable_fake_position",Title   = "Enable Fake Position",
-            Default = false,
-            Callback = function(val)
-                aaFakePos.Enabled = val
-                if val then
-                    applyFakePosition()
-                else
-                    disableFakePosition()
+            local hrp = _vs_local_parts["HumanoidRootPart"]
+            for i = 1, #_vs_anti_aim do
+                local func = _vs_anti_aim[i]
+                if func then
+                    task.spawn(func, dt, hrp)
                 end
-                v18:Notify({ Title = "CrystalHub", Content = "Fake Position " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+            end
+        end)
+
+        -- ── Глобальное API (совместимость с FLING_ACTIVE guard) ────────
+        getgenv().VELOCITY_SPOOF = {
+            enable    = function(v)      _vs_velocity_desync_enable(v) end,
+            setPreset = function(preset) _vs_velocity_desync_type = preset end,
+            setRotate = function(v)      _vs_velocity_desync_rotate = v end,
+        }
+
+        -- ── UI ────────────────────────────────────────────────────────
+        v304:Paragraph({ Title = "Velocity Spoof" })
+
+        v304:Toggle({
+            Flag    = "velocity_spoof_enable",
+            Title   = "Enable Velocity Spoof",
+            Default = false,
+            Callback = function(val)
+                _vs_velocity_desync_enable(val)
+                v18:Notify({
+                    Title   = "CrystalHub",
+                    Content = "Velocity Spoof " .. (val and "ON" or "OFF"),
+                    Duration = 3,
+                    Icon    = "bell",
+                })
             end,
         })
 
         v304:Dropdown({
-            Flag = "fakepos_version",Title  = "FakePos Version",
-            Values = { "Version 1", "Version 2", "Version 3" },
-            Value  = "Version 1",
+            Flag   = "velocity_spoof_preset",
+            Title  = "Preset",
+            Values = { "low", "high", "y high", "limit", "zero" },
+            Value  = "low",
             Callback = function(val)
-                aaFakePos.Version = val
+                _vs_velocity_desync_type = val
             end,
         })
 
-        v304:Dropdown({
-            Flag = "fakepos_mode",Title  = "FakePos Mode",
-            Values = { "Voidless", "On the spot" },
-            Value  = "Voidless",
+        v304:Toggle({
+            Flag    = "velocity_spoof_rotate",
+            Title   = "Rotate Spoof",
+            Default = false,
             Callback = function(val)
-                aaFakePos.Mode = val
-            end,
-        })
-
-        v304:Slider({
-            Flag = "return_delay_s",Title   = "Return Delay (s)",
-            IsTooltip = true,
-            IsTextbox = true,
-            Value   = { Min = 0.1, Max = 3, Default = 0.5 },
-            Callback = function(val)
-                aaFakePos.ReturnDelay = tonumber(val) or 0.5
+                _vs_velocity_desync_rotate = val
             end,
         })
     end
@@ -4786,18 +4542,17 @@ end
     -- RAGE TAB: SPINBOT
     -- ═══════════════════════════════════════════
     do
-        local sbEnabled  = false
-        local sbSpeed    = 16.67  -- ~50% из 1/3 * 50
+        local sbEnabled    = false
+        local sbSpeed      = 16.67  -- 50% от 1/3 * 50
         local sbConnection = nil
 
         v304:Divider()
 
-        v304:Paragraph({
-            Title   = "SpinBot",
-        })
+        v304:Paragraph({ Title = "SpinBot" })
 
         v304:Toggle({
-            Flag = "spinbot",Title   = "SpinBot",
+            Flag    = "spinbot",
+            Title   = "SpinBot",
             Default = false,
             Callback = function(val)
                 sbEnabled = val
@@ -4806,11 +4561,9 @@ end
                 local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 
                 if val then
-                    -- Отключаем автоповорот
                     if humanoid then
                         humanoid.AutoRotate = false
                     end
-                    -- Запускаем соединение
                     if not sbConnection then
                         sbConnection = RunService.Heartbeat:Connect(function(dt)
                             if not sbEnabled then return end
@@ -4822,28 +4575,31 @@ end
                         end)
                     end
                 else
-                    -- Останавливаем
                     if sbConnection then
                         sbConnection:Disconnect()
                         sbConnection = nil
                     end
-                    -- Восстанавливаем AutoRotate
                     if humanoid then
                         humanoid.AutoRotate = true
                     end
                 end
 
-                v18:Notify({ Title = "CrystalHub", Content = "SpinBot " .. (val and "ON" or "OFF"), Duration = 3, Icon = "bell" })
+                v18:Notify({
+                    Title   = "CrystalHub",
+                    Content = "SpinBot " .. (val and "ON" or "OFF"),
+                    Duration = 3,
+                    Icon    = "bell",
+                })
             end,
         })
 
         v304:Slider({
-            Flag = "spin_speed",Title     = "Spin Speed",
+            Flag     = "spin_speed",
+            Title    = "Spin Speed",
             IsTooltip = true,
             IsTextbox = true,
-            Value     = { Min = 1, Max = 100, Default = 50 },
-            Callback  = function(val)
-                -- Масштаб как в оригинале juju: value * (1/3)
+            Value    = { Min = 1, Max = 100, Default = 50 },
+            Callback = function(val)
                 sbSpeed = (tonumber(val) or 50) * (1 / 3)
             end,
         })
