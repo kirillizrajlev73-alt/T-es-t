@@ -1,3 +1,4 @@
+-- LOLLL V2
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -4400,12 +4401,63 @@ end
         local _vs_velocity_desync_type   = "low"
         local _vs_velocity_desync_rotate = false
 
-        -- enabled flag — включается через _vs_velocity_desync_enable
-        local _vs_enabled = false
+        local _vs_do_velocity_desync = function(dt, hrp)
+            LPH_ATTRIBUTES(VM(NONE))
+            if hrp and not _vs_stomping and not _vs_purchasing
+                and (getgenv().FLING_ACTIVE or 0) == 0 then
+
+                pcall(function()
+                    setfflag("S2PhysicsSenderRate", tostring(_vs_round(_vs_local_fps, 1)))
+                end)
+                pcall(function()
+                    sethiddenproperty(hrp, "NetworkIsSleeping", false)
+                end)
+
+                local old_lin = hrp.AssemblyLinearVelocity
+                local old_ang = hrp.AssemblyAngularVelocity
+
+                local vel = _vs_velocity_desync_type == "y high" and _vs_vector3_new(0, 16384, 0)
+                    or _vs_velocity_desync_type == "limit" and _vs_vector3_new(
+                        _vs_math_random(-9223372036854775808, 9223372036854775807),
+                        _vs_math_random(-9223372036854775808, 9223372036854775807),
+                        _vs_math_random(-9223372036854775808, 9223372036854775807)
+                    )
+                    or _vs_velocity_desync_type == "low" and _vs_vector3_new(
+                        _vs_math_random(1,2) == 1 and -300 or 300,
+                        _vs_math_random(1,2) == 1 and -300 or 300,
+                        _vs_math_random(1,2) == 1 and -300 or 300
+                    )
+                    or _vs_velocity_desync_type == "high" and _vs_vector3_new(
+                        _vs_math_random(1,2) == 1 and -16384 or 16384,
+                        _vs_math_random(1,2) == 1 and -14384 or 16384,
+                        _vs_math_random(1,2) == 1 and -16384 or 16384
+                    )
+                    or _vs_velocity_desync_type == "zero" and _vs_vector3_zero
+                    or _vs_vector3_zero
+
+                getgenv().VELOCITY_DESYNC_UNTIL = _vs_clock() + 0.35
+                hrp.AssemblyLinearVelocity = vel
+                if _vs_velocity_desync_rotate then
+                    hrp.AssemblyAngularVelocity = vel
+                end
+
+                _vs_render_stepped_wait(_vs_render_stepped)
+                hrp.AssemblyLinearVelocity = old_lin
+                hrp.AssemblyAngularVelocity = old_ang
+                getgenv().VELOCITY_DESYNC_UNTIL = _vs_clock() + 0.05
+            end
+        end
 
         local function _vs_velocity_desync_enable(value)
-            _vs_enabled = value
-            if not value then
+            for i = 1, #_vs_anti_aim do
+                if _vs_anti_aim[i] == _vs_do_velocity_desync then
+                    _vs_remove(_vs_anti_aim, i)
+                    break
+                end
+            end
+            if value then
+                _vs_anti_aim[#_vs_anti_aim + 1] = _vs_do_velocity_desync
+            else
                 pcall(function()
                     setfflag("S2PhysicsSenderRate", _vs_fake_position_sender_rate_old or "15")
                 end)
@@ -4425,75 +4477,20 @@ end
         _vs_init_character(_vs_lp.Character)
         _vs_lp.CharacterAdded:Connect(_vs_init_character)
 
-        -- ── RenderStepped — каждый кадр без пропусков ─────────────────
-        -- Фаза 1: в начале кадра ставим спуф-скорость
+        -- ── Heartbeat ──────────────────────────────────────────────────
         local _vs_last_fps = _vs_clock()
-        _vs_run_service.RenderStepped:Connect(function(dt)
-            -- обновляем FPS
+        _vs_run_service.Heartbeat:Connect(function(dt)
             local diff = _vs_clock() - _vs_last_fps
             if diff > 0 then _vs_local_fps = 1 / diff end
             _vs_last_fps = _vs_clock()
 
-            if not _vs_enabled then return end
-            if _vs_stomping or _vs_purchasing then return end
-            if (getgenv().FLING_ACTIVE or 0) > 0 then return end
-
             local hrp = _vs_local_parts["HumanoidRootPart"]
-            if not hrp or not hrp.Parent then return end
-
-            pcall(function()
-                setfflag("S2PhysicsSenderRate", tostring(_vs_round(_vs_local_fps, 1)))
-            end)
-            pcall(function()
-                sethiddenproperty(hrp, "NetworkIsSleeping", false)
-            end)
-
-            -- вычисляем вектор спуфа
-            local vel
-            if _vs_velocity_desync_type == "y high" then
-                vel = _vs_vector3_new(0, 16384, 0)
-            elseif _vs_velocity_desync_type == "limit" then
-                vel = _vs_vector3_new(
-                    _vs_math_random(-9223372036854775808, 9223372036854775807),
-                    _vs_math_random(-9223372036854775808, 9223372036854775807),
-                    _vs_math_random(-9223372036854775808, 9223372036854775807)
-                )
-            elseif _vs_velocity_desync_type == "high" then
-                vel = _vs_vector3_new(
-                    _vs_math_random(1,2) == 1 and -16384 or 16384,
-                    _vs_math_random(1,2) == 1 and -14384 or 16384,
-                    _vs_math_random(1,2) == 1 and -16384 or 16384
-                )
-            elseif _vs_velocity_desync_type == "zero" then
-                vel = _vs_vector3_zero
-            else -- "low" (default)
-                vel = _vs_vector3_new(
-                    _vs_math_random(1,2) == 1 and -300 or 300,
-                    _vs_math_random(1,2) == 1 and -300 or 300,
-                    _vs_math_random(1,2) == 1 and -300 or 300
-                )
-            end
-
-            -- сохраняем оригинал и ставим спуф
-            local old_lin = hrp.AssemblyLinearVelocity
-            local old_ang = hrp.AssemblyAngularVelocity
-
-            getgenv().VELOCITY_DESYNC_UNTIL = _vs_clock() + 0.35
-            hrp.AssemblyLinearVelocity = vel
-            if _vs_velocity_desync_rotate then
-                hrp.AssemblyAngularVelocity = vel
-            end
-
-            -- Фаза 2: восстанавливаем в конце того же кадра через Heartbeat
-            -- (Heartbeat всегда после RenderStepped в том же кадре)
-            local conn
-            conn = _vs_run_service.Heartbeat:Once(function()
-                if hrp and hrp.Parent then
-                    hrp.AssemblyLinearVelocity = old_lin
-                    hrp.AssemblyAngularVelocity = old_ang
+            for i = 1, #_vs_anti_aim do
+                local func = _vs_anti_aim[i]
+                if func then
+                    task.spawn(func, dt, hrp)
                 end
-                getgenv().VELOCITY_DESYNC_UNTIL = _vs_clock() + 0.05
-            end)
+            end
         end)
 
         -- ── Глобальное API (совместимость с FLING_ACTIVE guard) ────────
