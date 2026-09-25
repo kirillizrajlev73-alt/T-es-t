@@ -1,5 +1,5 @@
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
--- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
+-- ебал муслимов
 local _BT = nil
 local _bullettracerlol = nil
 
@@ -3754,6 +3754,154 @@ end
         Title = 'Rage',
         Icon = 'sword',
     })
+
+    -- ============================================================
+    -- GUI SETTINGS
+    -- Изменение размера основного окна и верхней кнопки-оверлея.
+    -- ============================================================
+    do
+        local guiSettingsTab = v300:Tab({
+            Title = 'GUI Settings',
+            Icon = 'settings',
+        })
+
+        local guiSettings = guiSettingsTab._left
+
+        local function findWindowFrame()
+            local screen = NeverLose and NeverLose.ScreenGui
+            if not screen then
+                return nil
+            end
+
+            local best, bestArea = nil, 0
+            for _, obj in ipairs(screen:GetDescendants()) do
+                if obj:IsA('Frame') and obj ~= screen then
+                    local size = obj.Size
+                    local x = size.X.Offset
+                    local y = size.Y.Offset
+                    local area = x * y
+
+                    if obj.ClipsDescendants and x >= 500 and y >= 350 and area > bestArea then
+                        best = obj
+                        bestArea = area
+                    end
+                end
+            end
+
+            return best
+        end
+
+        local function getOverlay()
+            local parent
+            local ok = pcall(function()
+                if typeof(gethui) == 'function' then
+                    parent = gethui()
+                end
+            end)
+
+            if not ok or not parent then
+                parent = game:GetService('CoreGui')
+            end
+
+            local overlayGui = parent:FindFirstChild('CrystalHubOpenButton')
+            return overlayGui and overlayGui:FindFirstChild('CrystalHubOverlay')
+        end
+
+        local function setWindowWidth(value)
+            local frame = findWindowFrame()
+            if frame then
+                frame.Size = UDim2.fromOffset(math.floor(value), frame.Size.Y.Offset)
+            end
+        end
+
+        local function setWindowHeight(value)
+            local frame = findWindowFrame()
+            if frame then
+                frame.Size = UDim2.fromOffset(frame.Size.X.Offset, math.floor(value))
+            end
+        end
+
+        local function setOverlayWidth(value)
+            local overlay = getOverlay()
+            if overlay then
+                overlay.Size = UDim2.fromOffset(math.floor(value), overlay.Size.Y.Offset)
+            end
+        end
+
+        local function setOverlayHeight(value)
+            local overlay = getOverlay()
+            if overlay then
+                overlay.Size = UDim2.fromOffset(overlay.Size.X.Offset, math.floor(value))
+            end
+        end
+
+        guiSettings:Paragraph({
+            Title = 'Window Size',
+            Content = 'Изменяет размер основного окна CrystalHub.',
+        })
+
+        guiSettings:Slider({
+            Flag = 'gui_window_width',
+            Title = 'Window Width',
+            Value = { Min = 450, Max = 1200, Default = 700 },
+            Rounding = 0,
+            Callback = setWindowWidth,
+        })
+
+        guiSettings:Slider({
+            Flag = 'gui_window_height',
+            Title = 'Window Height',
+            Value = { Min = 300, Max = 900, Default = 550 },
+            Rounding = 0,
+            Callback = setWindowHeight,
+        })
+
+        guiSettings:Divider()
+
+        guiSettings:Paragraph({
+            Title = 'Watermark / Overlay Size',
+            Content = 'Изменяет размер верхней кнопки открытия GUI.',
+        })
+
+        guiSettings:Slider({
+            Flag = 'gui_overlay_width',
+            Title = 'Overlay Width',
+            Value = { Min = 180, Max = 900, Default = 530 },
+            Rounding = 0,
+            Callback = setOverlayWidth,
+        })
+
+        guiSettings:Slider({
+            Flag = 'gui_overlay_height',
+            Title = 'Overlay Height',
+            Value = { Min = 24, Max = 90, Default = 42 },
+            Rounding = 0,
+            Callback = setOverlayHeight,
+        })
+
+        guiSettings:Button({
+            Title = 'Reset GUI Sizes',
+            Description = 'Вернуть стандартные размеры окна и верхней кнопки.',
+            Callback = function()
+                local frame = findWindowFrame()
+                if frame then
+                    frame.Size = UDim2.fromOffset(700, 550)
+                end
+
+                local overlay = getOverlay()
+                if overlay then
+                    overlay.Size = UDim2.fromOffset(530, 42)
+                end
+
+                v18:Notify({
+                    Title = 'CrystalHub',
+                    Content = 'GUI sizes reset.',
+                    Duration = 2,
+                    Icon = 'bell',
+                })
+            end,
+        })
+    end
 
 
     -- CrystalHub AutoFarm
@@ -8129,170 +8277,6 @@ function t50.Callback(p88)
 end
 
 v302:ColorPicker(t50)
--- ── SETTINGS TAB ─────────────────────────────────────────────────────────────
-do
-    local vSettings = v300:Tab({
-        Title = 'Settings',
-        Icon = 'settings',
-    })
-
-    -- ── GUI SIZE ──────────────────────────────────────────────────────────────
-    vSettings:Paragraph({ Title = 'GUI Size', Content = 'Resize the main CrystalHub window' })
-
-    local _guiWidthDefault  = 700
-    local _guiHeightDefault = 550
-    local _guiWidth  = _guiWidthDefault
-    local _guiHeight = _guiHeightDefault
-
-    local function applyGuiSize()
-        -- NeverLose window root frame sits at game.CoreGui or gethui()
-        local guiParent
-        pcall(function()
-            if typeof(gethui) == "function" then guiParent = gethui() end
-        end)
-        if not guiParent then guiParent = game:GetService("CoreGui") end
-
-        -- Try to find the NeverLose ScreenGui and resize its main Frame
-        for _, gui in ipairs(guiParent:GetChildren()) do
-            if gui:IsA("ScreenGui") then
-                for _, frame in ipairs(gui:GetChildren()) do
-                    if frame:IsA("Frame") and frame.Size.X.Offset >= 600 then
-                        frame.Size = UDim2.fromOffset(_guiWidth, _guiHeight)
-                        return
-                    end
-                end
-            end
-        end
-    end
-
-    vSettings:Button({
-        Title  = 'GUI Width Slider',
-        Description = 'Change the width of the main window',
-        Callback = function()
-            v25('GUI Width', 400, 1000, _guiWidth, 10, function(val)
-                _guiWidth = val
-                pcall(applyGuiSize)
-            end, function()
-                _guiWidth = _guiWidthDefault
-                pcall(applyGuiSize)
-                v18:Notify({ Title = 'CrystalHub', Content = 'GUI Width reset to ' .. _guiWidthDefault, Duration = 3, Icon = 'bell' })
-            end)
-        end,
-    })
-
-    vSettings:Button({
-        Title  = 'GUI Height Slider',
-        Description = 'Change the height of the main window',
-        Callback = function()
-            v25('GUI Height', 300, 800, _guiHeight, 10, function(val)
-                _guiHeight = val
-                pcall(applyGuiSize)
-            end, function()
-                _guiHeight = _guiHeightDefault
-                pcall(applyGuiSize)
-                v18:Notify({ Title = 'CrystalHub', Content = 'GUI Height reset to ' .. _guiHeightDefault, Duration = 3, Icon = 'bell' })
-            end)
-        end,
-    })
-
-    -- ── WATERMARK SIZE ────────────────────────────────────────────────────────
-    vSettings:Paragraph({ Title = 'Watermark Size', Content = 'Resize the top watermark bar' })
-
-    local _wmWidthDefault  = 530
-    local _wmHeightDefault = 42
-    local _wmWidth  = _wmWidthDefault
-    local _wmHeight = _wmHeightDefault
-    local _wmTextSize = 11
-
-    local function getWatermark()
-        local guiParent
-        pcall(function()
-            if typeof(gethui) == "function" then guiParent = gethui() end
-        end)
-        if not guiParent then guiParent = game:GetService("CoreGui") end
-        local sg = guiParent:FindFirstChild("CrystalHubOpenButton")
-        return sg and sg:FindFirstChild("CrystalHubOverlay")
-    end
-
-    local function applyWmSize()
-        local wm = getWatermark()
-        if not wm then return end
-        wm.Size = UDim2.new(0, _wmWidth, 0, _wmHeight)
-        -- scale all text labels proportionally
-        for _, child in ipairs(wm:GetChildren()) do
-            if child:IsA("TextLabel") then
-                local isBigIcon = child.Name == "Menu"
-                child.TextSize = isBigIcon and (_wmTextSize + 6) or _wmTextSize
-            end
-        end
-    end
-
-    vSettings:Button({
-        Title  = 'Watermark Width Slider',
-        Description = 'Change the width of the top bar',
-        Callback = function()
-            v25('Watermark Width', 200, 900, _wmWidth, 10, function(val)
-                _wmWidth = val
-                pcall(applyWmSize)
-            end, function()
-                _wmWidth = _wmWidthDefault
-                pcall(applyWmSize)
-                v18:Notify({ Title = 'CrystalHub', Content = 'Watermark Width reset to ' .. _wmWidthDefault, Duration = 3, Icon = 'bell' })
-            end)
-        end,
-    })
-
-    vSettings:Button({
-        Title  = 'Watermark Height Slider',
-        Description = 'Change the height of the top bar',
-        Callback = function()
-            v25('Watermark Height', 20, 80, _wmHeight, 2, function(val)
-                _wmHeight = val
-                pcall(applyWmSize)
-            end, function()
-                _wmHeight = _wmHeightDefault
-                pcall(applyWmSize)
-                v18:Notify({ Title = 'CrystalHub', Content = 'Watermark Height reset to ' .. _wmHeightDefault, Duration = 3, Icon = 'bell' })
-            end)
-        end,
-    })
-
-    vSettings:Button({
-        Title  = 'Watermark Text Size Slider',
-        Description = 'Change the font size inside the watermark',
-        Callback = function()
-            v25('Watermark Text', 8, 20, _wmTextSize, 1, function(val)
-                _wmTextSize = val
-                pcall(applyWmSize)
-            end, function()
-                _wmTextSize = 11
-                pcall(applyWmSize)
-                v18:Notify({ Title = 'CrystalHub', Content = 'Text size reset to 11', Duration = 3, Icon = 'bell' })
-            end)
-        end,
-    })
-
-    vSettings:Toggle({
-        Flag    = 'watermark_visible',
-        Title   = 'Show Watermark',
-        Default = true,
-        Callback = function(p)
-            local sg
-            pcall(function()
-                local guiParent
-                pcall(function()
-                    if typeof(gethui) == "function" then guiParent = gethui() end
-                end)
-                if not guiParent then guiParent = game:GetService("CoreGui") end
-                sg = guiParent:FindFirstChild("CrystalHubOpenButton")
-            end)
-            if sg then sg.Enabled = p end
-            v18:Notify({ Title = 'CrystalHub', Content = p and 'Watermark shown' or 'Watermark hidden', Duration = 3, Icon = 'bell' })
-        end,
-    })
-end
--- ── END SETTINGS TAB ─────────────────────────────────────────────────────────
-
 task.wait(0.4)
 v232(false)
 v239(false)
