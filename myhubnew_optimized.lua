@@ -1,3 +1,4 @@
+-- coch btat
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -6448,6 +6449,106 @@ end
 -- ── COMBAT column (left) ──────────────────────────────────────
 v301._left:Paragraph({ Title = 'Combat Buttons' })
 
+-- ── KILL ALL ────────────────────────────────────────────────
+do
+    local _ka_on = false
+    local _ka_am_murderer = false
+    local _ka_round_mod = nil
+    local _ka_last_kill = 0
+    local _ka_victims = {}
+    local _ka_RS = game:GetService('ReplicatedStorage')
+
+    local function _ka_require_round()
+        return require(_ka_RS:WaitForChild('Modules'):WaitForChild('CurrentRoundClient'))
+    end
+
+    local function _ka_refresh_role()
+        if not _ka_round_mod then
+            local ok, m = pcall(_ka_require_round)
+            if not ok or type(m) ~= 'table' then _ka_am_murderer = false return end
+            _ka_round_mod = m
+        end
+        local data = _ka_round_mod.PlayerData
+        if type(data) ~= 'table' then _ka_am_murderer = false return end
+        local me = data[LocalPlayer.Name]
+        _ka_am_murderer = me ~= nil and me.Role == 'Murderer' and not me.Dead
+    end
+
+    local function _ka_get_knife()
+        local char = LocalPlayer.Character
+        if char then local k = char:FindFirstChild('Knife') if k then return k, true end end
+        local bp = LocalPlayer:FindFirstChildOfClass('Backpack')
+        if bp then local k = bp:FindFirstChild('Knife') if k then return k, false end end
+        return nil, false
+    end
+
+    local function _ka_equip_knife()
+        local knife, equipped = _ka_get_knife()
+        if not knife then return nil end
+        if not equipped then
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass('Humanoid')
+            if hum then pcall(function() hum:EquipTool(knife) end) end
+            return nil
+        end
+        return knife
+    end
+
+    task.spawn(function()
+        while task.wait(0.3) do
+            if _ka_on then pcall(_ka_refresh_role) end
+        end
+    end)
+
+    task.spawn(function()
+        while task.wait() do
+            if not (_ka_on and _ka_am_murderer) then continue end
+            if getgenv().AUTOFARM_HOLD then continue end
+            local knife = _ka_equip_knife()
+            if not knife then continue end
+            if os.clock() - _ka_last_kill < 0.05 then continue end
+
+            table.clear(_ka_victims)
+            local vc = 0
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr == LocalPlayer then continue end
+                local tc = plr.Character
+                if not tc then continue end
+                local hum = tc:FindFirstChildOfClass('Humanoid')
+                if not hum or hum.Health <= 0 then continue end
+                local part = tc:FindFirstChild('HumanoidRootPart') or tc:FindFirstChild('Head')
+                if not part then continue end
+                vc = vc + 1; _ka_victims[vc] = part
+            end
+
+            if vc > 0 then
+                local evts = knife:FindFirstChild('Events')
+                local stabbed = evts and evts:FindFirstChild('KnifeStabbed')
+                local touched = evts and evts:FindFirstChild('HandleTouched')
+                if stabbed then pcall(function() stabbed:FireServer() end) end
+                if touched then
+                    for i = 1, vc do pcall(function() touched:FireServer(_ka_victims[i]) end) end
+                end
+                _ka_last_kill = os.clock()
+            end
+        end
+    end)
+
+    v301._left:Toggle({
+        Flag = 'kill_all',
+        Title = 'Kill All',
+        Default = false,
+        Callback = function(v)
+            _ka_on = v
+            if v then
+                task.spawn(_ka_refresh_role)
+                v18:Notify({ Title = 'CrystalHub', Content = 'Kill All ON', Duration = 3, Icon = 'bell' })
+            else
+                v18:Notify({ Title = 'CrystalHub', Content = 'Kill All OFF', Duration = 3, Icon = 'bell' })
+            end
+        end,
+    })
+end
+
     local t27 = {
         Flag = "show_gold_bomb",
         Title = 'Show Gold Bomb',
@@ -6497,7 +6598,6 @@ v301._left:Toggle({
 v301._left:Toggle({
     Flag = "auto_ping_prediction",
     Title = 'Auto Ping Prediction',
-    Description = 'Adds ping offset to shoot and throw',
     Default = false,
     Callback = function(p75)
         u13 = p75
@@ -7619,7 +7719,7 @@ task.spawn(function() pcall(install_hooks) end)
 
     -- ── UI controls ─────────────────────────────────────────────
     v301._left:Divider()
-    v301._left:Paragraph({ Title = 'Wallbang', Content = 'Force shoot through walls' })
+    v301._left:Paragraph({ Title = 'Wallbang' })
 
     v301._left:Toggle({
         Flag    = "wallbang_enable",
@@ -7638,7 +7738,6 @@ task.spawn(function() pcall(install_hooks) end)
     v301._left:Toggle({
         Flag    = "wallbang_auto",
         Title   = 'Auto Wallbang',
-        Description = 'Automatically fires at murderer',
         Default = false,
         Callback = function(p)
             getgenv().WALLBANG.setAuto(p, 0)
@@ -7677,7 +7776,6 @@ v301._right:Toggle({
 })
 v301._right:Button({
     Title = 'Stretch Resolution Slider',
-    Description = '10% = very wide  /  100% = normal',
     Callback = function()
         local v607 = n17 * 100
         local v608 = math.round(v607)
@@ -7877,7 +7975,6 @@ v301._right:Toggle(t33)
 local t34 = {
     Flag = "fov_slider",
     Title = 'FOV Slider',
-    Description = 'Mobile-friendly field of view selector',
 }
 local u322 = v25
 local u323 = CurrentCamera
@@ -7906,7 +8003,6 @@ v301._right:Paragraph({ Title = 'Extra Scripts' })
 local t35 = {
     Flag = "load_emotes_gui",
     Title = 'Load Emotes GUI',
-    Description = '7yd7 emote panel',
 }
 local u326 = v18
 
@@ -7929,7 +8025,6 @@ v301._right:Button(t35)
 local t36 = {
     Flag = "load_infinite_yield",
     Title = 'Load Infinite Yield',
-    Description = 'Admin script',
 }
 local u328 = v18
 
@@ -7952,7 +8047,6 @@ v301._right:Button(t36)
 local t37 = {
     Flag = "anti_fling",
     Title = 'Anti-Fling',
-    Description = 'Limits velocity to prevent being launched',
     Default = false,
 }
 local u330 = v18
@@ -7975,7 +8069,6 @@ v301._right:Toggle(t37)
 local t39 = {
     Flag = "speed_glitch_slider",
     Title = 'Speed Glitch Slider',
-    Description = 'Mobile-friendly speed selector',
 }
 local u334 = v25
 local u335 = v18
