@@ -154,7 +154,7 @@ function v18:CreateWindow(cfg)
         Logo = NeverLose.GlobalLogo,
         Name = cfg.Title or "CrystalHub",
         Content = cfg.Author or "Mmv And Mm2",
-        Size = cfg.Size or UDim2.fromOffset(467, 367),
+        Size = cfg.Size or UDim2.fromOffset(700, 450),
         ConfigFolder = cfg.Folder or "CrystalHub",
         Enable3DRenderer = false,
         Keybind = "Insert",
@@ -3541,7 +3541,7 @@ end
         Title = 'CrystalHub',
         Author = 'Mmv And Mm2',
         Folder = 'CrystalHub',
-        Size = UDim2.fromOffset(467, 367),
+        Size = UDim2.fromOffset(700, 450),
     }):Section({
         Title = 'CrystalHub',
         Opened = true,
