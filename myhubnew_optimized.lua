@@ -1,4 +1,3 @@
--- сыг хуйни
 local UserInputService, CurrentCamera, n1, n2, u13, n3, u15, u16, u17, v18, v25, u29, u31, u32, u61, u62, t3, t4, v68, v78, u120, n17, u126, u127, u128, v145, u147, u148, u149, u150, u151, u156, u172, u173, u174, u175, u176, u177, u178, v183, u184, u185, u186, u187, u188, u189, u198, u199, id, u201, u202, u205, u206, u207, u208, u209, u210, u211, u212, v232, v239, v244, u252, u257, u263, u270, u276, u281, u287, u293, v301, v302
 -- Shared bullet-tracer state (accessible by both __namecall hook and Shoot button)
 local _BT = nil
@@ -2243,214 +2242,184 @@ end
                     end
                 end
 
-                getgenv().RuzOldPos = nil
-                getgenv().RuzFPDH = Workspace.FallenPartsDestroyHeight
-                u157 = false
-
-                local u158 = LocalPlayer
-                local u159 = v18
-                local u160 = Workspace
+                -- ── NEW FLING (fling.lua replacement) ────────────────────────
+                local _fling_bypass_velocity = false
 
                 local function v161(p29)
-                    if not u157 then
-                        local Character = u158.Character
+                    if not p29 or not p29.Character then return end
+                    local Character = LocalPlayer.Character
+                    local Humanoid = Character and Character:FindFirstChildOfClass('Humanoid')
+                    local RootPart = Humanoid and Humanoid.RootPart
+                    if not RootPart then return end
 
-                        if Character then
-                            local Humanoid = Character:FindFirstChildOfClass('Humanoid')
+                    local Character4 = p29.Character
+                    local thrp = Character4:FindFirstChild('HumanoidRootPart') or Character4:FindFirstChild('Head')
+                    local Humanoid2 = Character4:FindFirstChildOfClass('Humanoid')
+                    if not thrp then return end
 
-                            if Humanoid then
-                                local RootPart = Humanoid.RootPart
+                    getgenv().FLING_ACTIVE = (getgenv().FLING_ACTIVE or 0) + 1
 
-                                if RootPart then
-                                    local Character4 = p29.Character
+                    if RootPart.Velocity.Magnitude < 50 then
+                        getgenv().OldPos = RootPart.CFrame
+                    end
 
-                                    if Character4 then
-                                        local Humanoid2 = Character4:FindFirstChildOfClass('Humanoid')
-                                        local v663 = Humanoid2 and Humanoid2.RootPart
-                                        local Head = Character4:FindFirstChild('Head')
-                                        local Accessory = Character4:FindFirstChildOfClass('Accessory')
-                                        local v666 = Accessory and Accessory:FindFirstChild('Handle')
-
-                                        if RootPart.Velocity.Magnitude < 50 then
-                                            getgenv().RuzOldPos = RootPart.CFrame
-                                        end
-                                        if not Humanoid2 or not Humanoid2.Sit then
-                                            local v667 = Head or (v666 or Humanoid2)
-
-                                            if v667 then
-                                                u160.CurrentCamera.CameraSubject = v667
-                                            end
-                                            if Character4:FindFirstChildWhichIsA('BasePart') then
-                                                local u668 = RootPart
-                                                local u669 = Character
-
-                                                local function u670(p30, p31, p32)
-                                                    u668.CFrame = CFrame.new(p30.Position) * p31 * p32
-
-                                                    local _pcall = pcall
-                                                    local u900 = p30
-                                                    local u901 = p31
-                                                    local u902 = p32
-
-                                                    pcall(function()
-                                                        u669:SetPrimaryPartCFrame(CFrame.new(u900.Position) * u901 * u902)
-                                                    end)
-
-                                                    u668.Velocity = Vector3.new(90000000, 900000000, 90000000)
-                                                    u668.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
-                                                end
-
-                                                local u671 = RootPart
-
-                                                u157 = true
-                                                u160.FallenPartsDestroyHeight = (0 / 0)
-
-                                                local BodyVelocity = Instance.new('BodyVelocity')
-
-                                                BodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                                                BodyVelocity.MaxForce = Vector3.new(9000000000, 9000000000, 9000000000)
-                                                BodyVelocity.Parent = RootPart
-
-                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-
-                                                local v673 = v663 or (Head or v666)
-
-                                                if not v673 then
-                                                    local v674 = p29.Name .. ' \u{2014} no valid fling part.'
-
-                                                    u159:Notify({
-                                                        Title = 'CrystalHub',
-                                                        Content = tostring(v674),
-                                                        Duration = 3,
-                                                        Icon = 'bell',
-                                                    })
-                                                else
-                                                    (function(p33)
-                                                        local v904 = tick() + 2.5
-                                                        local n18 = 0
-
-                                                        while u671 and Humanoid2 do
-                                                            local Magnitude = p33.Velocity.Magnitude
-
-                                                            if not (Magnitude < 40) then
-                                                                local MoveDirection = Humanoid2.MoveDirection
-                                                                local WalkSpeed = Humanoid2.WalkSpeed
-
-                                                                u670(p33, CFrame.new(MoveDirection.X * WalkSpeed * 0.12, 3, MoveDirection.Z * WalkSpeed * 0.12), CFrame.Angles(1.5707963267948966, 0, 0))
-
-                                                                u671.Velocity = Vector3.new(900000000, 900000000, 900000000)
-
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(-MoveDirection.X * WalkSpeed * 0.06, -3, -MoveDirection.Z * WalkSpeed * 0.06), CFrame.Angles(0, 0, 0))
-
-                                                                u671.Velocity = Vector3.new(900000000, 900000000, 900000000)
-
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(MoveDirection.X * WalkSpeed * 0.18, 3, MoveDirection.Z * WalkSpeed * 0.18), CFrame.Angles(1.5707963267948966, 0, 0))
-
-                                                                u671.Velocity = Vector3.new(900000000, 900000000, 900000000)
-
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(-MoveDirection.X * WalkSpeed * 0.06, -3, -MoveDirection.Z * WalkSpeed * 0.06), CFrame.Angles(0, 0, 0))
-
-                                                                u671.Velocity = Vector3.new(900000000, 900000000, 900000000)
-
-                                                                task.wait()
-                                                            else
-                                                                n18 = n18 + 100
-
-                                                                u670(p33, CFrame.new(0, 1.5, 0) + Humanoid2.MoveDirection * Magnitude / 1.25, CFrame.Angles(math.rad(n18), 0, 0))
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(0, -1.5, 0) + Humanoid2.MoveDirection * Magnitude / 1.25, CFrame.Angles(math.rad(n18), 0, 0))
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(0, 1.5, 0) + Humanoid2.MoveDirection * Magnitude / 1.25, CFrame.Angles(math.rad(n18), 0, 0))
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(0, -1.5, 0) + Humanoid2.MoveDirection * Magnitude / 1.25, CFrame.Angles(math.rad(n18), 0, 0))
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(0, 1.5, 0), CFrame.Angles(math.rad(n18), 0, 0))
-                                                                task.wait()
-                                                                u670(p33, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(n18), 0, 0))
-                                                                task.wait()
-                                                            end
-                                                            if v904 < tick() then
-                                                                return
-                                                            end
-                                                        end
-                                                    end)(v673)
-                                                end
-
-                                                BodyVelocity:Destroy()
-                                                Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-
-                                                u160.CurrentCamera.CameraSubject = Humanoid
-
-                                                if getgenv().RuzOldPos then
-                                                    local n19 = 0
-
-                                                    repeat
-                                                        n19 = n19 + 1
-                                                        RootPart.CFrame = getgenv().RuzOldPos * CFrame.new(0, 0.5, 0)
-
-                                                        local _pcall = pcall
-                                                        local u677 = Character
-
-                                                        pcall(function()
-                                                            u677:SetPrimaryPartCFrame(getgenv().RuzOldPos * CFrame.new(0, 0.5, 0))
-                                                        end)
-                                                        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-
-                                                        for _, child in ipairs(Character:GetChildren())do
-                                                            if child:IsA('BasePart') then
-                                                                child.Velocity = Vector3.new()
-                                                                child.RotVelocity = Vector3.new()
-                                                            end
-                                                        end
-
-                                                        task.wait()
-                                                    until n19 > 30 or (RootPart.Position - getgenv().RuzOldPos.p).Magnitude < 25
-
-                                                    u160.FallenPartsDestroyHeight = getgenv().RuzFPDH
-
-                                                    u159:Notify({
-                                                        Title = 'CrystalHub',
-                                                        Content = tostring('Returned to previous position.'),
-                                                        Duration = 3,
-                                                        Icon = 'bell',
-                                                    })
-                                                end
-
-                                                u157 = false
-
-                                                return
-                                            end
-
-                                            return
-                                        end
-
-                                        local v680 = p29.Name .. ' is sitting, skipped.'
-
-                                        u159:Notify({
-                                            Title = 'CrystalHub',
-                                            Content = tostring(v680),
-                                            Duration = 3,
-                                            Icon = 'bell',
-                                        })
-
-                                        return
-                                    end
-
-                                    return
-                                end
-
-                                return
-                            end
-
-                            return
-                        end
-
+                    if Humanoid2 and Humanoid2.Sit then
+                        getgenv().FLING_ACTIVE = math.max(0, (getgenv().FLING_ACTIVE or 1) - 1)
+                        v18:Notify({ Title = 'CrystalHub', Content = p29.Name .. ' is sitting, skipped.', Duration = 3, Icon = 'bell' })
                         return
                     end
+
+                    local camera = Workspace.CurrentCamera
+                    local old_fdh = Workspace.FallenPartsDestroyHeight
+
+                    camera.CameraSubject = thrp
+
+                    pcall(function() Workspace.FallenPartsDestroyHeight = 0/0 end)
+
+                    local bv = Instance.new('BodyVelocity')
+                    bv.Parent = RootPart
+                    bv.Velocity = Vector3.new(0, 0, 0)
+                    bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+                    local se = Humanoid:GetStateEnabled(Enum.HumanoidStateType.Seated)
+                    Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+
+                    u157 = true
+
+                    local tw = 2
+                    local tm = tick()
+                    local ang = 0
+
+                    repeat
+                        if RootPart and Humanoid2 then
+                            local tv
+                            if _fling_bypass_velocity then
+                                tv = Humanoid2.MoveDirection * Humanoid2.WalkSpeed
+                            else
+                                tv = thrp.Velocity
+                            end
+
+                            if tv.Magnitude < 50 then
+                                ang = ang + 100
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, 1.5, 0) + Humanoid2.MoveDirection * tv.Magnitude / 1.25
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0) + Humanoid2.MoveDirection * tv.Magnitude / 1.25
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, 1.5, 0) + Humanoid2.MoveDirection * tv.Magnitude / 1.25
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0) + Humanoid2.MoveDirection * tv.Magnitude / 1.25
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, 1.5, 0) + Humanoid2.MoveDirection
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0) + Humanoid2.MoveDirection
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(ang), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+                            else
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, 1.5, Humanoid2.WalkSpeed)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, -Humanoid2.WalkSpeed)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(0, 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, 1.5, Humanoid2.WalkSpeed)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(0, 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(math.rad(90), 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+
+                                RootPart.CFrame = CFrame.new(thrp.Position) * CFrame.new(0, -1.5, 0)
+                                RootPart.CFrame = RootPart.CFrame * CFrame.Angles(0, 0, 0)
+                                pcall(function() Character:SetPrimaryPartCFrame(RootPart.CFrame) end)
+                                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+                                task.wait()
+                            end
+                        end
+                    until tm + tw < tick()
+
+                    if bv then bv:Destroy() end
+                    Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, se)
+                    camera.CameraSubject = Humanoid
+
+                    if getgenv().OldPos and RootPart then
+                        RootPart.CFrame = getgenv().OldPos * CFrame.new(0, 0.5, 0)
+                        pcall(function() Character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, 0.5, 0)) end)
+                        Humanoid:ChangeState('GettingUp')
+                        for _, part in pairs(Character:GetChildren()) do
+                            if part:IsA('BasePart') then
+                                part.Velocity = Vector3.new()
+                                part.RotVelocity = Vector3.new()
+                            end
+                        end
+                        pcall(function() Workspace.FallenPartsDestroyHeight = old_fdh end)
+                        v18:Notify({ Title = 'CrystalHub', Content = 'Returned to previous position.', Duration = 3, Icon = 'bell' })
+                    end
+
+                    u157 = false
+                    getgenv().FLING_ACTIVE = math.max(0, (getgenv().FLING_ACTIVE or 1) - 1)
                 end
+
+                -- expose bypass toggle for UI
+                getgenv().FLING_BYPASS = function(v) _fling_bypass_velocity = v end
 
                 u162 = v18
                 u163 = Players
@@ -4691,6 +4660,102 @@ end
             Title = 'Refresh Fling List',
             Description = 'Update the player list',
             Callback = rebuildFlingList,
+        })
+
+        -- ── Fling Tool (click-to-fling) ──────────────────────────────
+        do
+            local fling_tool_on = false
+            local fling_tool_obj = nil
+            local fling_act_conn = nil
+            local fling_char_conn = nil
+
+            local function clicked_fling_player()
+                local m = LocalPlayer:GetMouse()
+                local target = m.Target
+                if target then
+                    local node = target
+                    while node and node ~= Workspace do
+                        local p = Players:GetPlayerFromCharacter(node)
+                        if p and p ~= LocalPlayer then return p end
+                        node = node.Parent
+                    end
+                end
+                local cam = Workspace.CurrentCamera
+                local mp = Vector2.new(m.X, m.Y)
+                local best, bestd = nil, 110
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        local hrpF = p.Character:FindFirstChild('HumanoidRootPart') or p.Character:FindFirstChild('Head')
+                        if hrpF then
+                            local sp, on = cam:WorldToViewportPoint(hrpF.Position)
+                            if on then
+                                local d = (Vector2.new(sp.X, sp.Y) - mp).Magnitude
+                                if d < bestd then bestd = d best = p end
+                            end
+                        end
+                    end
+                end
+                return best
+            end
+
+            local function give_fling_tool()
+                if not fling_tool_on then return end
+                local bp = LocalPlayer:FindFirstChildOfClass('Backpack')
+                if not bp then return end
+                if bp:FindFirstChild('fling') or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('fling')) then return end
+                if fling_act_conn then pcall(function() fling_act_conn:Disconnect() end) fling_act_conn = nil end
+                fling_tool_obj = Instance.new('Tool')
+                fling_tool_obj.Name = 'fling'
+                fling_tool_obj.RequiresHandle = false
+                fling_tool_obj.CanBeDropped = false
+                fling_tool_obj.Parent = bp
+                fling_act_conn = fling_tool_obj.Activated:Connect(function()
+                    local tp = clicked_fling_player()
+                    local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart')
+                    if tp and myHRP then task.spawn(u165, tp) end
+                end)
+            end
+
+            local function remove_fling_tool()
+                if fling_act_conn then pcall(function() fling_act_conn:Disconnect() end) fling_act_conn = nil end
+                if fling_tool_obj then pcall(function() fling_tool_obj:Destroy() end) fling_tool_obj = nil end
+                local bp = LocalPlayer:FindFirstChildOfClass('Backpack')
+                if bp then local t = bp:FindFirstChild('fling') if t then pcall(function() t:Destroy() end) end end
+                local c = LocalPlayer.Character
+                if c then local t = c:FindFirstChild('fling') if t then pcall(function() t:Destroy() end) end end
+            end
+
+            v303._left:Toggle({
+                Flag = 'fling_tool_enable',
+                Title = 'Fling Tool',
+                Default = false,
+                Callback = function(v)
+                    fling_tool_on = v
+                    if v then
+                        give_fling_tool()
+                        if not fling_char_conn then
+                            fling_char_conn = LocalPlayer.CharacterAdded:Connect(function()
+                                task.wait(0.5)
+                                if fling_tool_on then give_fling_tool() end
+                            end)
+                        end
+                    else
+                        if fling_char_conn then pcall(function() fling_char_conn:Disconnect() end) fling_char_conn = nil end
+                        remove_fling_tool()
+                    end
+                    v18:Notify({ Title = 'CrystalHub', Content = 'Fling Tool ' .. (v and 'ON' or 'OFF'), Duration = 3, Icon = 'bell' })
+                end,
+            })
+        end
+
+        v303._left:Toggle({
+            Flag = 'fling_bypass_velocity',
+            Title = 'Bypass Velocity',
+            Default = false,
+            Callback = function(v)
+                if getgenv().FLING_BYPASS then getgenv().FLING_BYPASS(v) end
+                v18:Notify({ Title = 'CrystalHub', Content = 'Bypass Velocity ' .. (v and 'ON' or 'OFF'), Duration = 3, Icon = 'bell' })
+            end,
         })
 
         Players.PlayerAdded:Connect(function()
